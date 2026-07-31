@@ -8,18 +8,18 @@
   <!-- Google Fonts: Poppins -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --font-main: 'Poppins', sans-serif;
+      --font-main: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
       --bg-light: #ffffff;
-      --bg-dark: #121212;
+      --bg-dark: #000000;
       --text-dark: #111111;
       --text-light: #ffffff;
       --accent-pink: #ff2d55;
       --accent-orange: #ff9500;
-      --border-gray: #e5e5e5;
+      --border-gray: #eeeeee;
     }
 
     * {
@@ -28,6 +28,7 @@
       padding: 0;
       font-family: var(--font-main);
       -webkit-tap-highlight-color: transparent;
+      letter-spacing: -0.01em;
     }
 
     body {
@@ -51,20 +52,32 @@
       overflow: hidden;
     }
 
-    /* Properly Hiding Inactive Screens */
+    /* Screen Views Switcher */
     .screen-view {
       flex: 1;
       display: none;
       flex-direction: column;
-      overflow-y: auto;
       height: calc(100vh - 65px);
+      overflow-y: auto;
+      position: relative;
     }
 
     .screen-view.active {
       display: flex !important;
     }
 
-    /* ================= FYP / FEED ================= */
+    /* SVG Icon Helper Styles */
+    .icon-svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    /* ==========================================
+       1. FEED SCREEN (VIDEO MEDIA STREAM)
+       ========================================== */
     #feed-screen {
       background-color: var(--bg-dark);
       color: var(--text-light);
@@ -72,10 +85,10 @@
 
     .feed-header {
       position: absolute;
-      top: 15px;
+      top: 20px;
       left: 0;
       right: 0;
-      z-index: 10;
+      z-index: 20;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -84,7 +97,7 @@
 
     .feed-tabs {
       display: flex;
-      gap: 20px;
+      gap: 16px;
       margin: 0 auto;
     }
 
@@ -93,12 +106,20 @@
       font-weight: 600;
       color: rgba(255, 255, 255, 0.6);
       cursor: pointer;
+      letter-spacing: 0.02em;
     }
 
     .feed-tab.active {
+      color: #ffffff;
+      border-bottom: 2px solid #ffffff;
+      padding-bottom: 4px;
+    }
+
+    .header-icon {
       color: #fff;
-      border-bottom: 2px solid #fff;
-      padding-bottom: 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
     }
 
     .video-viewport {
@@ -107,105 +128,167 @@
       justify-content: center;
       align-items: center;
       position: relative;
-      background: #1e1e1e;
+      background: #000;
+      overflow: hidden;
     }
 
-    .video-placeholder-text {
-      font-size: 40px;
-      font-weight: 700;
-      color: #333;
+    #feed-video-player {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .upload-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .upload-empty-state p {
+      font-size: 14px;
+      color: #888;
+      max-width: 240px;
+    }
+
+    .custom-file-upload {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background-color: var(--text-light);
+      color: var(--text-dark);
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .custom-file-upload:active {
+      opacity: 0.8;
+    }
+
+    #video-file-input {
+      display: none;
     }
 
     .right-action-bar {
       position: absolute;
-      right: 15px;
-      bottom: 80px;
+      right: 16px;
+      bottom: 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 18px;
-      z-index: 5;
+      gap: 20px;
+      z-index: 10;
     }
 
     .action-item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
+      gap: 4px;
       cursor: pointer;
-    }
-
-    .action-icon {
-      font-size: 24px;
+      color: #fff;
     }
 
     .action-count {
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 500;
     }
 
-    .feed-overlay-bottom {
-      position: absolute;
-      bottom: 20px;
-      left: 15px;
-      z-index: 5;
+    /* ==========================================
+       2. PROFILE SCREEN
+       ========================================== */
+    #profile-screen {
+      background-color: var(--bg-light);
+      padding: 24px 20px;
     }
 
-    .feed-handle {
-      font-size: 16px;
+    .logged-out-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 16px;
+    }
+
+    .logged-out-box h2 {
+      font-size: 22px;
       font-weight: 700;
     }
 
-    .feed-desc {
+    .logged-out-box p {
       font-size: 14px;
-      opacity: 0.9;
+      color: #666;
+      margin-bottom: 8px;
     }
 
-    /* ================= PROFILE ================= */
-    #profile-screen {
-      background-color: var(--bg-light);
-      padding: 20px;
+    .profile-authenticated {
+      display: none;
+      flex-direction: column;
     }
 
     .profile-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       margin-top: 10px;
     }
 
     .profile-info h1 {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 700;
+      line-height: 1.2;
     }
 
     .profile-info p {
-      font-size: 15px;
+      font-size: 14px;
       color: #666;
+      font-weight: 500;
     }
 
     .avatar-circle {
       width: 80px;
       height: 80px;
       border-radius: 50%;
-      background: #eee;
       object-fit: cover;
+      background: #f0f0f0;
+      border: 1px solid var(--border-gray);
     }
 
     .auth-btn {
-      margin-top: 20px;
       width: 100%;
-      padding: 12px;
-      background-color: #4285f4;
-      color: white;
+      max-width: 280px;
+      padding: 14px 20px;
+      background-color: #000;
+      color: #fff;
       border: none;
-      border-radius: 25px;
+      border-radius: 30px;
       font-size: 15px;
       font-weight: 600;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
     }
 
-    /* ================= DM SCREEN ================= */
+    .signout-btn {
+      margin-top: 30px;
+      background-color: #ff3b30;
+    }
+
+    /* ==========================================
+       3. DM SCREEN
+       ========================================== */
     #dm-screen {
       background-color: var(--bg-light);
     }
@@ -214,113 +297,47 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 15px;
+      padding: 16px 20px;
       border-bottom: 1px solid var(--border-gray);
     }
 
-    .dm-header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .dm-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: #ccc;
-    }
-
-    .dm-user-name {
-      font-size: 17px;
-      font-weight: 700;
-    }
-
-    .streak-badge {
-      color: var(--accent-orange);
-      font-size: 15px;
+    .dm-title {
+      font-size: 18px;
       font-weight: 700;
     }
 
     .chat-body {
       flex: 1;
-      padding: 15px;
+      padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 12px;
     }
 
-    .mystery-block {
-      align-self: flex-end;
-      width: 100px;
-      height: 120px;
-      background-color: #8e8e93;
-      border-radius: 14px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 32px;
-      font-weight: 700;
-      color: #333;
-    }
-
-    .msg-group {
+    .dm-empty-state {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      max-width: 85%;
-    }
-
-    .msg-sender-name {
-      font-size: 12px;
-      color: #777;
-      margin-left: 40px;
-    }
-
-    .msg-row {
-      display: flex;
-      align-items: flex-end;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-size: 14px;
       gap: 8px;
     }
 
-    .msg-avatar-small {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: #ddd;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-    }
-
-    .msg-bubble-black {
-      background-color: #000;
-      color: #fff;
-      padding: 10px 14px;
-      border-radius: 18px;
-      font-size: 14px;
-    }
-
-    .safety-banner {
-      margin-top: 8px;
-      padding: 8px;
-      text-align: center;
-      font-size: 12px;
-      color: #555;
-    }
-
     .dm-input-wrapper {
-      padding: 10px 15px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-gray);
     }
 
     .dm-input-bubble {
       display: flex;
       align-items: center;
-      border: 2px solid #000;
-      border-radius: 40px;
-      padding: 8px 16px;
+      border: 1.5px solid #111;
+      border-radius: 25px;
+      padding: 10px 16px;
+      gap: 10px;
     }
 
     .dm-input-bubble input {
@@ -331,14 +348,16 @@
       background: transparent;
     }
 
-    /* ================= BOTTOM NAV ================= */
+    /* ==========================================
+       PERSISTENT BOTTOM NAVIGATION
+       ========================================== */
     .bottom-nav {
       height: 65px;
       background-color: #000;
       display: flex;
       justify-content: space-around;
       align-items: center;
-      border-top: 1px solid #222;
+      border-top: 1px solid #1a1a1a;
       position: absolute;
       bottom: 0;
       left: 0;
@@ -347,22 +366,28 @@
     }
 
     .nav-item {
-      color: #fff;
-      font-size: 20px;
+      color: #ffffff;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       width: 25%;
       height: 100%;
+      opacity: 0.6;
+      transition: opacity 0.15s ease;
+    }
+
+    .nav-item.active {
+      opacity: 1;
     }
 
     .nav-btn-dm {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       border: 1.5px solid #fff;
       border-radius: 6px;
       padding: 2px 6px;
+      letter-spacing: 0.05em;
     }
   </style>
 </head>
@@ -377,22 +402,37 @@
           <span class="feed-tab">Friends</span>
           <span class="feed-tab active">For you</span>
         </div>
-        <span>🔍</span>
+        <div class="header-icon">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        </div>
       </div>
 
       <div class="video-viewport">
-        <div class="video-placeholder-text">video</div>
+        <video id="feed-video-player" playsinline loop controls></video>
 
-        <div class="right-action-bar">
-          <div class="action-item"><span class="action-icon">🤍</span><span class="action-count">67</span></div>
-          <div class="action-item"><span class="action-icon">💬</span><span class="action-count">20</span></div>
-          <div class="action-item"><span class="action-icon">↪️</span><span class="action-count">20K</span></div>
-          <div class="action-item"><span class="action-icon">📑</span><span class="action-count">0</span></div>
+        <div class="upload-empty-state" id="upload-prompt">
+          <svg class="icon-svg" style="width:48px; height:48px; fill:#555;" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/></svg>
+          <p>No video loaded. Select a file or capture using your camera.</p>
+          <label for="video-file-input" class="custom-file-upload">
+            <svg class="icon-svg" style="width:18px; height:18px; fill:#000;" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+            Upload or Record Video
+          </label>
+          <input type="file" id="video-file-input" accept="video/*" capture="environment">
         </div>
 
-        <div class="feed-overlay-bottom">
-          <div class="feed-handle">@handle</div>
-          <div class="feed-desc">desc</div>
+        <div class="right-action-bar">
+          <div class="action-item">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span class="action-count">0</span>
+          </div>
+          <div class="action-item">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+            <span class="action-count">0</span>
+          </div>
+          <div class="action-item">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l6.96-4.11c.52.48 1.2.78 1.96.78 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.33 6.82 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.82 0 1.5-.33 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+            <span class="action-count">0</span>
+          </div>
         </div>
       </div>
     </section>
@@ -400,65 +440,74 @@
     <!-- 2. DM SCREEN -->
     <section id="dm-screen" class="screen-view">
       <header class="dm-header">
-        <div class="dm-header-left">
-          <div class="dm-avatar"></div>
-          <div>
-            <span class="dm-user-name">Name</span>
-            <span class="streak-badge">🔥35</span>
-          </div>
-        </div>
-        <div>⋮</div>
+        <span class="dm-title">Messages</span>
+        <svg class="icon-svg" style="fill:#111;" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
       </header>
 
-      <div class="chat-body">
-        <div class="mystery-block">?</div>
-        <div class="msg-group">
-          <span class="msg-sender-name">Name</span>
-          <div class="msg-row">
-            <div class="msg-avatar-small">👤</div>
-            <div class="msg-bubble-black">I think I don’t wanna live anymore</div>
-          </div>
-          <div class="safety-banner">
-            If you or someone you know is struggling or in crisis, help is available. You are not alone.
-          </div>
+      <div class="chat-body" id="chat-body">
+        <div class="dm-empty-state">
+          <svg class="icon-svg" style="width:40px; height:40px; fill:#ccc;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+          <p>No messages yet</p>
         </div>
       </div>
 
       <div class="dm-input-wrapper">
         <div class="dm-input-bubble">
-          <input type="text" placeholder="Message">
+          <input type="text" id="dm-text-input" placeholder="Message...">
+          <svg class="icon-svg" style="fill:#111; cursor:pointer;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </div>
       </div>
     </section>
 
     <!-- 3. PROFILE SCREEN -->
     <section id="profile-screen" class="screen-view">
-      <div class="profile-header">
-        <div class="profile-info">
-          <h1 id="user-display-name">Name</h1>
-          <p id="user-display-handle">@handle</p>
-        </div>
-        <img class="avatar-circle" id="profile-avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><circle cx='40' cy='40' r='40' fill='%23eee'/></svg>">
+      
+      <!-- LOGGED OUT VIEW -->
+      <div class="logged-out-box" id="logged-out-state">
+        <svg class="icon-svg" style="width:64px; height:64px; fill:#ccc;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        <h2>Please log in first</h2>
+        <p>Sign in with your Google account to access your account details and settings.</p>
+        <button class="auth-btn" onclick="signInWithGoogle()">
+          <svg class="icon-svg" style="width:18px; height:18px; fill:#fff;" viewBox="0 0 24 24"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C6.721,2,2,6.721,2,12.545s4.721,10.545,10.545,10.545c6.089,0,10.127-4.281,10.127-10.3c0-0.693-0.074-1.365-0.198-2.011H12.545z"/></svg>
+          Sign in with Google
+        </button>
       </div>
 
-      <button class="auth-btn" onclick="signInWithGoogle()">Sign in with Google</button>
+      <!-- LOGGED IN VIEW -->
+      <div class="profile-authenticated" id="logged-in-state">
+        <div class="profile-header">
+          <div class="profile-info">
+            <h1 id="user-display-name">Name</h1>
+            <p id="user-display-handle">@handle</p>
+          </div>
+          <img class="avatar-circle" id="profile-avatar-img" src="" alt="Avatar">
+        </div>
+        <button class="auth-btn signout-btn" onclick="signOutUser()">Sign Out</button>
+      </div>
+
     </section>
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
-      <div class="nav-item" onclick="switchTab('feed-screen')">🏠</div>
-      <div class="nav-item">📷</div>
-      <div class="nav-item" onclick="switchTab('dm-screen')">
+      <div class="nav-item active" onclick="switchTab('feed-screen', this)">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </div>
+      <div class="nav-item" onclick="switchTab('feed-screen', this)">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </div>
+      <div class="nav-item" onclick="switchTab('dm-screen', this)">
         <span class="nav-btn-dm">DM</span>
       </div>
-      <div class="nav-item" onclick="switchTab('profile-screen')">👤</div>
+      <div class="nav-item" onclick="switchTab('profile-screen', this)">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+      </div>
     </nav>
 
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCNj19A3A3764GpZO8rkhLYFrWXk9k_HEM",
@@ -473,37 +522,70 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
+    // Google Auth Functions
     window.signInWithGoogle = async function() {
       try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        updateProfileUI(user);
+        await signInWithPopup(auth, provider);
       } catch (error) {
-        console.error("Google Sign-In Error:", error);
+        console.error("Auth Error:", error);
       }
     };
 
+    window.signOutUser = async function() {
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error("Sign Out Error:", error);
+      }
+    };
+
+    // Track User Auth State
     onAuthStateChanged(auth, (user) => {
-      if (user) updateProfileUI(user);
+      const loggedOutBox = document.getElementById('logged-out-state');
+      const loggedInBox = document.getElementById('logged-in-state');
+
+      if (user) {
+        loggedOutBox.style.display = 'none';
+        loggedInBox.style.display = 'flex';
+        document.getElementById('user-display-name').innerText = user.displayName || "User";
+        document.getElementById('user-display-handle').innerText = `@${user.email.split('@')[0]}`;
+        if (user.photoURL) {
+          document.getElementById('profile-avatar-img').src = user.photoURL;
+        }
+      } else {
+        loggedOutBox.style.display = 'flex';
+        loggedInBox.style.display = 'none';
+      }
     });
 
-    function updateProfileUI(user) {
-      document.getElementById('user-display-name').innerText = user.displayName || "User";
-      document.getElementById('user-display-handle').innerText = `@${user.email.split('@')[0]}`;
-      if (user.photoURL) {
-        document.getElementById('profile-avatar-img').src = user.photoURL;
-      }
-    }
+    // Handle Local Video Stream / File Upload
+    const videoInput = document.getElementById('video-file-input');
+    const videoPlayer = document.getElementById('feed-video-player');
+    const uploadPrompt = document.getElementById('upload-prompt');
 
-    // Fixed Tab Switching Function
-    window.switchTab = function(screenId) {
+    videoInput.addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const fileURL = URL.createObjectURL(file);
+        videoPlayer.src = fileURL;
+        videoPlayer.style.display = 'block';
+        uploadPrompt.style.display = 'none';
+        videoPlayer.play();
+      }
+    });
+
+    // View Navigation Switcher
+    window.switchTab = function(screenId, navElement) {
       document.querySelectorAll('.screen-view').forEach(screen => {
         screen.classList.remove('active');
       });
-      const selected = document.getElementById(screenId);
-      if (selected) {
-        selected.classList.add('active');
-      }
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      const selectedScreen = document.getElementById(screenId);
+      if (selectedScreen) selectedScreen.classList.add('active');
+      if (navElement) navElement.classList.add('active');
     };
   </script>
 
