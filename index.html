@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Riven</title>
 
   <!-- Google Fonts: Poppins -->
@@ -18,8 +18,7 @@
       --text-dark: #111111;
       --text-light: #ffffff;
       --accent-pink: #ff2d55;
-      --accent-orange: #ff9500;
-      --border-gray: #eeeeee;
+      --border-gray: #e5e5e5;
     }
 
     * {
@@ -76,7 +75,7 @@
     }
 
     /* ==========================================
-       1. FEED SCREEN (VIDEO MEDIA STREAM)
+       1. FEED SCREEN (INCLUDES SAFE-AREA FOR NOTCH)
        ========================================== */
     #feed-screen {
       background-color: var(--bg-dark);
@@ -85,7 +84,7 @@
 
     .feed-header {
       position: absolute;
-      top: 20px;
+      top: calc(env(safe-area-inset-top, 20px) + 15px); /* Clears notch */
       left: 0;
       right: 0;
       z-index: 20;
@@ -106,7 +105,6 @@
       font-weight: 600;
       color: rgba(255, 255, 255, 0.6);
       cursor: pointer;
-      letter-spacing: 0.02em;
     }
 
     .feed-tab.active {
@@ -166,11 +164,6 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.2s;
-    }
-
-    .custom-file-upload:active {
-      opacity: 0.8;
     }
 
     #video-file-input {
@@ -203,11 +196,11 @@
     }
 
     /* ==========================================
-       2. PROFILE SCREEN
+       2. PROFILE SCREEN (MATCHING SKETCH)
        ========================================== */
     #profile-screen {
       background-color: var(--bg-light);
-      padding: 24px 20px;
+      padding-top: env(safe-area-inset-top, 20px);
     }
 
     .logged-out-box {
@@ -218,6 +211,7 @@
       justify-content: center;
       text-align: center;
       gap: 16px;
+      padding: 20px;
     }
 
     .logged-out-box h2 {
@@ -228,69 +222,202 @@
     .logged-out-box p {
       font-size: 14px;
       color: #666;
-      margin-bottom: 8px;
     }
 
     .profile-authenticated {
       display: none;
       flex-direction: column;
+      width: 100%;
     }
 
-    .profile-header {
+    .profile-top-bar {
+      display: flex;
+      justify-content: flex-end;
+      padding: 10px 20px;
+    }
+
+    .menu-dots-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #000;
+    }
+
+    .profile-card {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-top: 10px;
+      align-items: flex-start;
+      padding: 0 20px;
+      margin-bottom: 20px;
     }
 
-    .profile-info h1 {
-      font-size: 24px;
+    .profile-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .profile-name {
+      font-size: 28px;
       font-weight: 700;
-      line-height: 1.2;
+      line-height: 1.1;
+      color: #000;
     }
 
-    .profile-info p {
-      font-size: 14px;
-      color: #666;
-      font-weight: 500;
+    .profile-handle-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .profile-handle {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111;
+    }
+
+    .verified-check {
+      width: 18px;
+      height: 18px;
+      fill: #1d9bf0;
+      display: none;
     }
 
     .avatar-circle {
-      width: 80px;
-      height: 80px;
+      width: 90px;
+      height: 90px;
       border-radius: 50%;
       object-fit: cover;
-      background: #f0f0f0;
-      border: 1px solid var(--border-gray);
+      background: #eee;
+      border: 1px solid #ddd;
     }
 
-    .auth-btn {
+    .profile-actions-wrapper {
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .btn-follow {
       width: 100%;
-      max-width: 280px;
-      padding: 14px 20px;
-      background-color: #000;
+      padding: 14px;
+      background-color: var(--accent-pink);
       color: #fff;
       border: none;
-      border-radius: 30px;
-      font-size: 15px;
-      font-weight: 600;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: 700;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
+      text-align: center;
     }
 
-    .signout-btn {
-      margin-top: 30px;
-      background-color: #ff3b30;
+    .btn-edit-profile {
+      width: 100%;
+      padding: 10px;
+      background-color: #f2f2f7;
+      color: #000;
+      border: none;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
     }
+
+    .profile-divider {
+      width: 100%;
+      height: 1px;
+      background-color: var(--border-gray);
+      margin-bottom: 20px;
+    }
+
+    .video-grid-container {
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .video-thumbnail-card {
+      aspect-ratio: 9/16;
+      background-color: #bbb;
+      border-radius: 8px;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      padding: 8px;
+    }
+
+    .video-views-badge {
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    /* Modal for Editing Profile */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: #fff;
+      border-radius: 16px;
+      width: 85%;
+      max-width: 340px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-content h3 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    .modal-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .modal-btn-cancel { background: #eee; color: #333; }
+    .modal-btn-save { background: #000; color: #fff; }
 
     /* ==========================================
        3. DM SCREEN
        ========================================== */
     #dm-screen {
       background-color: var(--bg-light);
+      padding-top: env(safe-area-inset-top, 0px);
     }
 
     .dm-header {
@@ -312,7 +439,6 @@
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 12px;
     }
 
     .dm-empty-state {
@@ -466,26 +592,63 @@
       <div class="logged-out-box" id="logged-out-state">
         <svg class="icon-svg" style="width:64px; height:64px; fill:#ccc;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
         <h2>Please log in first</h2>
-        <p>Sign in with your Google account to access your account details and settings.</p>
-        <button class="auth-btn" onclick="signInWithGoogle()">
-          <svg class="icon-svg" style="width:18px; height:18px; fill:#fff;" viewBox="0 0 24 24"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C6.721,2,2,6.721,2,12.545s4.721,10.545,10.545,10.545c6.089,0,10.127-4.281,10.127-10.3c0-0.693-0.074-1.365-0.198-2.011H12.545z"/></svg>
-          Sign in with Google
-        </button>
+        <p>Sign in with Google to view your profile.</p>
+        <button class="btn-follow" style="max-width: 240px; background:#000;" onclick="signInWithGoogle()">Sign in with Google</button>
       </div>
 
-      <!-- LOGGED IN VIEW -->
+      <!-- LOGGED IN VIEW (EXACT MATCH FOR DRAWING) -->
       <div class="profile-authenticated" id="logged-in-state">
-        <div class="profile-header">
-          <div class="profile-info">
-            <h1 id="user-display-name">Name</h1>
-            <p id="user-display-handle">@handle</p>
-          </div>
-          <img class="avatar-circle" id="profile-avatar-img" src="" alt="Avatar">
+        <div class="profile-top-bar">
+          <button class="menu-dots-btn">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
         </div>
-        <button class="auth-btn signout-btn" onclick="signOutUser()">Sign Out</button>
+
+        <div class="profile-card">
+          <div class="profile-meta">
+            <h1 class="profile-name" id="user-display-name">Name</h1>
+            <div class="profile-handle-row">
+              <span class="profile-handle" id="user-display-handle">@handle</span>
+              <!-- Blue Verified Badge SVG -->
+              <svg class="verified-check" id="verified-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            </div>
+          </div>
+          <img class="avatar-circle" id="profile-avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'><circle cx='45' cy='45' r='45' fill='%23eee'/></svg>">
+        </div>
+
+        <div class="profile-actions-wrapper">
+          <button class="btn-follow">Follow</button>
+          <button class="btn-edit-profile" onclick="openEditModal()">Edit Profile</button>
+        </div>
+
+        <div class="profile-divider"></div>
+
+        <!-- Video Thumbnail Grid -->
+        <div class="video-grid-container">
+          <div class="video-thumbnail-card">
+            <div class="video-views-badge">
+              <svg class="icon-svg" style="width:12px; height:12px; fill:#fff;" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              2K
+            </div>
+          </div>
+        </div>
       </div>
 
     </section>
+
+    <!-- EDIT PROFILE MODAL -->
+    <div class="modal-overlay" id="edit-modal">
+      <div class="modal-content">
+        <h3>Edit Profile Details</h3>
+        <input type="text" id="edit-name-input" class="modal-input" placeholder="Display Name">
+        <input type="text" id="edit-handle-input" class="modal-input" placeholder="Handle (e.g. habib)">
+        <input type="text" id="edit-pfp-input" class="modal-input" placeholder="Image URL for Profile Picture">
+        <div class="modal-buttons">
+          <button class="modal-btn modal-btn-cancel" onclick="closeEditModal()">Cancel</button>
+          <button class="modal-btn modal-btn-save" onclick="saveProfileChanges()">Save</button>
+        </div>
+      </div>
+    </div>
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
@@ -507,7 +670,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCNj19A3A3764GpZO8rkhLYFrWXk9k_HEM",
@@ -522,7 +685,6 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    // Google Auth Functions
     window.signInWithGoogle = async function() {
       try {
         await signInWithPopup(auth, provider);
@@ -531,15 +693,6 @@
       }
     };
 
-    window.signOutUser = async function() {
-      try {
-        await signOut(auth);
-      } catch (error) {
-        console.error("Sign Out Error:", error);
-      }
-    };
-
-    // Track User Auth State
     onAuthStateChanged(auth, (user) => {
       const loggedOutBox = document.getElementById('logged-out-state');
       const loggedInBox = document.getElementById('logged-in-state');
@@ -547,16 +700,53 @@
       if (user) {
         loggedOutBox.style.display = 'none';
         loggedInBox.style.display = 'flex';
-        document.getElementById('user-display-name').innerText = user.displayName || "User";
-        document.getElementById('user-display-handle').innerText = `@${user.email.split('@')[0]}`;
-        if (user.photoURL) {
-          document.getElementById('profile-avatar-img').src = user.photoURL;
-        }
+        
+        // Default set to habib
+        updateProfileDisplay(user.displayName || "Habib", "habib", user.photoURL);
       } else {
         loggedOutBox.style.display = 'flex';
         loggedInBox.style.display = 'none';
       }
     });
+
+    function updateProfileDisplay(name, handle, pfp) {
+      const cleanHandle = handle.replace('@', '').toLowerCase();
+      document.getElementById('user-display-name').innerText = name;
+      document.getElementById('user-display-handle').innerText = `@${cleanHandle}`;
+
+      // Check Verification for @habib
+      const verifiedIcon = document.getElementById('verified-icon');
+      if (cleanHandle === 'habib') {
+        verifiedIcon.style.display = 'inline-block';
+      } else {
+        verifiedIcon.style.display = 'none';
+      }
+
+      if (pfp) {
+        document.getElementById('profile-avatar-img').src = pfp;
+      }
+    }
+
+    // Modal Edit Profile logic
+    window.openEditModal = function() {
+      document.getElementById('edit-name-input').value = document.getElementById('user-display-name').innerText;
+      document.getElementById('edit-handle-input').value = document.getElementById('user-display-handle').innerText.replace('@', '');
+      document.getElementById('edit-pfp-input').value = document.getElementById('profile-avatar-img').src;
+      document.getElementById('edit-modal').style.display = 'flex';
+    };
+
+    window.closeEditModal = function() {
+      document.getElementById('edit-modal').style.display = 'none';
+    };
+
+    window.saveProfileChanges = function() {
+      const newName = document.getElementById('edit-name-input').value || "Name";
+      const newHandle = document.getElementById('edit-handle-input').value || "handle";
+      const newPfp = document.getElementById('edit-pfp-input').value;
+
+      updateProfileDisplay(newName, newHandle, newPfp);
+      closeEditModal();
+    };
 
     // Handle Local Video Stream / File Upload
     const videoInput = document.getElementById('video-file-input');
