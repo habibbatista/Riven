@@ -747,7 +747,6 @@
         </div>
 
         <div class="profile-actions-wrapper">
-          <!-- Follow button dynamically controlled (hidden on your own profile) -->
           <button class="btn-follow" id="btn-follow-action" style="display:none;">Follow</button>
           <button class="btn-edit-profile" id="btn-edit-action" onclick="openEditModal()">Edit Profile</button>
         </div>
@@ -818,6 +817,27 @@
     let uploadedProfilePicData = null;
     let isLiked = false;
 
+    // 1. INSTANT LOCALCACHE RENDER (Eliminates "---" latency instantly)
+    function loadCachedUserInstantly() {
+      const lastUid = localStorage.getItem('riven_last_active_uid');
+      if (lastUid) {
+        const cachedData = localStorage.getItem(`riven_user_${lastUid}`);
+        if (cachedData) {
+          try {
+            const parsed = JSON.parse(cachedData);
+            myProfileData = parsed;
+            
+            document.getElementById('logged-out-state').style.display = 'none';
+            document.getElementById('logged-in-state').style.display = 'flex';
+            
+            updateProfileDisplay(parsed.name, parsed.handle, parsed.pfp, true);
+          } catch(e) {}
+        }
+      }
+    }
+
+    loadCachedUserInstantly();
+
     window.signInWithGoogle = async function() {
       try {
         await signInWithPopup(auth, provider);
@@ -831,22 +851,8 @@
       return `user${randomNumber}`;
     }
 
-    async function loadSavedUserData(uid) {
-      try {
-        const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          return docSnap.data();
-        }
-      } catch(e) {
-        console.log("Firestore fallback to local storage");
-      }
-
-      const localData = localStorage.getItem(`riven_user_${uid}`);
-      return localData ? JSON.parse(localData) : null;
-    }
-
     async function saveUserData(uid, data) {
+      localStorage.setItem('riven_last_active_uid', uid);
       localStorage.setItem(`riven_user_${uid}`, JSON.stringify(data));
       try {
         await setDoc(doc(db, "users", uid), data, { merge: true });
@@ -871,35 +877,50 @@
       }
     }
 
-    onAuthStateChanged(auth, async (user) => {
+    // AUTH STATE LISTENER (Non-blocking background sync)
+    onAuthStateChanged(auth, (user) => {
       currentUser = user;
       const loggedOutBox = document.getElementById('logged-out-state');
       const loggedInBox = document.getElementById('logged-in-state');
 
       if (user) {
+        localStorage.setItem('riven_last_active_uid', user.uid);
         loggedOutBox.style.display = 'none';
         loggedInBox.style.display = 'flex';
-        
-        let savedData = await loadSavedUserData(user.uid);
-        
-        let handle = savedData?.handle || getHandleFromUrl() || generateRandomUserHandle();
-        let name = savedData?.name || `User ${handle.replace('user', '')}`;
-        let pfp = savedData?.pfp || user.photoURL;
+
+        const localStr = localStorage.getItem(`riven_user_${user.uid}`);
+        let localData = localStr ? JSON.parse(localStr) : null;
+
+        let handle = localData?.handle || getHandleFromUrl() || generateRandomUserHandle();
+        let name = localData?.name || user.displayName || `User ${handle.replace('user', '')}`;
+        let pfp = localData?.pfp || user.photoURL;
 
         myProfileData = { name, handle, pfp, uid: user.uid };
+        
+        updateProfileDisplay(name, handle, pfp, true);
 
-        updateProfileDisplay(name, handle, pfp, true); // true = viewing own profile
-        saveUserData(user.uid, { name, handle, pfp, uid: user.uid });
+        // Silent background fetch to update stale data
+        getDoc(doc(db, "users", user.uid)).then((docSnap) => {
+          if (docSnap.exists()) {
+            const remoteData = docSnap.data();
+            myProfileData = { ...remoteData, uid: user.uid };
+            localStorage.setItem(`riven_user_${user.uid}`, JSON.stringify(myProfileData));
+            updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true);
+          } else {
+            saveUserData(user.uid, myProfileData);
+          }
+        }).catch(err => console.log("Background sync skipped:", err));
+
       } else {
+        localStorage.removeItem('riven_last_active_uid');
         loggedOutBox.style.display = 'flex';
         loggedInBox.style.display = 'none';
       }
     });
 
-    // Smart display renderer hiding follow button on self-profile
     function updateProfileDisplay(name, handle, pfp, isOwnProfile = false) {
-      const cleanHandle = handle.replace('@', '').toLowerCase();
-      document.getElementById('user-display-name').innerText = name;
+      const cleanHandle = handle ? handle.replace('@', '').toLowerCase() : 'user';
+      document.getElementById('user-display-name').innerText = name || 'User';
       document.getElementById('user-display-handle').innerText = `@${cleanHandle}`;
 
       setProfileUrl(cleanHandle);
@@ -912,7 +933,7 @@
       const editBtn = document.getElementById('btn-edit-action');
 
       if (isOwnProfile) {
-        followBtn.style.display = 'none'; // Hides self follow!
+        followBtn.style.display = 'none';
         editBtn.style.display = 'block';
       } else {
         followBtn.style.display = 'block';
@@ -941,7 +962,6 @@
 
       let matches = [];
 
-      // Fetch live accounts from Firestore
       try {
         const querySnapshot = await getDocs(collection(db, "users"));
         querySnapshot.forEach((doc) => {
@@ -951,10 +971,9 @@
           }
         });
       } catch(e) {
-        console.warn("Firestore search fallback to client session", e);
+        console.warn("Firestore search error", e);
       }
 
-      // Add active user if match
       if (myProfileData) {
         const curHandle = myProfileData.handle.toLowerCase();
         const curName = myProfileData.name.toLowerCase();
@@ -969,10 +988,10 @@
       }
 
       resultsContainer.innerHTML = matches.map(m => `
-        <div class="search-result-card" onclick="selectSearchResult('${m.handle}', '${m.name.replace(/'/g, "\\'")}', '${m.pfp}', '${m.uid}')">
+        <div class="search-result-card" onclick="selectSearchResult('${m.handle}', '${(m.name || 'User').replace(/'/g, "\\'")}', '${m.pfp || ''}', '${m.uid}')">
           <img class="search-avatar" src="${m.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 44 44\'><circle cx=\'22\' cy=\'22\' r=\'22\' fill=\'%23333\'/></svg>'}" />
           <div class="search-info">
-            <span class="title">${m.name}</span>
+            <span class="title">${m.name || 'User'}</span>
             <span class="subtitle">@${m.handle}</span>
           </div>
         </div>
@@ -1044,33 +1063,34 @@
     const uploadPrompt = document.getElementById('upload-prompt');
     const playIndicator = document.getElementById('custom-play-indicator');
 
-    videoInput.addEventListener('change', function(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const fileURL = URL.createObjectURL(file);
-        videoPlayer.src = fileURL;
-        videoPlayer.style.display = 'block';
-        uploadPrompt.style.display = 'none';
-        
-        videoPlayer.play().catch(err => {
-          console.log("Autoplay bypass:", err);
-        });
-      }
-    });
+    if (videoInput) {
+      videoInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+          const fileURL = URL.createObjectURL(file);
+          videoPlayer.src = fileURL;
+          videoPlayer.style.display = 'block';
+          uploadPrompt.style.display = 'none';
+          
+          videoPlayer.play().catch(err => console.log("Autoplay bypass:", err));
+        }
+      });
+    }
 
-    videoContainer.addEventListener('click', function(e) {
-      if (e.target.closest('.right-action-bar') || e.target.closest('#upload-prompt')) return;
+    if (videoContainer) {
+      videoContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.right-action-bar') || e.target.closest('#upload-prompt')) return;
+        if (!videoPlayer.src) return;
 
-      if (!videoPlayer.src) return;
-
-      if (videoPlayer.paused) {
-        videoPlayer.play();
-        showPlayIndicator(false);
-      } else {
-        videoPlayer.pause();
-        showPlayIndicator(true);
-      }
-    });
+        if (videoPlayer.paused) {
+          videoPlayer.play();
+          showPlayIndicator(false);
+        } else {
+          videoPlayer.pause();
+          showPlayIndicator(true);
+        }
+      });
+    }
 
     function showPlayIndicator(paused) {
       if (paused) {
@@ -1080,7 +1100,6 @@
       }
     }
 
-    // LIKE TOGGLE SYSTEM
     window.toggleLike = function() {
       isLiked = !isLiked;
       const likeIcon = document.getElementById('like-icon');
@@ -1095,7 +1114,6 @@
       }
     };
 
-    // TAB SWITCHER
     window.switchTab = function(screenId, navElement) {
       document.querySelectorAll('.screen-view').forEach(screen => {
         screen.classList.remove('active');
