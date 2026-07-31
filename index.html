@@ -50,7 +50,6 @@
     #app-container {
       width: 100%;
       max-width: 430px;
-      /* Dynamic Viewport Height prevents Safari bottom-bar clipping */
       height: 100dvh; 
       background: var(--bg-light);
       position: relative;
@@ -135,7 +134,6 @@
       overflow: hidden;
     }
 
-    /* Prevent Apple Native Overlay Styling */
     #feed-video-player {
       width: 100%;
       height: 100%;
@@ -144,7 +142,6 @@
       -webkit-appearance: none;
     }
 
-    /* Disable Native iOS AVPlayer Controls */
     video::-webkit-media-controls,
     video::-webkit-media-controls-container,
     video::-webkit-media-controls-panel,
@@ -157,7 +154,6 @@
       pointer-events: none !important;
     }
 
-    /* Custom Custom Player Play/Pause Indicator */
     .custom-play-overlay {
       position: absolute;
       inset: 0;
@@ -218,7 +214,6 @@
       display: none;
     }
 
-    /* Sidebar fix: Position offset properly above bottom nav */
     .right-action-bar {
       position: absolute;
       right: 16px;
@@ -244,7 +239,7 @@
       font-weight: 500;
     }
 
-    /* SEARCH OVERLAY SCREEN */
+    /* SEARCH OVERLAY */
     #search-overlay {
       position: absolute;
       inset: 0;
@@ -596,7 +591,6 @@
       background: transparent;
     }
 
-    /* BOTTOM NAVIGATION FIX: Handles Safe Insets to prevent clipping */
     .bottom-nav {
       height: calc(65px + var(--safe-bottom));
       padding-bottom: var(--safe-bottom);
@@ -650,15 +644,13 @@
           <span class="feed-tab active">For you</span>
         </div>
         <div class="header-icon" onclick="openSearchOverlay()">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 11.99 14 9.5 14z"/></svg>
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
         </div>
       </div>
 
       <div class="video-viewport" id="video-container">
-        <!-- Strictly Inline HTML5 Video Element (Disables Apple AVPlayer Overlay) -->
         <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted></video>
 
-        <!-- Custom Custom Controls Play Overlay -->
         <div class="custom-play-overlay" id="custom-play-indicator">
           <div class="play-icon-circle">
             <svg class="icon-svg" style="width:36px; height:36px; fill:#fff;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -675,7 +667,6 @@
           <input type="file" id="video-file-input" accept="video/*" capture="environment">
         </div>
 
-        <!-- Sidebar Actions -->
         <div class="right-action-bar">
           <div class="action-item" onclick="toggleLike()">
             <svg class="icon-svg" id="like-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
@@ -731,8 +722,6 @@
 
     <!-- 3. PROFILE SCREEN -->
     <section id="profile-screen" class="screen-view">
-      
-      <!-- LOGGED OUT VIEW -->
       <div class="logged-out-box" id="logged-out-state">
         <svg class="icon-svg" style="width:64px; height:64px; fill:#ccc;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
         <h2>Please log in first</h2>
@@ -740,7 +729,6 @@
         <button class="btn-follow" style="max-width: 240px; background:#000;" onclick="signInWithGoogle()">Sign in with Google</button>
       </div>
 
-      <!-- LOGGED IN VIEW -->
       <div class="profile-authenticated" id="logged-in-state" style="display:none;">
         <div class="profile-top-bar">
           <button class="menu-dots-btn">
@@ -765,7 +753,6 @@
 
         <div class="profile-divider"></div>
       </div>
-
     </section>
 
     <!-- EDIT PROFILE MODAL -->
@@ -829,7 +816,6 @@
     let uploadedProfilePicData = null;
     let isLiked = false;
 
-    // Search Database standard profiles
     const databaseIndex = [
       { name: "Official Riven", handle: "user8492011", pfp: "https://via.placeholder.com/150/111111/ffffff?text=R" },
       { name: "Community Hub", handle: "user2001920", pfp: "https://via.placeholder.com/150/ff2d55/ffffff?text=C" }
@@ -848,9 +834,7 @@
       return `user${randomNumber}`;
     }
 
-    // PERSISTENCE SAVING SYSTEM
     async function loadSavedUserData(uid) {
-      // Check Firestore
       try {
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
@@ -861,20 +845,34 @@
         console.log("Firestore fallback to local storage");
       }
 
-      // Check LocalStorage Fallback
       const localData = localStorage.getItem(`riven_user_${uid}`);
       return localData ? JSON.parse(localData) : null;
     }
 
     async function saveUserData(uid, data) {
-      // LocalStorage
       localStorage.setItem(`riven_user_${uid}`, JSON.stringify(data));
-
-      // Firestore
       try {
         await setDoc(doc(db, "users", uid), data, { merge: true });
       } catch(e) {
         console.warn("Firestore save error:", e);
+      }
+    }
+
+    // FIX FOR GITHUB PAGES 404: Read handle safely from URL hash (#/@handle)
+    function getHandleFromUrl() {
+      const hash = window.location.hash;
+      if (hash.startsWith('#/@')) {
+        return hash.replace('#/@', '');
+      }
+      return null;
+    }
+
+    // FIX FOR GITHUB PAGES 404: Set Hash URL instead of dynamic pathname
+    function setProfileUrl(handle) {
+      const cleanHandle = handle.replace('@', '').toLowerCase();
+      const newHash = `#/@${cleanHandle}`;
+      if (window.location.hash !== newHash) {
+        history.pushState(null, '', newHash);
       }
     }
 
@@ -901,22 +899,6 @@
       }
     });
 
-    function getHandleFromUrl() {
-      const hash = window.location.hash;
-      if (hash.startsWith('#/@')) {
-        return hash.replace('#/@', '');
-      }
-      return null;
-    }
-
-    function setProfileUrl(handle) {
-      const cleanHandle = handle.replace('@', '').toLowerCase();
-      const newHash = `/#/@${cleanHandle}`;
-      if (window.location.hash !== newHash) {
-        history.pushState(null, '', newHash);
-      }
-    }
-
     function updateProfileDisplay(name, handle, pfp) {
       const cleanHandle = handle.replace('@', '').toLowerCase();
       document.getElementById('user-display-name').innerText = name;
@@ -929,7 +911,7 @@
       }
     }
 
-    // SEARCH FUNCTIONALITY
+    // SEARCH SYSTEM
     window.openSearchOverlay = function() {
       document.getElementById('search-overlay').classList.add('active');
       document.getElementById('search-input').focus();
@@ -986,7 +968,7 @@
       updateProfileDisplay(name, handle, pfp);
     };
 
-    // EDIT PROFILE MODAL LOGIC WITH SAVING
+    // EDIT PROFILE
     window.openEditModal = function() {
       document.getElementById('edit-name-input').value = document.getElementById('user-display-name').innerText;
       document.getElementById('edit-handle-input').value = document.getElementById('user-display-handle').innerText.replace('@', '');
@@ -1035,7 +1017,7 @@
       }
     };
 
-    // INLINE CUSTOM VIDEO STREAM MANAGER (Fixes Apple Player Takeover)
+    // INLINE VIDEO CONTROL
     const videoInput = document.getElementById('video-file-input');
     const videoPlayer = document.getElementById('feed-video-player');
     const videoContainer = document.getElementById('video-container');
@@ -1056,7 +1038,6 @@
       }
     });
 
-    // Custom inline tap-to-play/pause handler
     videoContainer.addEventListener('click', function(e) {
       if (e.target.closest('.right-action-bar') || e.target.closest('#upload-prompt')) return;
 
@@ -1094,7 +1075,7 @@
       }
     };
 
-    // Navigation Switcher
+    // TAB SWITCHER
     window.switchTab = function(screenId, navElement) {
       document.querySelectorAll('.screen-view').forEach(screen => {
         screen.classList.remove('active');
