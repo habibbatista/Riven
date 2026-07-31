@@ -1298,7 +1298,8 @@
       addDoc, query, orderBy, limit, updateDoc, arrayUnion, arrayRemove,
       increment, serverTimestamp, runTransaction
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+    // Video files are hosted on Cloudinary's free tier instead of Firebase Storage
+    // (Firebase Storage now requires the paid Blaze plan even for small usage).
 
     const firebaseConfig = {
       apiKey: "AIzaSyCNj19A3A3764GpZO8rkhLYFrWXk9k_HEM",
@@ -1312,8 +1313,15 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app);
     const provider = new GoogleAuthProvider();
+
+    // ---- Cloudinary (free tier, no credit card) — fill these in after you sign up ----
+    // 1. Create a free account at https://cloudinary.com/users/register/free
+    // 2. Copy your "Cloud name" from the dashboard and paste it below.
+    // 3. Go to Settings (gear icon) -> Upload -> Upload presets -> Add upload preset.
+    //    Set "Signing Mode" to "Unsigned", save, and paste the preset name below.
+    const CLOUDINARY_CLOUD_NAME = "vmceqcad";
+    const CLOUDINARY_UPLOAD_PRESET = "ml_default";
 
     let currentUser = null;
     let myProfileData = null;
@@ -1775,12 +1783,27 @@
         return;
       }
 
+      if (CLOUDINARY_CLOUD_NAME === 'YOUR_CLOUD_NAME' || CLOUDINARY_UPLOAD_PRESET === 'YOUR_UNSIGNED_PRESET') {
+        showToast('Video hosting isn\'t configured yet — see the Cloudinary setup notes');
+        return;
+      }
+
       try {
         showToast('Uploading video...', 60000);
-        const path = `videos/${currentUser.uid}/${Date.now()}_${file.name}`;
-        const storageRef = ref(storage, path);
-        await uploadBytes(storageRef, file);
-        const videoUrl = await getDownloadURL(storageRef);
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+        const uploadResponse = await fetch(
+          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`,
+          { method: 'POST', body: formData }
+        );
+        const uploadResult = await uploadResponse.json();
+        if (!uploadResponse.ok) {
+          throw new Error(uploadResult?.error?.message || 'Cloudinary upload failed');
+        }
+        const videoUrl = uploadResult.secure_url;
 
         const newDocRef = await addDoc(collection(db, 'videos'), {
           uid: currentUser.uid,
