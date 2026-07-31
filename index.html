@@ -215,11 +215,11 @@
       display: none;
     }
 
-    /* FIXED ACTION BAR POSITIONING */
+    /* ACTION BAR FIX */
     .right-action-bar {
       position: absolute;
       right: 16px;
-      bottom: 24px; /* Fixed relative to viewport without double safe-area padding */
+      bottom: 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -241,12 +241,12 @@
       font-weight: 500;
     }
 
-    /* SEARCH OVERLAY - HIGH Z-INDEX FIX */
+    /* SEARCH OVERLAY OVERHAUL */
     #search-overlay {
       position: absolute;
       inset: 0;
       background: #000;
-      z-index: 999;
+      z-index: 99999;
       display: none;
       flex-direction: column;
       padding-top: calc(var(--safe-top) + 10px);
@@ -333,7 +333,7 @@
       font-size: 13px;
     }
 
-    /* PROFILE SCREEN */
+    /* PROFILE SCREEN & STATS */
     #profile-screen {
       background-color: var(--bg-light);
       padding-top: calc(var(--safe-top) + 10px);
@@ -384,7 +384,7 @@
       justify-content: space-between;
       align-items: flex-start;
       padding: 0 20px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .profile-meta {
@@ -407,18 +407,54 @@
     }
 
     .profile-handle {
-      font-size: 18px;
-      font-weight: 600;
-      color: #111;
+      font-size: 16px;
+      font-weight: 500;
+      color: #666;
     }
 
     .avatar-circle {
-      width: 90px;
-      height: 90px;
+      width: 86px;
+      height: 86px;
       border-radius: 50%;
       object-fit: cover;
       background: #eee;
       border: 1px solid #ddd;
+    }
+
+    /* PROFILE STATS SECTION */
+    .profile-stats-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 12px 20px;
+      margin-bottom: 16px;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: #000;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #777;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .stat-sublabel {
+      font-size: 10px;
+      color: #aaa;
+      margin-top: -2px;
     }
 
     .profile-actions-wrapper {
@@ -455,20 +491,13 @@
       text-align: center;
     }
 
-    .profile-divider {
-      width: 100%;
-      height: 1px;
-      background-color: var(--border-gray);
-      margin-bottom: 20px;
-    }
-
     /* EDIT PROFILE MODAL */
     .modal-overlay {
       display: none;
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.5);
-      z-index: 200;
+      z-index: 200000;
       justify-content: center;
       align-items: center;
     }
@@ -748,12 +777,27 @@
           <img class="avatar-circle" id="profile-avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'><circle cx='45' cy='45' r='45' fill='%23eee'/></svg>">
         </div>
 
+        <!-- ADDED PROFILE STATS BELOW HANDLE -->
+        <div class="profile-stats-row">
+          <div class="stat-item">
+            <span class="stat-value" id="followers-count">0</span>
+            <span class="stat-label">Followers</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="following-count">0</span>
+            <span class="stat-label">Following</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="likes-count">0</span>
+            <span class="stat-label">Likes</span>
+            <span class="stat-sublabel">(incl. private)</span>
+          </div>
+        </div>
+
         <div class="profile-actions-wrapper">
           <button class="btn-follow" id="btn-follow-action" style="display:none;">Follow</button>
           <button class="btn-edit-profile" id="btn-edit-action" onclick="openEditModal()">Edit Profile</button>
         </div>
-
-        <div class="profile-divider"></div>
       </div>
     </section>
 
@@ -819,7 +863,6 @@
     let uploadedProfilePicData = null;
     let isLiked = false;
 
-    // 1. INSTANT LOCALCACHE RENDER
     function loadCachedUserInstantly() {
       const lastUid = localStorage.getItem('riven_last_active_uid');
       if (lastUid) {
@@ -879,7 +922,6 @@
       }
     }
 
-    // AUTH STATE LISTENER
     onAuthStateChanged(auth, (user) => {
       currentUser = user;
       const loggedOutBox = document.getElementById('logged-out-state');
@@ -910,7 +952,7 @@
           } else {
             saveUserData(user.uid, myProfileData);
           }
-        }).catch(err => console.log("Background sync skipped:", err));
+        }).catch(err => console.log("Sync error:", err));
 
       } else {
         localStorage.removeItem('riven_last_active_uid');
@@ -942,13 +984,13 @@
       }
     }
 
-    // ROBUST SEARCH SYSTEM
+    // SEARCH OVERLAY IMPLEMENTATION
     window.openSearchOverlay = function() {
       const overlay = document.getElementById('search-overlay');
       overlay.classList.add('active');
       const input = document.getElementById('search-input');
       input.value = '';
-      input.focus();
+      setTimeout(() => input.focus(), 50);
     };
 
     window.closeSearchOverlay = function() {
@@ -966,7 +1008,6 @@
 
       let matches = [];
 
-      // Add local profile instantly if matching
       if (myProfileData) {
         const curHandle = (myProfileData.handle || '').toLowerCase();
         const curName = (myProfileData.name || '').toLowerCase();
@@ -975,7 +1016,6 @@
         }
       }
 
-      // Query Firestore for remote matches
       try {
         const querySnapshot = await getDocs(collection(db, "users"));
         querySnapshot.forEach((docSnap) => {
@@ -987,7 +1027,7 @@
           }
         });
       } catch(e) {
-        console.warn("Firestore search network error or rules restriction:", e);
+        console.warn("Firestore search warning:", e);
       }
 
       if (matches.length === 0) {
@@ -1080,7 +1120,7 @@
           videoPlayer.style.display = 'block';
           uploadPrompt.style.display = 'none';
           
-          videoPlayer.play().catch(err => console.log("Autoplay bypass:", err));
+          videoPlayer.play().catch(err => console.log("Autoplay block:", err));
         }
       });
     }
