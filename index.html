@@ -20,6 +20,8 @@
       --accent-pink: #ff2d55;
       --border-gray: #e5e5e5;
       --radius-squircle: 14px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
     }
 
     * {
@@ -31,20 +33,25 @@
       letter-spacing: -0.01em;
     }
 
-    body {
+    html, body {
+      width: 100%;
+      height: 100%;
       background-color: #000;
       color: var(--text-dark);
+      overflow: hidden;
+    }
+
+    body {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      overflow: hidden;
     }
 
     #app-container {
       width: 100%;
       max-width: 430px;
-      height: 100vh;
+      /* Dynamic Viewport Height prevents Safari bottom-bar clipping */
+      height: 100dvh; 
       background: var(--bg-light);
       position: relative;
       display: flex;
@@ -56,7 +63,7 @@
       flex: 1;
       display: none;
       flex-direction: column;
-      height: calc(100vh - 65px);
+      height: calc(100dvh - (65px + var(--safe-bottom)));
       overflow-y: auto;
       position: relative;
     }
@@ -88,8 +95,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: calc(env(safe-area-inset-top, 20px) + 20px) 20px 10px 20px;
-      background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+      padding: calc(var(--safe-top) + 12px) 20px 10px 20px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
     }
 
     .feed-tabs {
@@ -137,12 +144,45 @@
       -webkit-appearance: none;
     }
 
-    /* Hide iOS Video Controls Overlay Elements */
+    /* Disable Native iOS AVPlayer Controls */
+    video::-webkit-media-controls,
+    video::-webkit-media-controls-container,
+    video::-webkit-media-controls-panel,
     video::-webkit-media-controls-fullscreen-button,
     video::-webkit-media-controls-play-button,
     video::-webkit-media-controls-start-playback-button {
       display: none !important;
       -webkit-appearance: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    /* Custom Custom Player Play/Pause Indicator */
+    .custom-play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .custom-play-overlay.visible {
+      opacity: 1;
+    }
+
+    .play-icon-circle {
+      width: 68px;
+      height: 68px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
     }
 
     .upload-empty-state {
@@ -178,10 +218,11 @@
       display: none;
     }
 
+    /* Sidebar fix: Position offset properly above bottom nav */
     .right-action-bar {
       position: absolute;
       right: 16px;
-      bottom: 40px;
+      bottom: calc(20px + var(--safe-bottom));
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -203,10 +244,102 @@
       font-weight: 500;
     }
 
+    /* SEARCH OVERLAY SCREEN */
+    #search-overlay {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      z-index: 150;
+      display: none;
+      flex-direction: column;
+      padding-top: calc(var(--safe-top) + 10px);
+    }
+
+    #search-overlay.active {
+      display: flex;
+    }
+
+    .search-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid #222;
+    }
+
+    .search-input-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: #1c1c1e;
+      border-radius: 10px;
+      padding: 8px 12px;
+      gap: 8px;
+    }
+
+    .search-input-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 15px;
+      width: 100%;
+    }
+
+    .cancel-search-btn {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .search-results-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .search-result-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 10px;
+      background: #111;
+      cursor: pointer;
+    }
+
+    .search-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #333;
+      object-fit: cover;
+    }
+
+    .search-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .search-info .title {
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .search-info .subtitle {
+      color: #888;
+      font-size: 13px;
+    }
+
     /* PROFILE SCREEN */
     #profile-screen {
       background-color: var(--bg-light);
-      padding-top: calc(env(safe-area-inset-top, 20px) + 10px);
+      padding-top: calc(var(--safe-top) + 10px);
     }
 
     .logged-out-box {
@@ -280,13 +413,6 @@
       font-size: 18px;
       font-weight: 600;
       color: #111;
-    }
-
-    .verified-check {
-      width: 18px;
-      height: 18px;
-      fill: #1d9bf0;
-      display: none;
     }
 
     .avatar-circle {
@@ -413,7 +539,7 @@
     /* DM SCREEN */
     #dm-screen {
       background-color: var(--bg-light);
-      padding-top: env(safe-area-inset-top, 0px);
+      padding-top: var(--safe-top);
     }
 
     .dm-header {
@@ -470,9 +596,10 @@
       background: transparent;
     }
 
-    /* BOTTOM NAVIGATION */
+    /* BOTTOM NAVIGATION FIX: Handles Safe Insets to prevent clipping */
     .bottom-nav {
-      height: 65px;
+      height: calc(65px + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
       background-color: #000;
       display: flex;
       justify-content: space-around;
@@ -522,14 +649,21 @@
           <span class="feed-tab">Friends</span>
           <span class="feed-tab active">For you</span>
         </div>
-        <div class="header-icon">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <div class="header-icon" onclick="openSearchOverlay()">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 11.99 14 9.5 14z"/></svg>
         </div>
       </div>
 
-      <div class="video-viewport">
-        <!-- Disabled iOS Apple native player overlay using webkit-playsinline and disablePictureInPicture -->
+      <div class="video-viewport" id="video-container">
+        <!-- Strictly Inline HTML5 Video Element (Disables Apple AVPlayer Overlay) -->
         <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted></video>
+
+        <!-- Custom Custom Controls Play Overlay -->
+        <div class="custom-play-overlay" id="custom-play-indicator">
+          <div class="play-icon-circle">
+            <svg class="icon-svg" style="width:36px; height:36px; fill:#fff;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
 
         <div class="upload-empty-state" id="upload-prompt">
           <svg class="icon-svg" style="width:48px; height:48px; fill:#555;" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/></svg>
@@ -541,10 +675,11 @@
           <input type="file" id="video-file-input" accept="video/*" capture="environment">
         </div>
 
+        <!-- Sidebar Actions -->
         <div class="right-action-bar">
-          <div class="action-item">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-            <span class="action-count">0</span>
+          <div class="action-item" onclick="toggleLike()">
+            <svg class="icon-svg" id="like-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span class="action-count" id="like-count">0</span>
           </div>
           <div class="action-item">
             <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
@@ -557,6 +692,20 @@
         </div>
       </div>
     </section>
+
+    <!-- SEARCH OVERLAY -->
+    <div id="search-overlay">
+      <div class="search-header">
+        <div class="search-input-box">
+          <svg class="icon-svg" style="width:18px; height:18px; fill:#888;" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" id="search-input" placeholder="Search accounts, tags, videos..." oninput="handleSearch(this.value)">
+        </div>
+        <span class="cancel-search-btn" onclick="closeSearchOverlay()">Cancel</span>
+      </div>
+      <div class="search-results-list" id="search-results">
+        <div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">Type to search users and posts...</div>
+      </div>
+    </div>
 
     <!-- 2. DM SCREEN -->
     <section id="dm-screen" class="screen-view">
@@ -604,7 +753,6 @@
             <h1 class="profile-name" id="user-display-name">---</h1>
             <div class="profile-handle-row">
               <span class="profile-handle" id="user-display-handle">@---</span>
-              <svg class="verified-check" id="verified-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             </div>
           </div>
           <img class="avatar-circle" id="profile-avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'><circle cx='45' cy='45' r='45' fill='%23eee'/></svg>">
@@ -661,6 +809,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCNj19A3A3764GpZO8rkhLYFrWXk9k_HEM",
@@ -673,10 +822,18 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
     let currentUser = null;
     let uploadedProfilePicData = null;
+    let isLiked = false;
+
+    // Search Database standard profiles
+    const databaseIndex = [
+      { name: "Official Riven", handle: "user8492011", pfp: "https://via.placeholder.com/150/111111/ffffff?text=R" },
+      { name: "Community Hub", handle: "user2001920", pfp: "https://via.placeholder.com/150/ff2d55/ffffff?text=C" }
+    ];
 
     window.signInWithGoogle = async function() {
       try {
@@ -686,13 +843,42 @@
       }
     };
 
-    // Generate random user(number) handle without using Google display name or email
     function generateRandomUserHandle() {
       const randomNumber = Math.floor(1000000 + Math.random() * 9000000);
       return `user${randomNumber}`;
     }
 
-    onAuthStateChanged(auth, (user) => {
+    // PERSISTENCE SAVING SYSTEM
+    async function loadSavedUserData(uid) {
+      // Check Firestore
+      try {
+        const docRef = doc(db, "users", uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          return docSnap.data();
+        }
+      } catch(e) {
+        console.log("Firestore fallback to local storage");
+      }
+
+      // Check LocalStorage Fallback
+      const localData = localStorage.getItem(`riven_user_${uid}`);
+      return localData ? JSON.parse(localData) : null;
+    }
+
+    async function saveUserData(uid, data) {
+      // LocalStorage
+      localStorage.setItem(`riven_user_${uid}`, JSON.stringify(data));
+
+      // Firestore
+      try {
+        await setDoc(doc(db, "users", uid), data, { merge: true });
+      } catch(e) {
+        console.warn("Firestore save error:", e);
+      }
+    }
+
+    onAuthStateChanged(auth, async (user) => {
       currentUser = user;
       const loggedOutBox = document.getElementById('logged-out-state');
       const loggedInBox = document.getElementById('logged-in-state');
@@ -701,12 +887,14 @@
         loggedOutBox.style.display = 'none';
         loggedInBox.style.display = 'flex';
         
-        const urlHandle = getHandleFromUrl();
-        // Generates user(number) instead of using Google account name
-        const defaultUserHandle = urlHandle || generateRandomUserHandle();
-        const defaultDisplayName = `User ${defaultUserHandle.replace('user', '')}`;
+        let savedData = await loadSavedUserData(user.uid);
         
-        updateProfileDisplay(defaultDisplayName, defaultUserHandle, user.photoURL);
+        let handle = savedData?.handle || getHandleFromUrl() || generateRandomUserHandle();
+        let name = savedData?.name || `User ${handle.replace('user', '')}`;
+        let pfp = savedData?.pfp || user.photoURL;
+
+        updateProfileDisplay(name, handle, pfp);
+        saveUserData(user.uid, { name, handle, pfp });
       } else {
         loggedOutBox.style.display = 'flex';
         loggedInBox.style.display = 'none';
@@ -741,15 +929,64 @@
       }
     }
 
-    window.addEventListener('hashchange', () => {
-      const targetHandle = getHandleFromUrl();
-      if (targetHandle && currentUser) {
-        switchTab('profile-screen', document.getElementById('nav-profile-btn'));
-        updateProfileDisplay(document.getElementById('user-display-name').innerText, targetHandle, document.getElementById('profile-avatar-img').src);
-      }
-    });
+    // SEARCH FUNCTIONALITY
+    window.openSearchOverlay = function() {
+      document.getElementById('search-overlay').classList.add('active');
+      document.getElementById('search-input').focus();
+    };
 
-    // Edit Profile Modal logic
+    window.closeSearchOverlay = function() {
+      document.getElementById('search-overlay').classList.remove('active');
+    };
+
+    window.handleSearch = function(query) {
+      const resultsContainer = document.getElementById('search-results');
+      const q = query.trim().toLowerCase();
+
+      if (!q) {
+        resultsContainer.innerHTML = `<div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">Type to search users...</div>`;
+        return;
+      }
+
+      const matches = databaseIndex.filter(item => 
+        item.name.toLowerCase().includes(q) || item.handle.toLowerCase().includes(q)
+      );
+
+      if (currentUser) {
+        const curHandle = document.getElementById('user-display-handle').innerText.replace('@', '');
+        const curName = document.getElementById('user-display-name').innerText;
+        if (curHandle.includes(q) || curName.toLowerCase().includes(q)) {
+          matches.unshift({
+            name: curName,
+            handle: curHandle,
+            pfp: document.getElementById('profile-avatar-img').src
+          });
+        }
+      }
+
+      if (matches.length === 0) {
+        resultsContainer.innerHTML = `<div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">No results found for "${query}"</div>`;
+        return;
+      }
+
+      resultsContainer.innerHTML = matches.map(m => `
+        <div class="search-result-card" onclick="selectSearchResult('${m.handle}', '${m.name}', '${m.pfp}')">
+          <img class="search-avatar" src="${m.pfp}" />
+          <div class="search-info">
+            <span class="title">${m.name}</span>
+            <span class="subtitle">@${m.handle}</span>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    window.selectSearchResult = function(handle, name, pfp) {
+      closeSearchOverlay();
+      switchTab('profile-screen', document.getElementById('nav-profile-btn'));
+      updateProfileDisplay(name, handle, pfp);
+    };
+
+    // EDIT PROFILE MODAL LOGIC WITH SAVING
     window.openEditModal = function() {
       document.getElementById('edit-name-input').value = document.getElementById('user-display-name').innerText;
       document.getElementById('edit-handle-input').value = document.getElementById('user-display-handle').innerText.replace('@', '');
@@ -772,12 +1009,21 @@
       }
     });
 
-    window.saveProfileChanges = function() {
+    window.saveProfileChanges = async function() {
       const newName = document.getElementById('edit-name-input').value || "User";
       const newHandle = document.getElementById('edit-handle-input').value || generateRandomUserHandle();
       const currentPfp = uploadedProfilePicData || document.getElementById('profile-avatar-img').src;
 
       updateProfileDisplay(newName, newHandle, currentPfp);
+
+      if (currentUser) {
+        await saveUserData(currentUser.uid, {
+          name: newName,
+          handle: newHandle,
+          pfp: currentPfp
+        });
+      }
+
       closeEditModal();
     };
 
@@ -789,10 +1035,12 @@
       }
     };
 
-    // Inline Video Stream Manager
+    // INLINE CUSTOM VIDEO STREAM MANAGER (Fixes Apple Player Takeover)
     const videoInput = document.getElementById('video-file-input');
     const videoPlayer = document.getElementById('feed-video-player');
+    const videoContainer = document.getElementById('video-container');
     const uploadPrompt = document.getElementById('upload-prompt');
+    const playIndicator = document.getElementById('custom-play-indicator');
 
     videoInput.addEventListener('change', function(event) {
       const file = event.target.files[0];
@@ -802,21 +1050,49 @@
         videoPlayer.style.display = 'block';
         uploadPrompt.style.display = 'none';
         
-        // Custom Inline Playback Trigger
         videoPlayer.play().catch(err => {
-          console.log("Autoplay restriction bypass:", err);
+          console.log("Autoplay bypass:", err);
         });
       }
     });
 
-    // Toggle play/pause inline without opening native iOS player
-    videoPlayer.addEventListener('click', function() {
+    // Custom inline tap-to-play/pause handler
+    videoContainer.addEventListener('click', function(e) {
+      if (e.target.closest('.right-action-bar') || e.target.closest('#upload-prompt')) return;
+
+      if (!videoPlayer.src) return;
+
       if (videoPlayer.paused) {
         videoPlayer.play();
+        showPlayIndicator(false);
       } else {
         videoPlayer.pause();
+        showPlayIndicator(true);
       }
     });
+
+    function showPlayIndicator(paused) {
+      if (paused) {
+        playIndicator.classList.add('visible');
+      } else {
+        playIndicator.classList.remove('visible');
+      }
+    }
+
+    // LIKE TOGGLE SYSTEM
+    window.toggleLike = function() {
+      isLiked = !isLiked;
+      const likeIcon = document.getElementById('like-icon');
+      const likeCount = document.getElementById('like-count');
+      
+      if (isLiked) {
+        likeIcon.style.fill = '#ff2d55';
+        likeCount.innerText = '1';
+      } else {
+        likeIcon.style.fill = 'currentColor';
+        likeCount.innerText = '0';
+      }
+    };
 
     // Navigation Switcher
     window.switchTab = function(screenId, navElement) {
