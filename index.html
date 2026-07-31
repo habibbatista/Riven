@@ -934,6 +934,151 @@
 
     #toast.visible {
       opacity: 1;
+      transform: translate(-50%, -6px);
+    }
+
+    /* ---------------- ANIMATIONS ---------------- */
+
+    @keyframes heartPop {
+      0%   { transform: scale(1); }
+      30%  { transform: scale(1.35); }
+      55%  { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
+
+    .like-pop {
+      animation: heartPop 0.35s ease;
+    }
+
+    @keyframes videoFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .video-fade-in {
+      animation: videoFadeIn 0.25s ease;
+    }
+
+    @keyframes tabSwitchFade {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .screen-view.active {
+      animation: tabSwitchFade 0.22s ease;
+    }
+
+    @keyframes dmBubbleIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .dm-bubble {
+      animation: dmBubbleIn 0.2s ease;
+    }
+
+    @keyframes commentRowIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .comment-row {
+      animation: commentRowIn 0.2s ease;
+    }
+
+    /* Buttons & icons get gentle press feedback everywhere */
+    .action-item, .nav-item, .header-icon, .btn-follow, .btn-edit-profile,
+    .custom-file-upload, .modal-btn, .comment-send-btn, .search-result-card,
+    .cancel-search-btn, .comments-close-btn, .profile-menu-item, .menu-dots-btn {
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+
+    .action-item:active, .nav-item:active, .btn-follow:active, .btn-edit-profile:active,
+    .custom-file-upload:active, .modal-btn:active, .comment-send-btn:active,
+    .search-result-card:active, .profile-menu-item:active {
+      transform: scale(0.94);
+    }
+
+    /* Search overlay: slide up + fade instead of an abrupt display swap */
+    #search-overlay {
+      display: flex;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(16px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    #search-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    /* Comments sheet: real slide-up sheet transition */
+    #comments-overlay {
+      display: flex;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    #comments-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .comments-sheet {
+      transform: translateY(100%);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    #comments-overlay.active .comments-sheet {
+      transform: translateY(0);
+    }
+
+    /* Edit-profile modal: fade + scale in */
+    .modal-overlay {
+      display: flex;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      transform: scale(0.92);
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .modal-overlay.active .modal-content {
+      transform: scale(1);
+    }
+
+    /* Profile menu dropdown: fade + scale from top-right */
+    .profile-menu-dropdown {
+      display: block;
+      opacity: 0;
+      transform: scale(0.92) translateY(-6px);
+      transform-origin: top right;
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .profile-menu-dropdown.active {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
+      }
     }
   </style>
 </head>
@@ -1151,7 +1296,7 @@
     import {
       getFirestore, doc, setDoc, getDoc, collection, getDocs,
       addDoc, query, orderBy, limit, updateDoc, arrayUnion, arrayRemove,
-      increment, serverTimestamp
+      increment, serverTimestamp, runTransaction
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
@@ -1251,9 +1396,21 @@
       }
     });
 
-    function generateRandomUserHandle() {
-      const randomNumber = Math.floor(1000000 + Math.random() * 9000000);
-      return `user${randomNumber}`;
+    // Sequential handle assignment: user1, user2, user3... via an atomic Firestore counter.
+    async function getNextSequentialHandle() {
+      const counterRef = doc(db, 'meta', 'userCounter');
+      try {
+        const newHandle = await runTransaction(db, async (tx) => {
+          const snap = await tx.get(counterRef);
+          const next = snap.exists() ? (snap.data().count || 0) + 1 : 1;
+          tx.set(counterRef, { count: next }, { merge: true });
+          return `user${next}`;
+        });
+        return newHandle;
+      } catch (e) {
+        console.warn('Counter transaction failed, falling back:', e);
+        return `user${Date.now()}`;
+      }
     }
 
     async function saveUserData(uid, data) {
@@ -1282,7 +1439,7 @@
       }
     }
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       currentUser = user;
       const loggedOutBox = document.getElementById('logged-out-state');
       const loggedInBox = document.getElementById('logged-in-state');
@@ -1292,27 +1449,44 @@
         loggedOutBox.style.display = 'none';
         loggedInBox.style.display = 'flex';
 
-        const localStr = localStorage.getItem(`riven_user_${user.uid}`);
-        let localData = localStr ? JSON.parse(localStr) : null;
+        // Optimistic instant paint from local cache (if any) while Firestore confirms.
+        const cachedStr = localStorage.getItem(`riven_user_${user.uid}`);
+        if (cachedStr) {
+          try {
+            const cached = JSON.parse(cachedStr);
+            myProfileData = cached;
+            updateProfileDisplay(cached.name, cached.handle, cached.pfp, true);
+          } catch (e) {}
+        }
 
-        let handle = localData?.handle || getHandleFromUrl() || generateRandomUserHandle();
-        let name = localData?.name || user.displayName || `User ${handle.replace('user', '')}`;
-        let pfp = localData?.pfp || user.photoURL;
-
-        myProfileData = { name, handle, pfp, uid: user.uid };
-        
-        updateProfileDisplay(name, handle, pfp, true);
-
-        getDoc(doc(db, "users", user.uid)).then((docSnap) => {
+        // Firestore is the source of truth — never invent a new random profile
+        // for an account that already exists. This is what caused profiles to
+        // appear "not saved" after logging out and back in.
+        try {
+          const docSnap = await getDoc(doc(db, "users", user.uid));
           if (docSnap.exists()) {
             const remoteData = docSnap.data();
             myProfileData = { ...remoteData, uid: user.uid };
-            localStorage.setItem(`riven_user_${user.uid}`, JSON.stringify(myProfileData));
-            updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true);
           } else {
-            saveUserData(user.uid, myProfileData);
+            // Genuinely new account: assign the next sequential handle.
+            const handle = await getNextSequentialHandle();
+            const name = user.displayName || handle;
+            const pfp = user.photoURL || '';
+            myProfileData = { name, handle, pfp, uid: user.uid };
+            await saveUserData(user.uid, myProfileData);
           }
-        }).catch(err => console.log("Sync error:", err));
+          localStorage.setItem('riven_last_active_uid', user.uid);
+          localStorage.setItem(`riven_user_${user.uid}`, JSON.stringify(myProfileData));
+          updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true);
+        } catch (err) {
+          console.warn("Profile sync error:", err);
+          if (!myProfileData) {
+            // Total fallback if Firestore is unreachable and there was no cache.
+            myProfileData = { name: user.displayName || 'User', handle: `user${Date.now()}`, pfp: user.photoURL || '', uid: user.uid };
+            updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true);
+          }
+          showToast('Could not reach the database — check your connection or Firebase rules');
+        }
 
         renderCurrentVideo(); // refresh like state now that we know the uid
 
@@ -1419,11 +1593,11 @@
       document.getElementById('edit-name-input').value = document.getElementById('user-display-name').innerText;
       document.getElementById('edit-handle-input').value = document.getElementById('user-display-handle').innerText.replace('@', '');
       uploadedProfilePicData = null;
-      document.getElementById('edit-modal').style.display = 'flex';
+      document.getElementById('edit-modal').classList.add('active');
     };
 
     window.closeEditModal = function() {
-      document.getElementById('edit-modal').style.display = 'none';
+      document.getElementById('edit-modal').classList.remove('active');
     };
 
     document.getElementById('pfp-file-input').addEventListener('change', function(e) {
@@ -1515,6 +1689,9 @@
       videoPlayer.style.display = 'block';
       videoPlayer.src = v.videoUrl;
       videoPlayer.currentTime = 0;
+      videoPlayer.classList.remove('video-fade-in');
+      void videoPlayer.offsetWidth; // restart animation
+      videoPlayer.classList.add('video-fade-in');
       videoPlayer.play().catch(() => {});
       showPlayIndicator(false);
 
@@ -1642,6 +1819,11 @@
         showToast('Sign in to like videos');
         return;
       }
+      const likeIconEl = document.getElementById('like-icon');
+      likeIconEl.classList.remove('like-pop');
+      void likeIconEl.offsetWidth;
+      likeIconEl.classList.add('like-pop');
+
       const v = videoQueue[currentVideoIndex];
       const likesBy = v.likesBy || [];
       const alreadyLiked = likesBy.includes(currentUser.uid);
