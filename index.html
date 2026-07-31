@@ -19,6 +19,8 @@
       --text-light: #ffffff;
       --accent-pink: #ff2d55;
       --border-gray: #e5e5e5;
+      /* Squircle radius token */
+      --radius-squircle: 14px;
     }
 
     * {
@@ -75,7 +77,7 @@
     }
 
     /* ==========================================
-       1. FEED SCREEN (INCLUDES SAFE-AREA FOR NOTCH)
+       1. FEED SCREEN
        ========================================== */
     #feed-screen {
       background-color: var(--bg-dark);
@@ -84,14 +86,15 @@
 
     .feed-header {
       position: absolute;
-      top: calc(env(safe-area-inset-top, 20px) + 15px); /* Clears notch */
+      top: 0;
       left: 0;
       right: 0;
       z-index: 20;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 20px;
+      padding: calc(env(safe-area-inset-top, 20px) + 20px) 20px 10px 20px; /* Fully pushes clear of notch */
+      background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
     }
 
     .feed-tabs {
@@ -153,14 +156,15 @@
       max-width: 240px;
     }
 
+    /* Squircle Upload Button */
     .custom-file-upload {
       display: inline-flex;
       align-items: center;
       gap: 10px;
       background-color: var(--text-light);
       color: var(--text-dark);
-      padding: 12px 24px;
-      border-radius: 30px;
+      padding: 12px 20px;
+      border-radius: var(--radius-squircle);
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
@@ -196,11 +200,11 @@
     }
 
     /* ==========================================
-       2. PROFILE SCREEN (MATCHING SKETCH)
+       2. PROFILE SCREEN
        ========================================== */
     #profile-screen {
       background-color: var(--bg-light);
-      padding-top: env(safe-area-inset-top, 20px);
+      padding-top: calc(env(safe-area-inset-top, 20px) + 10px);
     }
 
     .logged-out-box {
@@ -300,13 +304,14 @@
       margin-bottom: 20px;
     }
 
+    /* Squircle Buttons */
     .btn-follow {
       width: 100%;
       padding: 14px;
       background-color: var(--accent-pink);
       color: #fff;
       border: none;
-      border-radius: 25px;
+      border-radius: var(--radius-squircle);
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
@@ -315,11 +320,11 @@
 
     .btn-edit-profile {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       background-color: #f2f2f7;
       color: #000;
       border: none;
-      border-radius: 20px;
+      border-radius: var(--radius-squircle);
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
@@ -333,33 +338,7 @@
       margin-bottom: 20px;
     }
 
-    .video-grid-container {
-      padding: 0 20px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .video-thumbnail-card {
-      aspect-ratio: 9/16;
-      background-color: #bbb;
-      border-radius: 8px;
-      position: relative;
-      display: flex;
-      align-items: flex-end;
-      padding: 8px;
-    }
-
-    .video-views-badge {
-      color: #fff;
-      font-size: 11px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 3px;
-    }
-
-    /* Modal for Editing Profile */
+    /* Squircle Edit Profile Modal */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -372,8 +351,8 @@
 
     .modal-content {
       background: #fff;
-      border-radius: 16px;
-      width: 85%;
+      border-radius: 20px; /* Outer Squircle */
+      width: 88%;
       max-width: 340px;
       padding: 20px;
       display: flex;
@@ -388,10 +367,28 @@
 
     .modal-input {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       border: 1px solid #ccc;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 14px;
+    }
+
+    .pfp-upload-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px;
+      background-color: #f2f2f7;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px dashed #bbb;
+    }
+
+    #pfp-file-input {
+      display: none;
     }
 
     .modal-buttons {
@@ -402,8 +399,8 @@
     }
 
     .modal-btn {
-      padding: 8px 16px;
-      border-radius: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
       border: none;
       font-weight: 600;
       cursor: pointer;
@@ -457,11 +454,12 @@
       border-top: 1px solid var(--border-gray);
     }
 
+    /* Squircle Input Bar */
     .dm-input-bubble {
       display: flex;
       align-items: center;
       border: 1.5px solid #111;
-      border-radius: 25px;
+      border-radius: var(--radius-squircle);
       padding: 10px 16px;
       gap: 10px;
     }
@@ -511,7 +509,7 @@
       font-size: 12px;
       font-weight: 700;
       border: 1.5px solid #fff;
-      border-radius: 6px;
+      border-radius: 6px; /* Squircle badge */
       padding: 2px 6px;
       letter-spacing: 0.05em;
     }
@@ -596,7 +594,7 @@
         <button class="btn-follow" style="max-width: 240px; background:#000;" onclick="signInWithGoogle()">Sign in with Google</button>
       </div>
 
-      <!-- LOGGED IN VIEW (EXACT MATCH FOR DRAWING) -->
+      <!-- LOGGED IN VIEW -->
       <div class="profile-authenticated" id="logged-in-state">
         <div class="profile-top-bar">
           <button class="menu-dots-btn">
@@ -608,8 +606,8 @@
           <div class="profile-meta">
             <h1 class="profile-name" id="user-display-name">Name</h1>
             <div class="profile-handle-row">
-              <span class="profile-handle" id="user-display-handle">@handle</span>
-              <!-- Blue Verified Badge SVG -->
+              <span class="profile-handle" id="user-display-handle">@habib</span>
+              <!-- Blue Verified Checkmark -->
               <svg class="verified-check" id="verified-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             </div>
           </div>
@@ -622,16 +620,6 @@
         </div>
 
         <div class="profile-divider"></div>
-
-        <!-- Video Thumbnail Grid -->
-        <div class="video-grid-container">
-          <div class="video-thumbnail-card">
-            <div class="video-views-badge">
-              <svg class="icon-svg" style="width:12px; height:12px; fill:#fff;" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-              2K
-            </div>
-          </div>
-        </div>
       </div>
 
     </section>
@@ -639,10 +627,17 @@
     <!-- EDIT PROFILE MODAL -->
     <div class="modal-overlay" id="edit-modal">
       <div class="modal-content">
-        <h3>Edit Profile Details</h3>
+        <h3>Edit Profile</h3>
         <input type="text" id="edit-name-input" class="modal-input" placeholder="Display Name">
         <input type="text" id="edit-handle-input" class="modal-input" placeholder="Handle (e.g. habib)">
-        <input type="text" id="edit-pfp-input" class="modal-input" placeholder="Image URL for Profile Picture">
+        
+        <!-- Local Device Picture Picker -->
+        <label for="pfp-file-input" class="pfp-upload-label">
+          <svg class="icon-svg" style="width:16px; height:16px; fill:#333;" viewBox="0 0 24 24"><path d="M19 7v10H5V7h14m0-2H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-5 8l-2.5-3.15L9.5 13l-1.5-2L5 15h14l-4-5z"/></svg>
+          Choose Image from Phone
+        </label>
+        <input type="file" id="pfp-file-input" accept="image/*">
+
         <div class="modal-buttons">
           <button class="modal-btn modal-btn-cancel" onclick="closeEditModal()">Cancel</button>
           <button class="modal-btn modal-btn-save" onclick="saveProfileChanges()">Save</button>
@@ -685,6 +680,8 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
+    let uploadedProfilePicData = null;
+
     window.signInWithGoogle = async function() {
       try {
         await signInWithPopup(auth, provider);
@@ -701,8 +698,8 @@
         loggedOutBox.style.display = 'none';
         loggedInBox.style.display = 'flex';
         
-        // Default set to habib
-        updateProfileDisplay(user.displayName || "Habib", "habib", user.photoURL);
+        // Defaults Name to full user name, and handle cleanly to habib
+        updateProfileDisplay(user.displayName || "Name", "habib", user.photoURL);
       } else {
         loggedOutBox.style.display = 'flex';
         loggedInBox.style.display = 'none';
@@ -714,7 +711,7 @@
       document.getElementById('user-display-name').innerText = name;
       document.getElementById('user-display-handle').innerText = `@${cleanHandle}`;
 
-      // Check Verification for @habib
+      // Check Verification badge specifically for @habib
       const verifiedIcon = document.getElementById('verified-icon');
       if (cleanHandle === 'habib') {
         verifiedIcon.style.display = 'inline-block';
@@ -731,7 +728,7 @@
     window.openEditModal = function() {
       document.getElementById('edit-name-input').value = document.getElementById('user-display-name').innerText;
       document.getElementById('edit-handle-input').value = document.getElementById('user-display-handle').innerText.replace('@', '');
-      document.getElementById('edit-pfp-input').value = document.getElementById('profile-avatar-img').src;
+      uploadedProfilePicData = null;
       document.getElementById('edit-modal').style.display = 'flex';
     };
 
@@ -739,16 +736,28 @@
       document.getElementById('edit-modal').style.display = 'none';
     };
 
+    // Read local image file from device
+    document.getElementById('pfp-file-input').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          uploadedProfilePicData = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
     window.saveProfileChanges = function() {
       const newName = document.getElementById('edit-name-input').value || "Name";
-      const newHandle = document.getElementById('edit-handle-input').value || "handle";
-      const newPfp = document.getElementById('edit-pfp-input').value;
+      const newHandle = document.getElementById('edit-handle-input').value || "habib";
+      const currentPfp = uploadedProfilePicData || document.getElementById('profile-avatar-img').src;
 
-      updateProfileDisplay(newName, newHandle, newPfp);
+      updateProfileDisplay(newName, newHandle, currentPfp);
       closeEditModal();
     };
 
-    // Handle Local Video Stream / File Upload
+    // Local Video Stream / Camera File Upload
     const videoInput = document.getElementById('video-file-input');
     const videoPlayer = document.getElementById('feed-video-player');
     const uploadPrompt = document.getElementById('upload-prompt');
@@ -764,7 +773,7 @@
       }
     });
 
-    // View Navigation Switcher
+    // Navigation View Switcher
     window.switchTab = function(screenId, navElement) {
       document.querySelectorAll('.screen-view').forEach(screen => {
         screen.classList.remove('active');
