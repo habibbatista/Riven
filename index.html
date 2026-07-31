@@ -128,11 +128,21 @@
       overflow: hidden;
     }
 
+    /* Prevent Apple Native Overlay Styling */
     #feed-video-player {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: none;
+      -webkit-appearance: none;
+    }
+
+    /* Hide iOS Video Controls Overlay Elements */
+    video::-webkit-media-controls-fullscreen-button,
+    video::-webkit-media-controls-play-button,
+    video::-webkit-media-controls-start-playback-button {
+      display: none !important;
+      -webkit-appearance: none !important;
     }
 
     .upload-empty-state {
@@ -518,7 +528,8 @@
       </div>
 
       <div class="video-viewport">
-        <video id="feed-video-player" playsinline loop controls></video>
+        <!-- Disabled iOS Apple native player overlay using webkit-playsinline and disablePictureInPicture -->
+        <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted></video>
 
         <div class="upload-empty-state" id="upload-prompt">
           <svg class="icon-svg" style="width:48px; height:48px; fill:#555;" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/></svg>
@@ -593,7 +604,6 @@
             <h1 class="profile-name" id="user-display-name">---</h1>
             <div class="profile-handle-row">
               <span class="profile-handle" id="user-display-handle">@---</span>
-              <!-- Blue Verified Checkmark -->
               <svg class="verified-check" id="verified-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             </div>
           </div>
@@ -676,6 +686,12 @@
       }
     };
 
+    // Generate random user(number) handle without using Google display name or email
+    function generateRandomUserHandle() {
+      const randomNumber = Math.floor(1000000 + Math.random() * 9000000);
+      return `user${randomNumber}`;
+    }
+
     onAuthStateChanged(auth, (user) => {
       currentUser = user;
       const loggedOutBox = document.getElementById('logged-out-state');
@@ -685,18 +701,18 @@
         loggedOutBox.style.display = 'none';
         loggedInBox.style.display = 'flex';
         
-        // Check if there is already a handle in the URL hash, otherwise use their account's UID / email prefix dynamically
         const urlHandle = getHandleFromUrl();
-        const defaultUserHandle = urlHandle || user.email.split('@')[0];
+        // Generates user(number) instead of using Google account name
+        const defaultUserHandle = urlHandle || generateRandomUserHandle();
+        const defaultDisplayName = `User ${defaultUserHandle.replace('user', '')}`;
         
-        updateProfileDisplay(user.displayName || "User", defaultUserHandle, user.photoURL);
+        updateProfileDisplay(defaultDisplayName, defaultUserHandle, user.photoURL);
       } else {
         loggedOutBox.style.display = 'flex';
         loggedInBox.style.display = 'none';
       }
     });
 
-    // Helper to extract handle from URL (e.g. /#/@user1270108)
     function getHandleFromUrl() {
       const hash = window.location.hash;
       if (hash.startsWith('#/@')) {
@@ -705,7 +721,6 @@
       return null;
     }
 
-    // Dynamic Routing Update Function
     function setProfileUrl(handle) {
       const cleanHandle = handle.replace('@', '').toLowerCase();
       const newHash = `/#/@${cleanHandle}`;
@@ -719,7 +734,6 @@
       document.getElementById('user-display-name').innerText = name;
       document.getElementById('user-display-handle').innerText = `@${cleanHandle}`;
 
-      // Update URL route bar seamlessly for user handle link
       setProfileUrl(cleanHandle);
 
       if (pfp) {
@@ -727,7 +741,6 @@
       }
     }
 
-    // Deep-linking Route Handler
     window.addEventListener('hashchange', () => {
       const targetHandle = getHandleFromUrl();
       if (targetHandle && currentUser) {
@@ -761,7 +774,7 @@
 
     window.saveProfileChanges = function() {
       const newName = document.getElementById('edit-name-input').value || "User";
-      const newHandle = document.getElementById('edit-handle-input').value || "user";
+      const newHandle = document.getElementById('edit-handle-input').value || generateRandomUserHandle();
       const currentPfp = uploadedProfilePicData || document.getElementById('profile-avatar-img').src;
 
       updateProfileDisplay(newName, newHandle, currentPfp);
@@ -776,7 +789,7 @@
       }
     };
 
-    // Video Stream Manager
+    // Inline Video Stream Manager
     const videoInput = document.getElementById('video-file-input');
     const videoPlayer = document.getElementById('feed-video-player');
     const uploadPrompt = document.getElementById('upload-prompt');
@@ -788,7 +801,20 @@
         videoPlayer.src = fileURL;
         videoPlayer.style.display = 'block';
         uploadPrompt.style.display = 'none';
+        
+        // Custom Inline Playback Trigger
+        videoPlayer.play().catch(err => {
+          console.log("Autoplay restriction bypass:", err);
+        });
+      }
+    });
+
+    // Toggle play/pause inline without opening native iOS player
+    videoPlayer.addEventListener('click', function() {
+      if (videoPlayer.paused) {
         videoPlayer.play();
+      } else {
+        videoPlayer.pause();
       }
     });
 
