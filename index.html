@@ -257,7 +257,7 @@
       font-weight: 600;
     }
 
-    /* ACTION BAR FIX: anchored to viewport bottom, respects safe area, own stacking layer */
+    /* ACTION BAR FIX */
     .right-action-bar {
       position: absolute;
       right: 12px;
@@ -297,7 +297,7 @@
       text-shadow: 0 1px 2px rgba(0,0,0,0.6);
     }
 
-    /* SEARCH OVERLAY OVERHAUL */
+    /* SEARCH OVERLAY */
     #search-overlay {
       position: absolute;
       inset: 0;
@@ -556,7 +556,6 @@
       color: #000;
     }
 
-    /* PROFILE MENU DROPDOWN (contains Log out) */
     .profile-menu-dropdown {
       display: none;
       position: absolute;
@@ -691,6 +690,11 @@
       text-align: center;
     }
 
+    .btn-follow.following {
+      background-color: #e5e5ea;
+      color: #000;
+    }
+
     .btn-edit-profile {
       width: 100%;
       padding: 12px;
@@ -794,6 +798,75 @@
       font-weight: 700;
     }
 
+    .dm-friends-list {
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .dm-friend-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      border-bottom: 1px solid #f5f5f5;
+      cursor: pointer;
+    }
+
+    .dm-friend-item:active {
+      background-color: #f9f9f9;
+    }
+
+    .dm-friend-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #eee;
+    }
+
+    .dm-friend-info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .dm-friend-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #000;
+    }
+
+    .dm-friend-preview {
+      font-size: 13px;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    .dm-active-prompt {
+      color: var(--accent-pink);
+      font-weight: 500;
+    }
+
+    .active-chat-view {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .active-chat-view.active {
+      display: flex;
+    }
+
+    .dm-back-btn {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
     .chat-body {
       flex: 1;
       padding: 20px;
@@ -828,6 +901,13 @@
       background: #111;
       color: #fff;
       border-bottom-right-radius: 4px;
+    }
+
+    .dm-bubble.theirs {
+      align-self: flex-start;
+      background: #f2f2f7;
+      color: #000;
+      border-bottom-left-radius: 4px;
     }
 
     .dm-input-wrapper {
@@ -937,7 +1017,7 @@
       transform: translate(-50%, -6px);
     }
 
-    /* ---------------- ANIMATIONS ---------------- */
+    /* ANIMATIONS */
 
     @keyframes heartPop {
       0%   { transform: scale(1); }
@@ -986,7 +1066,6 @@
       animation: commentRowIn 0.2s ease;
     }
 
-    /* Buttons & icons get gentle press feedback everywhere */
     .action-item, .nav-item, .header-icon, .btn-follow, .btn-edit-profile,
     .custom-file-upload, .modal-btn, .comment-send-btn, .search-result-card,
     .cancel-search-btn, .comments-close-btn, .profile-menu-item, .menu-dots-btn {
@@ -999,7 +1078,6 @@
       transform: scale(0.94);
     }
 
-    /* Search overlay: slide up + fade instead of an abrupt display swap */
     #search-overlay {
       display: flex;
       opacity: 0;
@@ -1014,7 +1092,6 @@
       transform: translateY(0);
     }
 
-    /* Comments sheet: real slide-up sheet transition */
     #comments-overlay {
       display: flex;
       opacity: 0;
@@ -1036,7 +1113,6 @@
       transform: translateY(0);
     }
 
-    /* Edit-profile modal: fade + scale in */
     .modal-overlay {
       display: flex;
       opacity: 0;
@@ -1058,7 +1134,6 @@
       transform: scale(1);
     }
 
-    /* Profile menu dropdown: fade + scale from top-right */
     .profile-menu-dropdown {
       display: block;
       opacity: 0;
@@ -1174,22 +1249,37 @@
 
     <!-- 2. DM SCREEN -->
     <section id="dm-screen" class="screen-view">
-      <header class="dm-header">
-        <span class="dm-title">Messages</span>
-        <svg class="icon-svg" style="fill:#111;" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-      </header>
+      <!-- DM List View -->
+      <div id="dm-list-container" style="display: flex; flex-direction: column; height: 100%;">
+        <header class="dm-header">
+          <span class="dm-title">Messages</span>
+          <svg class="icon-svg" style="fill:#111;" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        </header>
 
-      <div class="chat-body" id="chat-body">
-        <div class="dm-empty-state" id="dm-empty-state">
-          <svg class="icon-svg" style="width:40px; height:40px; fill:#ccc;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-          <p>No messages yet</p>
+        <div class="dm-friends-list" id="dm-friends-list">
+          <div class="dm-empty-state" id="dm-empty-state">
+            <svg class="icon-svg" style="width:40px; height:40px; fill:#ccc;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+            <p>No messages or friends yet</p>
+          </div>
         </div>
       </div>
 
-      <div class="dm-input-wrapper">
-        <div class="dm-input-bubble">
-          <input type="text" id="dm-text-input" placeholder="Message..." onkeydown="if(event.key==='Enter'){sendDmMessage();}">
-          <svg class="icon-svg dm-send-icon" style="fill:#111;" viewBox="0 0 24 24" onclick="sendDmMessage()"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      <!-- Active Chat View -->
+      <div id="dm-chat-container" class="active-chat-view">
+        <header class="dm-header">
+          <div class="dm-back-btn" onclick="closeActiveChat()">
+            <svg class="icon-svg" style="fill:#111; width:20px; height:20px;" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            <span id="chat-target-name">Chat</span>
+          </div>
+        </header>
+
+        <div class="chat-body" id="chat-body"></div>
+
+        <div class="dm-input-wrapper">
+          <div class="dm-input-bubble">
+            <input type="text" id="dm-text-input" placeholder="Message..." onkeydown="if(event.key==='Enter'){sendDmMessage();}">
+            <svg class="icon-svg dm-send-icon" style="fill:#111;" viewBox="0 0 24 24" onclick="sendDmMessage()"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </div>
         </div>
       </div>
     </section>
@@ -1242,7 +1332,7 @@
         </div>
 
         <div class="profile-actions-wrapper">
-          <button class="btn-follow" id="btn-follow-action" style="display:none;">Follow</button>
+          <button class="btn-follow" id="btn-follow-action" style="display:none;" onclick="toggleFollowUser()">Follow</button>
           <button class="btn-edit-profile" id="btn-edit-action" onclick="openEditModal()">Edit Profile</button>
         </div>
       </div>
@@ -1296,10 +1386,8 @@
     import {
       getFirestore, doc, setDoc, getDoc, collection, getDocs,
       addDoc, query, orderBy, limit, updateDoc, arrayUnion, arrayRemove,
-      increment, serverTimestamp, runTransaction
+      increment, serverTimestamp, runTransaction, onSnapshot
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    // Video files are hosted on Cloudinary's free tier instead of Firebase Storage
-    // (Firebase Storage now requires the paid Blaze plan even for small usage).
 
     const firebaseConfig = {
       apiKey: "AIzaSyCNj19A3A3764GpZO8rkhLYFrWXk9k_HEM",
@@ -1315,21 +1403,19 @@
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
-    // ---- Cloudinary (free tier, no credit card) — fill these in after you sign up ----
-    // 1. Create a free account at https://cloudinary.com/users/register/free
-    // 2. Copy your "Cloud name" from the dashboard and paste it below.
-    // 3. Go to Settings (gear icon) -> Upload -> Upload presets -> Add upload preset.
-    //    Set "Signing Mode" to "Unsigned", save, and paste the preset name below.
     const CLOUDINARY_CLOUD_NAME = "vmceqcad";
     const CLOUDINARY_UPLOAD_PRESET = "ml_default";
 
     let currentUser = null;
     let myProfileData = null;
+    let viewedProfileUid = null;
     let uploadedProfilePicData = null;
     let isLiked = false;
+    let activeChatFriendUid = null;
+    let activeChatUnsubscribe = null;
 
     // ---- Feed state ----
-    let videoQueue = [];       // array of { id, ...docData }
+    let videoQueue = [];
     let currentVideoIndex = -1;
     let touchStartY = null;
 
@@ -1353,7 +1439,7 @@
             document.getElementById('logged-out-state').style.display = 'none';
             document.getElementById('logged-in-state').style.display = 'flex';
             
-            updateProfileDisplay(parsed.name, parsed.handle, parsed.pfp, true);
+            updateProfileDisplay(parsed.name, parsed.handle, parsed.pfp, true, parsed.uid);
           } catch(e) {}
         }
       }
@@ -1404,7 +1490,6 @@
       }
     });
 
-    // Sequential handle assignment: user1, user2, user3... via an atomic Firestore counter.
     async function getNextSequentialHandle() {
       const counterRef = doc(db, 'meta', 'userCounter');
       try {
@@ -1431,14 +1516,6 @@
       }
     }
 
-    function getHandleFromUrl() {
-      const hash = window.location.hash;
-      if (hash.startsWith('#/@')) {
-        return hash.replace('#/@', '');
-      }
-      return null;
-    }
-
     function setProfileUrl(handle) {
       const cleanHandle = handle.replace('@', '').toLowerCase();
       const newHash = `#/@${cleanHandle}`;
@@ -1457,54 +1534,48 @@
         loggedOutBox.style.display = 'none';
         loggedInBox.style.display = 'flex';
 
-        // Optimistic instant paint from local cache (if any) while Firestore confirms.
         const cachedStr = localStorage.getItem(`riven_user_${user.uid}`);
         if (cachedStr) {
           try {
             const cached = JSON.parse(cachedStr);
             myProfileData = cached;
-            updateProfileDisplay(cached.name, cached.handle, cached.pfp, true);
+            updateProfileDisplay(cached.name, cached.handle, cached.pfp, true, user.uid);
           } catch (e) {}
         }
 
-        // Firestore is the source of truth — never invent a new random profile
-        // for an account that already exists. This is what caused profiles to
-        // appear "not saved" after logging out and back in.
         try {
           const docSnap = await getDoc(doc(db, "users", user.uid));
           if (docSnap.exists()) {
             const remoteData = docSnap.data();
             myProfileData = { ...remoteData, uid: user.uid };
           } else {
-            // Genuinely new account: assign the next sequential handle.
             const handle = await getNextSequentialHandle();
             const name = user.displayName || handle;
             const pfp = user.photoURL || '';
-            myProfileData = { name, handle, pfp, uid: user.uid };
+            myProfileData = { name, handle, pfp, uid: user.uid, following: [] };
             await saveUserData(user.uid, myProfileData);
           }
           localStorage.setItem('riven_last_active_uid', user.uid);
           localStorage.setItem(`riven_user_${user.uid}`, JSON.stringify(myProfileData));
-          updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true);
+          updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true, user.uid);
         } catch (err) {
           console.warn("Profile sync error:", err);
           if (!myProfileData) {
-            // Total fallback if Firestore is unreachable and there was no cache.
-            myProfileData = { name: user.displayName || 'User', handle: `user${Date.now()}`, pfp: user.photoURL || '', uid: user.uid };
-            updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true);
+            myProfileData = { name: user.displayName || 'User', handle: `user${Date.now()}`, pfp: user.photoURL || '', uid: user.uid, following: [] };
+            updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true, user.uid);
           }
-          showToast('Could not reach the database — check your connection or Firebase rules');
         }
 
-        renderCurrentVideo(); // refresh like state now that we know the uid
-
+        renderCurrentVideo();
+        loadFriendsAndDms();
       } else {
         loggedOutBox.style.display = 'flex';
         loggedInBox.style.display = 'none';
       }
     });
 
-    function updateProfileDisplay(name, handle, pfp, isOwnProfile = false) {
+    async function updateProfileDisplay(name, handle, pfp, isOwnProfile = false, targetUid = null) {
+      viewedProfileUid = targetUid || (isOwnProfile ? currentUser?.uid : null);
       const cleanHandle = handle ? handle.replace('@', '').toLowerCase() : 'user';
       document.getElementById('user-display-name').innerText = name || 'User';
       document.getElementById('user-display-handle').innerText = `@${cleanHandle}`;
@@ -1524,8 +1595,84 @@
       } else {
         followBtn.style.display = 'block';
         editBtn.style.display = 'none';
+
+        // Check if currently following
+        const myFollowing = myProfileData?.following || [];
+        if (myFollowing.includes(viewedProfileUid)) {
+          followBtn.innerText = "Following";
+          followBtn.classList.add('following');
+        } else {
+          followBtn.innerText = "Follow";
+          followBtn.classList.remove('following');
+        }
+      }
+
+      // Fetch Followers and Following count
+      if (viewedProfileUid) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", viewedProfileUid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            document.getElementById('following-count').innerText = (data.following || []).length;
+          }
+
+          // Count followers
+          const q = query(collection(db, "users"));
+          const snap = await getDocs(q);
+          let followersCount = 0;
+          snap.forEach(d => {
+            const fList = d.data().following || [];
+            if (fList.includes(viewedProfileUid)) followersCount++;
+          });
+          document.getElementById('followers-count').innerText = followersCount;
+        } catch (e) {
+          console.warn("Error getting counts:", e);
+        }
       }
     }
+
+    // FOLLOW FUNCTIONALITY
+    window.toggleFollowUser = async function() {
+      if (!currentUser) {
+        showToast("Sign in to follow users");
+        return;
+      }
+      if (!viewedProfileUid || viewedProfileUid === currentUser.uid) return;
+
+      const followBtn = document.getElementById('btn-follow-action');
+      let myFollowing = myProfileData?.following || [];
+      const isFollowing = myFollowing.includes(viewedProfileUid);
+
+      if (isFollowing) {
+        myFollowing = myFollowing.filter(id => id !== viewedProfileUid);
+        followBtn.innerText = "Follow";
+        followBtn.classList.remove('following');
+      } else {
+        myFollowing.push(viewedProfileUid);
+        followBtn.innerText = "Following";
+        followBtn.classList.add('following');
+      }
+
+      myProfileData.following = myFollowing;
+      localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
+
+      try {
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          following: isFollowing ? arrayRemove(viewedProfileUid) : arrayUnion(viewedProfileUid)
+        });
+        updateProfileDisplay(
+          document.getElementById('user-display-name').innerText,
+          document.getElementById('user-display-handle').innerText,
+          document.getElementById('profile-avatar-img').src,
+          false,
+          viewedProfileUid
+        );
+        loadFriendsAndDms();
+      } catch (e) {
+        console.error("Follow error:", e);
+        showToast("Error updating follow status");
+      }
+    };
 
     // SEARCH OVERLAY IMPLEMENTATION
     window.openSearchOverlay = function() {
@@ -1551,22 +1698,12 @@
 
       let matches = [];
 
-      if (myProfileData) {
-        const curHandle = (myProfileData.handle || '').toLowerCase();
-        const curName = (myProfileData.name || '').toLowerCase();
-        if (curHandle.includes(q) || curName.includes(q)) {
-          matches.push(myProfileData);
-        }
-      }
-
       try {
         const querySnapshot = await getDocs(collection(db, "users"));
         querySnapshot.forEach((docSnap) => {
           const userData = docSnap.data();
           if ((userData.name?.toLowerCase().includes(q) || userData.handle?.toLowerCase().includes(q))) {
-            if (!matches.some(m => m.handle === userData.handle)) {
-              matches.push(userData);
-            }
+            matches.push({ ...userData, uid: docSnap.id });
           }
         });
       } catch(e) {
@@ -1593,7 +1730,7 @@
       closeSearchOverlay();
       switchTab('profile-screen', document.getElementById('nav-profile-btn'));
       const isOwnProfile = (currentUser && uid === currentUser.uid) || (myProfileData && handle === myProfileData.handle);
-      updateProfileDisplay(name, handle, pfp, isOwnProfile);
+      updateProfileDisplay(name, handle, pfp, isOwnProfile, uid);
     };
 
     // EDIT PROFILE
@@ -1624,9 +1761,9 @@
       const newHandle = document.getElementById('edit-handle-input').value || generateRandomUserHandle();
       const currentPfp = uploadedProfilePicData || document.getElementById('profile-avatar-img').src;
 
-      myProfileData = { name: newName, handle: newHandle, pfp: currentPfp, uid: currentUser?.uid };
+      myProfileData = { ...myProfileData, name: newName, handle: newHandle, pfp: currentPfp, uid: currentUser?.uid };
 
-      updateProfileDisplay(newName, newHandle, currentPfp, true);
+      updateProfileDisplay(newName, newHandle, currentPfp, true, currentUser?.uid);
 
       if (currentUser) {
         await saveUserData(currentUser.uid, {
@@ -1643,11 +1780,11 @@
     window.openMyProfile = function(navElement) {
       switchTab('profile-screen', navElement);
       if (myProfileData) {
-        updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true);
+        updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true, currentUser?.uid);
       }
     };
 
-    // ---------------- FEED / VIDEO FEATURE (Firestore + Storage backed) ----------------
+    // ---------------- FEED / VIDEO FEATURE ----------------
 
     const videoPlayer = document.getElementById('feed-video-player');
     const videoContainer = document.getElementById('video-container');
@@ -1672,7 +1809,6 @@
 
     function renderCurrentVideo() {
       if (currentVideoIndex < 0 || videoQueue.length === 0) {
-        // Empty database state
         videoPlayer.pause();
         videoPlayer.removeAttribute('src');
         videoPlayer.style.display = 'none';
@@ -1698,7 +1834,7 @@
       videoPlayer.src = v.videoUrl;
       videoPlayer.currentTime = 0;
       videoPlayer.classList.remove('video-fade-in');
-      void videoPlayer.offsetWidth; // restart animation
+      void videoPlayer.offsetWidth;
       videoPlayer.classList.add('video-fade-in');
       videoPlayer.play().catch(() => {});
       showPlayIndicator(false);
@@ -1718,7 +1854,7 @@
     function goToVideo(delta) {
       if (videoQueue.length === 0) return;
       const next = currentVideoIndex + delta;
-      if (next < 0 || next >= videoQueue.length) return; // no wrap, simple clamp
+      if (next < 0 || next >= videoQueue.length) return;
       currentVideoIndex = next;
       renderCurrentVideo();
     }
@@ -1737,14 +1873,12 @@
         return;
       }
 
-      // treated as a tap -> toggle play/pause
       if (e.target.closest('.right-action-bar') || e.target.closest('#upload-prompt')) return;
       if (!videoPlayer.src) return;
       if (videoPlayer.paused) { videoPlayer.play(); showPlayIndicator(false); }
       else { videoPlayer.pause(); showPlayIndicator(true); }
     });
 
-    // Desktop click fallback
     videoContainer.addEventListener('click', function(e) {
       if (e.target.closest('.right-action-bar') || e.target.closest('#upload-prompt')) return;
       if (!videoPlayer.src) return;
@@ -1780,11 +1914,6 @@
       if (!currentUser) {
         showToast('Sign in first to post a video');
         switchTab('profile-screen', document.getElementById('nav-profile-btn'));
-        return;
-      }
-
-      if (CLOUDINARY_CLOUD_NAME === 'YOUR_CLOUD_NAME' || CLOUDINARY_UPLOAD_PRESET === 'YOUR_UNSIGNED_PRESET') {
-        showToast('Video hosting isn\'t configured yet — see the Cloudinary setup notes');
         return;
       }
 
@@ -1956,7 +2085,7 @@
       if (navigator.share) {
         try {
           await navigator.share({ title: 'Riven', text: `Check out this video by @${v.authorHandle}`, url: shareUrl });
-        } catch (e) { /* user cancelled */ }
+        } catch (e) { }
       } else if (navigator.clipboard) {
         try {
           await navigator.clipboard.writeText(shareUrl);
@@ -1969,22 +2098,152 @@
       }
     };
 
-    // ---------------- DM (local, single-device echo) ----------------
-    window.sendDmMessage = function() {
+    // ---------------- DM & MUTUAL FRIENDS ----------------
+
+    function getChatId(uid1, uid2) {
+      return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
+    }
+
+    async function loadFriendsAndDms() {
+      if (!currentUser) return;
+
+      const friendsListEl = document.getElementById('dm-friends-list');
+      friendsListEl.innerHTML = '<div class="dm-empty-state"><p>Loading friends...</p></div>';
+
+      try {
+        const myDoc = await getDoc(doc(db, "users", currentUser.uid));
+        if (!myDoc.exists()) return;
+
+        const myFollowing = myDoc.data().following || [];
+        const allUsersSnap = await getDocs(collection(db, "users"));
+        
+        let friends = [];
+
+        // Find mutual followers
+        for (let userDoc of allUsersSnap.docs) {
+          const uId = userDoc.id;
+          if (uId === currentUser.uid) continue;
+
+          const uData = userDoc.data();
+          const uFollowing = uData.following || [];
+
+          if (myFollowing.includes(uId) && uFollowing.includes(currentUser.uid)) {
+            // Check last message in chat
+            const chatId = getChatId(currentUser.uid, uId);
+            const chatSnap = await getDoc(doc(db, "chats", chatId));
+            let lastMessage = null;
+
+            if (chatSnap.exists()) {
+              lastMessage = chatSnap.data().lastMessage || null;
+            }
+
+            friends.push({
+              uid: uId,
+              name: uData.name || 'User',
+              handle: uData.handle || 'user',
+              pfp: uData.pfp || '',
+              lastMessage: lastMessage
+            });
+          }
+        }
+
+        if (friends.length === 0) {
+          friendsListEl.innerHTML = `
+            <div class="dm-empty-state">
+              <svg class="icon-svg" style="width:40px; height:40px; fill:#ccc;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+              <p>No mutual friends yet. Follow users back to start chatting!</p>
+            </div>
+          `;
+          return;
+        }
+
+        friendsListEl.innerHTML = friends.map(f => {
+          const previewText = f.lastMessage 
+            ? f.lastMessage 
+            : `<span class="dm-active-prompt">${f.name} is active now, say hi!</span>`;
+
+          return `
+            <div class="dm-friend-item" onclick="openActiveChat('${f.uid}', '${(f.name).replace(/'/g, "\\'")}')">
+              <img class="dm-friend-avatar" src="${f.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><circle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%23eee\'/></svg>'}" />
+              <div class="dm-friend-info">
+                <span class="dm-friend-name">${f.name}</span>
+                <span class="dm-friend-preview">${previewText}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (e) {
+        console.error("Error loading friends & DMs:", e);
+        friendsListEl.innerHTML = '<div class="dm-empty-state"><p>Error loading chats</p></div>';
+      }
+    }
+
+    window.openActiveChat = function(friendUid, friendName) {
+      activeChatFriendUid = friendUid;
+      document.getElementById('dm-list-container').style.display = 'none';
+      document.getElementById('dm-chat-container').classList.add('active');
+      document.getElementById('chat-target-name').innerText = friendName;
+
+      const chatBody = document.getElementById('chat-body');
+      chatBody.innerHTML = '';
+
+      if (activeChatUnsubscribe) activeChatUnsubscribe();
+
+      const chatId = getChatId(currentUser.uid, friendUid);
+      const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
+
+      activeChatUnsubscribe = onSnapshot(q, (snapshot) => {
+        chatBody.innerHTML = '';
+        if (snapshot.empty) {
+          chatBody.innerHTML = `<div class="dm-empty-state"><p>No messages yet. Say hi!</p></div>`;
+        } else {
+          snapshot.forEach(docSnap => {
+            const msg = docSnap.data();
+            const bubble = document.createElement('div');
+            bubble.className = `dm-bubble ${msg.senderUid === currentUser.uid ? 'mine' : 'theirs'}`;
+            bubble.textContent = msg.text;
+            chatBody.appendChild(bubble);
+          });
+          chatBody.scrollTop = chatBody.scrollHeight;
+        }
+      });
+    };
+
+    window.closeActiveChat = function() {
+      if (activeChatUnsubscribe) activeChatUnsubscribe();
+      activeChatFriendUid = null;
+      document.getElementById('dm-chat-container').classList.remove('active');
+      document.getElementById('dm-list-container').style.display = 'flex';
+      loadFriendsAndDms();
+    };
+
+    window.sendDmMessage = async function() {
+      if (!currentUser || !activeChatFriendUid) return;
+
       const input = document.getElementById('dm-text-input');
       const text = input.value.trim();
       if (!text) return;
       input.value = '';
 
-      const chatBody = document.getElementById('chat-body');
-      const emptyState = document.getElementById('dm-empty-state');
-      if (emptyState) emptyState.remove();
+      const chatId = getChatId(currentUser.uid, activeChatFriendUid);
 
-      const bubble = document.createElement('div');
-      bubble.className = 'dm-bubble mine';
-      bubble.textContent = text;
-      chatBody.appendChild(bubble);
-      chatBody.scrollTop = chatBody.scrollHeight;
+      try {
+        await addDoc(collection(db, "chats", chatId, "messages"), {
+          senderUid: currentUser.uid,
+          text: text,
+          createdAt: serverTimestamp()
+        });
+
+        await setDoc(doc(db, "chats", chatId), {
+          lastMessage: text,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+      } catch (e) {
+        console.error("Error sending DM:", e);
+        showToast("Failed to send message");
+      }
     };
 
     window.switchTab = function(screenId, navElement) {
@@ -1998,6 +2257,10 @@
       const selectedScreen = document.getElementById(screenId);
       if (selectedScreen) selectedScreen.classList.add('active');
       if (navElement) navElement.classList.add('active');
+
+      if (screenId === 'dm-screen') {
+        loadFriendsAndDms();
+      }
 
       if (screenId === 'feed-screen' && videoPlayer.src) {
         videoPlayer.play().catch(() => {});
