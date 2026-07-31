@@ -689,12 +689,12 @@
       <div class="search-header">
         <div class="search-input-box">
           <svg class="icon-svg" style="width:18px; height:18px; fill:#888;" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          <input type="text" id="search-input" placeholder="Search accounts, tags, videos..." oninput="handleSearch(this.value)">
+          <input type="text" id="search-input" placeholder="Search accounts..." oninput="handleSearch(this.value)">
         </div>
         <span class="cancel-search-btn" onclick="closeSearchOverlay()">Cancel</span>
       </div>
       <div class="search-results-list" id="search-results">
-        <div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">Type to search users and posts...</div>
+        <div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">Type to search users...</div>
       </div>
     </div>
 
@@ -747,8 +747,9 @@
         </div>
 
         <div class="profile-actions-wrapper">
-          <button class="btn-follow">Follow</button>
-          <button class="btn-edit-profile" onclick="openEditModal()">Edit Profile</button>
+          <!-- Follow button dynamically controlled (hidden on your own profile) -->
+          <button class="btn-follow" id="btn-follow-action" style="display:none;">Follow</button>
+          <button class="btn-edit-profile" id="btn-edit-action" onclick="openEditModal()">Edit Profile</button>
         </div>
 
         <div class="profile-divider"></div>
@@ -796,7 +797,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCNj19A3A3764GpZO8rkhLYFrWXk9k_HEM",
@@ -813,13 +814,9 @@
     const provider = new GoogleAuthProvider();
 
     let currentUser = null;
+    let myProfileData = null;
     let uploadedProfilePicData = null;
     let isLiked = false;
-
-    const databaseIndex = [
-      { name: "Official Riven", handle: "user8492011", pfp: "https://via.placeholder.com/150/111111/ffffff?text=R" },
-      { name: "Community Hub", handle: "user2001920", pfp: "https://via.placeholder.com/150/ff2d55/ffffff?text=C" }
-    ];
 
     window.signInWithGoogle = async function() {
       try {
@@ -858,7 +855,6 @@
       }
     }
 
-    // FIX FOR GITHUB PAGES 404: Read handle safely from URL hash (#/@handle)
     function getHandleFromUrl() {
       const hash = window.location.hash;
       if (hash.startsWith('#/@')) {
@@ -867,7 +863,6 @@
       return null;
     }
 
-    // FIX FOR GITHUB PAGES 404: Set Hash URL instead of dynamic pathname
     function setProfileUrl(handle) {
       const cleanHandle = handle.replace('@', '').toLowerCase();
       const newHash = `#/@${cleanHandle}`;
@@ -891,15 +886,18 @@
         let name = savedData?.name || `User ${handle.replace('user', '')}`;
         let pfp = savedData?.pfp || user.photoURL;
 
-        updateProfileDisplay(name, handle, pfp);
-        saveUserData(user.uid, { name, handle, pfp });
+        myProfileData = { name, handle, pfp, uid: user.uid };
+
+        updateProfileDisplay(name, handle, pfp, true); // true = viewing own profile
+        saveUserData(user.uid, { name, handle, pfp, uid: user.uid });
       } else {
         loggedOutBox.style.display = 'flex';
         loggedInBox.style.display = 'none';
       }
     });
 
-    function updateProfileDisplay(name, handle, pfp) {
+    // Smart display renderer hiding follow button on self-profile
+    function updateProfileDisplay(name, handle, pfp, isOwnProfile = false) {
       const cleanHandle = handle.replace('@', '').toLowerCase();
       document.getElementById('user-display-name').innerText = name;
       document.getElementById('user-display-handle').innerText = `@${cleanHandle}`;
@@ -909,9 +907,20 @@
       if (pfp) {
         document.getElementById('profile-avatar-img').src = pfp;
       }
+
+      const followBtn = document.getElementById('btn-follow-action');
+      const editBtn = document.getElementById('btn-edit-action');
+
+      if (isOwnProfile) {
+        followBtn.style.display = 'none'; // Hides self follow!
+        editBtn.style.display = 'block';
+      } else {
+        followBtn.style.display = 'block';
+        editBtn.style.display = 'none';
+      }
     }
 
-    // SEARCH SYSTEM
+    // SEARCH SYSTEM REAL-TIME FIRESTORE SEARCH
     window.openSearchOverlay = function() {
       document.getElementById('search-overlay').classList.add('active');
       document.getElementById('search-input').focus();
@@ -921,7 +930,7 @@
       document.getElementById('search-overlay').classList.remove('active');
     };
 
-    window.handleSearch = function(query) {
+    window.handleSearch = async function(query) {
       const resultsContainer = document.getElementById('search-results');
       const q = query.trim().toLowerCase();
 
@@ -930,19 +939,27 @@
         return;
       }
 
-      const matches = databaseIndex.filter(item => 
-        item.name.toLowerCase().includes(q) || item.handle.toLowerCase().includes(q)
-      );
+      let matches = [];
 
-      if (currentUser) {
-        const curHandle = document.getElementById('user-display-handle').innerText.replace('@', '');
-        const curName = document.getElementById('user-display-name').innerText;
-        if (curHandle.includes(q) || curName.toLowerCase().includes(q)) {
-          matches.unshift({
-            name: curName,
-            handle: curHandle,
-            pfp: document.getElementById('profile-avatar-img').src
-          });
+      // Fetch live accounts from Firestore
+      try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        querySnapshot.forEach((doc) => {
+          const userData = doc.data();
+          if (userData.name?.toLowerCase().includes(q) || userData.handle?.toLowerCase().includes(q)) {
+            matches.push(userData);
+          }
+        });
+      } catch(e) {
+        console.warn("Firestore search fallback to client session", e);
+      }
+
+      // Add active user if match
+      if (myProfileData) {
+        const curHandle = myProfileData.handle.toLowerCase();
+        const curName = myProfileData.name.toLowerCase();
+        if ((curHandle.includes(q) || curName.includes(q)) && !matches.some(m => m.handle === myProfileData.handle)) {
+          matches.unshift(myProfileData);
         }
       }
 
@@ -952,8 +969,8 @@
       }
 
       resultsContainer.innerHTML = matches.map(m => `
-        <div class="search-result-card" onclick="selectSearchResult('${m.handle}', '${m.name}', '${m.pfp}')">
-          <img class="search-avatar" src="${m.pfp}" />
+        <div class="search-result-card" onclick="selectSearchResult('${m.handle}', '${m.name.replace(/'/g, "\\'")}', '${m.pfp}', '${m.uid}')">
+          <img class="search-avatar" src="${m.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 44 44\'><circle cx=\'22\' cy=\'22\' r=\'22\' fill=\'%23333\'/></svg>'}" />
           <div class="search-info">
             <span class="title">${m.name}</span>
             <span class="subtitle">@${m.handle}</span>
@@ -962,10 +979,11 @@
       `).join('');
     };
 
-    window.selectSearchResult = function(handle, name, pfp) {
+    window.selectSearchResult = function(handle, name, pfp, uid) {
       closeSearchOverlay();
       switchTab('profile-screen', document.getElementById('nav-profile-btn'));
-      updateProfileDisplay(name, handle, pfp);
+      const isOwnProfile = (currentUser && uid === currentUser.uid) || (myProfileData && handle === myProfileData.handle);
+      updateProfileDisplay(name, handle, pfp, isOwnProfile);
     };
 
     // EDIT PROFILE
@@ -996,13 +1014,16 @@
       const newHandle = document.getElementById('edit-handle-input').value || generateRandomUserHandle();
       const currentPfp = uploadedProfilePicData || document.getElementById('profile-avatar-img').src;
 
-      updateProfileDisplay(newName, newHandle, currentPfp);
+      myProfileData = { name: newName, handle: newHandle, pfp: currentPfp, uid: currentUser?.uid };
+
+      updateProfileDisplay(newName, newHandle, currentPfp, true);
 
       if (currentUser) {
         await saveUserData(currentUser.uid, {
           name: newName,
           handle: newHandle,
-          pfp: currentPfp
+          pfp: currentPfp,
+          uid: currentUser.uid
         });
       }
 
@@ -1011,9 +1032,8 @@
 
     window.openMyProfile = function(navElement) {
       switchTab('profile-screen', navElement);
-      const handle = document.getElementById('user-display-handle').innerText.replace('@', '');
-      if (handle && handle !== '---') {
-        setProfileUrl(handle);
+      if (myProfileData) {
+        updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true);
       }
     };
 
