@@ -122,6 +122,7 @@
       cursor: pointer;
       display: flex;
       align-items: center;
+      padding: 4px;
     }
 
     .video-viewport {
@@ -214,15 +215,16 @@
       display: none;
     }
 
+    /* FIXED ACTION BAR POSITIONING */
     .right-action-bar {
       position: absolute;
       right: 16px;
-      bottom: calc(20px + var(--safe-bottom));
+      bottom: 24px; /* Fixed relative to viewport without double safe-area padding */
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 20px;
-      z-index: 10;
+      z-index: 25;
     }
 
     .action-item {
@@ -239,19 +241,19 @@
       font-weight: 500;
     }
 
-    /* SEARCH OVERLAY */
+    /* SEARCH OVERLAY - HIGH Z-INDEX FIX */
     #search-overlay {
       position: absolute;
       inset: 0;
       background: #000;
-      z-index: 150;
+      z-index: 999;
       display: none;
       flex-direction: column;
       padding-top: calc(var(--safe-top) + 10px);
     }
 
     #search-overlay.active {
-      display: flex;
+      display: flex !important;
     }
 
     .search-header {
@@ -817,7 +819,7 @@
     let uploadedProfilePicData = null;
     let isLiked = false;
 
-    // 1. INSTANT LOCALCACHE RENDER (Eliminates "---" latency instantly)
+    // 1. INSTANT LOCALCACHE RENDER
     function loadCachedUserInstantly() {
       const lastUid = localStorage.getItem('riven_last_active_uid');
       if (lastUid) {
@@ -877,7 +879,7 @@
       }
     }
 
-    // AUTH STATE LISTENER (Non-blocking background sync)
+    // AUTH STATE LISTENER
     onAuthStateChanged(auth, (user) => {
       currentUser = user;
       const loggedOutBox = document.getElementById('logged-out-state');
@@ -899,7 +901,6 @@
         
         updateProfileDisplay(name, handle, pfp, true);
 
-        // Silent background fetch to update stale data
         getDoc(doc(db, "users", user.uid)).then((docSnap) => {
           if (docSnap.exists()) {
             const remoteData = docSnap.data();
@@ -941,10 +942,13 @@
       }
     }
 
-    // SEARCH SYSTEM REAL-TIME FIRESTORE SEARCH
+    // ROBUST SEARCH SYSTEM
     window.openSearchOverlay = function() {
-      document.getElementById('search-overlay').classList.add('active');
-      document.getElementById('search-input').focus();
+      const overlay = document.getElementById('search-overlay');
+      overlay.classList.add('active');
+      const input = document.getElementById('search-input');
+      input.value = '';
+      input.focus();
     };
 
     window.closeSearchOverlay = function() {
@@ -962,24 +966,28 @@
 
       let matches = [];
 
+      // Add local profile instantly if matching
+      if (myProfileData) {
+        const curHandle = (myProfileData.handle || '').toLowerCase();
+        const curName = (myProfileData.name || '').toLowerCase();
+        if (curHandle.includes(q) || curName.includes(q)) {
+          matches.push(myProfileData);
+        }
+      }
+
+      // Query Firestore for remote matches
       try {
         const querySnapshot = await getDocs(collection(db, "users"));
-        querySnapshot.forEach((doc) => {
-          const userData = doc.data();
-          if (userData.name?.toLowerCase().includes(q) || userData.handle?.toLowerCase().includes(q)) {
-            matches.push(userData);
+        querySnapshot.forEach((docSnap) => {
+          const userData = docSnap.data();
+          if ((userData.name?.toLowerCase().includes(q) || userData.handle?.toLowerCase().includes(q))) {
+            if (!matches.some(m => m.handle === userData.handle)) {
+              matches.push(userData);
+            }
           }
         });
       } catch(e) {
-        console.warn("Firestore search error", e);
-      }
-
-      if (myProfileData) {
-        const curHandle = myProfileData.handle.toLowerCase();
-        const curName = myProfileData.name.toLowerCase();
-        if ((curHandle.includes(q) || curName.includes(q)) && !matches.some(m => m.handle === myProfileData.handle)) {
-          matches.unshift(myProfileData);
-        }
+        console.warn("Firestore search network error or rules restriction:", e);
       }
 
       if (matches.length === 0) {
@@ -988,7 +996,7 @@
       }
 
       resultsContainer.innerHTML = matches.map(m => `
-        <div class="search-result-card" onclick="selectSearchResult('${m.handle}', '${(m.name || 'User').replace(/'/g, "\\'")}', '${m.pfp || ''}', '${m.uid}')">
+        <div class="search-result-card" onclick="selectSearchResult('${m.handle}', '${(m.name || 'User').replace(/'/g, "\\'")}', '${m.pfp || ''}', '${m.uid || ''}')">
           <img class="search-avatar" src="${m.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 44 44\'><circle cx=\'22\' cy=\'22\' r=\'22\' fill=\'%23333\'/></svg>'}" />
           <div class="search-info">
             <span class="title">${m.name || 'User'}</span>
