@@ -1776,6 +1776,9 @@
         <div class="call-control-btn" id="call-mute-btn" onclick="toggleCallMute()" title="Mute">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
         </div>
+        <div class="call-control-btn" id="call-switch-video-btn" onclick="switchToVideoCall()" title="Switch to video" style="display:none;">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+        </div>
         <div class="call-control-btn end-call" onclick="hangUpCall()" title="End call">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 3.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.68-1.36-2.66-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
         </div>
@@ -1863,6 +1866,9 @@
     let callTimerSeconds = 0;
     let isCallMuted = false;
     let isCallCameraOff = false;
+    let videoUpgradeRequested = false;
+    let videoUpgradeHandled = false;
+    let incomingCallHapticInterval = null;
 
     // ---- Feed state ----
     let videoQueue = [];
@@ -2839,6 +2845,22 @@
     // NOTE: only STUN servers are configured (no TURN), so calls between
     // devices on very restrictive/symmetric NATs may fail to connect.
 
+    // Vibration API — supported on Android Chrome, not on iOS Safari (no-op there)
+    function triggerHaptic(pattern) {
+      if (!navigator.vibrate) return;
+      try {
+        if (pattern === 'ring') {
+          navigator.vibrate([400, 200, 400, 200, 400]);
+        } else if (pattern === 'light') {
+          navigator.vibrate(15);
+        } else if (pattern === 'connect') {
+          navigator.vibrate([30, 40, 30]);
+        } else if (pattern === 'end') {
+          navigator.vibrate(60);
+        }
+      } catch (e) {}
+    }
+
     function startIncomingCallListener() {
       if (!currentUser) return;
       if (incomingCallsUnsubscribe) incomingCallsUnsubscribe();
@@ -2866,6 +2888,10 @@
       document.getElementById('incoming-call-type').innerText = data.type === 'voice' ? 'Incoming voice call...' : 'Incoming video call...';
       document.getElementById('incoming-call-overlay').classList.add('active');
 
+      triggerHaptic('ring');
+      clearInterval(incomingCallHapticInterval);
+      incomingCallHapticInterval = setInterval(() => triggerHaptic('ring'), 2200);
+
       if (incomingCallWatchUnsubscribe) incomingCallWatchUnsubscribe();
       incomingCallWatchUnsubscribe = onSnapshot(doc(db, 'calls', callId), (snap) => {
         const status = snap.exists() ? snap.data().status : 'ended';
@@ -2880,11 +2906,14 @@
     function hideIncomingCall() {
       document.getElementById('incoming-call-overlay').classList.remove('active');
       pendingIncomingCall = null;
+      clearInterval(incomingCallHapticInterval);
+      incomingCallHapticInterval = null;
       if (incomingCallWatchUnsubscribe) { incomingCallWatchUnsubscribe(); incomingCallWatchUnsubscribe = null; }
     }
 
     window.declineIncomingCall = async function() {
       if (!pendingIncomingCall) return;
+      triggerHaptic('light');
       const { callId } = pendingIncomingCall;
       hideIncomingCall();
       try {
@@ -2896,6 +2925,7 @@
 
     window.acceptIncomingCall = async function() {
       if (!pendingIncomingCall) return;
+      triggerHaptic('light');
       const { callId, data } = pendingIncomingCall;
       hideIncomingCall();
       await joinCallAsCallee(callId, data);
@@ -2904,6 +2934,9 @@
     function setupActiveCallUI(peerName, peerPfp, type) {
       document.getElementById('call-peer-name').innerText = peerName;
       document.getElementById('voice-call-avatar').src = peerPfp || DEFAULT_AVATAR_SVG;
+
+      videoUpgradeRequested = false;
+      videoUpgradeHandled = false;
 
       const overlay = document.getElementById('active-call-overlay');
       overlay.classList.add('active');
@@ -2918,6 +2951,103 @@
       document.getElementById('call-mute-btn').classList.remove('active-off');
       document.getElementById('call-cam-btn').classList.remove('active-off');
       document.getElementById('call-cam-btn').style.display = type === 'video' ? 'flex' : 'none';
+      document.getElementById('call-switch-video-btn').style.display = type === 'voice' ? 'flex' : 'none';
+    }
+
+    // Live-upgrades the current voice call to video by adding a camera track
+    // and renegotiating the peer connection through the call doc.
+    function applyVideoModeUI() {
+      const overlay = document.getElementById('active-call-overlay');
+      overlay.classList.remove('voice-mode');
+      const localVideoEl = document.getElementById('local-call-video');
+      localVideoEl.srcObject = localCallStream;
+      localVideoEl.style.display = 'block';
+      document.getElementById('call-cam-btn').style.display = 'flex';
+      document.getElementById('call-switch-video-btn').style.display = 'none';
+    }
+
+    window.switchToVideoCall = async function() {
+      if (!peerConnection || !localCallStream || !currentCallId) return;
+      if (currentCallType === 'video') return;
+      if (videoUpgradeRequested) { showToast('Already switching to video...'); return; }
+
+      triggerHaptic('light');
+
+      let videoTrack;
+      try {
+        const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        videoTrack = camStream.getVideoTracks()[0];
+      } catch (e) {
+        console.warn('getUserMedia video error:', e);
+        showToast('Camera permission denied');
+        return;
+      }
+
+      localCallStream.addTrack(videoTrack);
+      peerConnection.addTrack(videoTrack, localCallStream);
+      applyVideoModeUI();
+      currentCallType = 'video';
+      videoUpgradeRequested = true;
+
+      try {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        await updateDoc(doc(db, 'calls', currentCallId), {
+          videoUpgradeOffer: { type: offer.type, sdp: offer.sdp },
+          videoUpgradeOfferBy: currentUser.uid
+        });
+      } catch (e) {
+        console.warn('Video upgrade offer error:', e);
+        showToast('Could not switch to video');
+      }
+    };
+
+    // Handles both sides of a mid-call voice→video upgrade via the call doc
+    async function handleVideoUpgradeSignaling(data) {
+      if (!peerConnection || !currentCallId) return;
+
+      // Someone else requested the switch — answer it
+      if (data.videoUpgradeOffer && data.videoUpgradeOfferBy && data.videoUpgradeOfferBy !== currentUser.uid && !videoUpgradeHandled) {
+        videoUpgradeHandled = true;
+        try {
+          if (currentCallType !== 'video') {
+            try {
+              const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+              const videoTrack = camStream.getVideoTracks()[0];
+              localCallStream.addTrack(videoTrack);
+              peerConnection.addTrack(videoTrack, localCallStream);
+            } catch (e) {
+              console.warn('No local camera available for upgrade, staying receive-only:', e);
+            }
+          }
+
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.videoUpgradeOffer));
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+
+          await updateDoc(doc(db, 'calls', currentCallId), {
+            videoUpgradeAnswer: { type: answer.type, sdp: answer.sdp }
+          });
+
+          applyVideoModeUI();
+          currentCallType = 'video';
+          showToast('Switched to video call');
+          triggerHaptic('light');
+        } catch (e) {
+          console.warn('Video upgrade answer error:', e);
+        }
+      }
+
+      // Our own upgrade request just got answered
+      if (data.videoUpgradeAnswer && videoUpgradeRequested && peerConnection.signalingState === 'have-local-offer') {
+        videoUpgradeRequested = false;
+        try {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.videoUpgradeAnswer));
+          showToast('Switched to video call');
+        } catch (e) {
+          console.warn('Video upgrade remote answer error:', e);
+        }
+      }
     }
 
     function setCallStatusText(text) {
@@ -3018,12 +3148,14 @@
         if (data.status === 'accepted' && data.answer && peerConnection && !peerConnection.currentRemoteDescription) {
           peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)).then(() => {
             setCallStatusText('Connected');
+            triggerHaptic('connect');
             startCallTimer();
           }).catch(e => console.warn('setRemoteDescription error:', e));
         } else if (['declined', 'ended', 'missed'].includes(data.status)) {
           if (data.status === 'declined') showToast('Call declined');
           endCallLocally();
         }
+        handleVideoUpgradeSignaling(data);
       });
 
       callTimeoutHandle = setTimeout(async () => {
@@ -3100,18 +3232,23 @@
       });
 
       callDocUnsubscribe = onSnapshot(callRef, (snap) => {
-        const status = snap.exists() ? snap.data().status : 'ended';
-        if (['ended', 'declined', 'missed'].includes(status)) {
+        if (!snap.exists()) { endCallLocally(); return; }
+        const data = snap.data();
+        if (['ended', 'declined', 'missed'].includes(data.status)) {
           endCallLocally();
+          return;
         }
+        handleVideoUpgradeSignaling(data);
       });
 
       setCallStatusText('Connected');
+      triggerHaptic('connect');
       startCallTimer();
     }
 
     window.toggleCallMute = function() {
       if (!localCallStream) return;
+      triggerHaptic('light');
       isCallMuted = !isCallMuted;
       localCallStream.getAudioTracks().forEach(t => t.enabled = !isCallMuted);
       document.getElementById('call-mute-btn').classList.toggle('active-off', isCallMuted);
@@ -3119,6 +3256,7 @@
 
     window.toggleCallCamera = function() {
       if (!localCallStream || currentCallType !== 'video') return;
+      triggerHaptic('light');
       isCallCameraOff = !isCallCameraOff;
       localCallStream.getVideoTracks().forEach(t => t.enabled = !isCallCameraOff);
       document.getElementById('call-cam-btn').classList.toggle('active-off', isCallCameraOff);
@@ -3132,6 +3270,7 @@
     };
 
     function endCallLocally() {
+      const wasActive = document.getElementById('active-call-overlay').classList.contains('active');
       clearTimeout(callTimeoutHandle);
       clearInterval(callTimerInterval);
       if (callDocUnsubscribe) { callDocUnsubscribe(); callDocUnsubscribe = null; }
@@ -3154,8 +3293,12 @@
       overlay.classList.remove('active');
       overlay.classList.remove('voice-mode');
 
+      if (wasActive) triggerHaptic('end');
+
       currentCallId = null;
       currentCallType = null;
+      videoUpgradeRequested = false;
+      videoUpgradeHandled = false;
     }
 
     window.switchTab = function(screenId, navElement) {
