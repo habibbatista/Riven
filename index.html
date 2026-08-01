@@ -2818,6 +2818,7 @@
           const { activeDates, streak, lastStreakDate } = computeStreakUpdate(chatData, uidA, uidB, currentUser.uid);
 
           tx.set(chatRef, {
+            participants: [uidA, uidB],
             lastMessage: text,
             updatedAt: serverTimestamp(),
             activeDates,
@@ -2998,7 +2999,7 @@
         });
       } catch (e) {
         console.error('Call setup error:', e);
-        showToast('Could not start call');
+        showToast('Could not start call: ' + (e.code || e.message || 'unknown error'), 5000);
         endCallLocally();
         return;
       }
@@ -3085,7 +3086,7 @@
         });
       } catch (e) {
         console.error('Call answer error:', e);
-        showToast('Could not join call');
+        showToast('Could not join call: ' + (e.code || e.message || 'unknown error'), 5000);
         endCallLocally();
         return;
       }
