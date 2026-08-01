@@ -845,6 +845,16 @@
       margin-top: 2px;
     }
 
+    .dm-friend-streak {
+      font-size: 12px;
+      font-weight: 700;
+      color: #ff9500;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+
     .dm-active-prompt {
       color: var(--accent-pink);
       font-weight: 500;
@@ -861,13 +871,97 @@
       display: flex;
     }
 
-    .dm-back-btn {
+    /* CHAT HEADER (redesigned to match mockup) */
+    .chat-header-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: calc(var(--safe-top) + 10px) 14px 12px 14px;
+      border-bottom: 1px solid var(--border-gray);
+      background: #fff;
+      position: relative;
+    }
+
+    .chat-back-btn {
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 4px;
-      font-size: 14px;
-      font-weight: 600;
+      justify-content: center;
+      flex-shrink: 0;
+      padding: 4px;
+    }
+
+    .chat-header-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #eee;
+      flex-shrink: 0;
+    }
+
+    .chat-header-info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .chat-header-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-header-streak {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #ff9500;
+      margin-top: 1px;
+    }
+
+    .chat-header-icons {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .chat-icon-btn {
+      cursor: pointer;
+      color: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+    }
+
+    .chat-icon-btn .icon-svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .chat-menu-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(var(--safe-top) + 48px);
+      right: 14px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      overflow: hidden;
+      z-index: 60;
+      min-width: 160px;
+    }
+
+    .chat-menu-dropdown.active {
+      display: block;
     }
 
     .chat-body {
@@ -1079,15 +1173,27 @@
       animation: commentRowIn 0.2s ease;
     }
 
+    @keyframes streakPop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.3) rotate(-6deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .streak-pop {
+      animation: streakPop 0.4s ease;
+    }
+
     .action-item, .nav-item, .header-icon, .btn-follow, .btn-edit-profile,
     .custom-file-upload, .modal-btn, .comment-send-btn, .search-result-card,
-    .cancel-search-btn, .comments-close-btn, .profile-menu-item, .menu-dots-btn {
+    .cancel-search-btn, .comments-close-btn, .profile-menu-item, .menu-dots-btn,
+    .chat-icon-btn, .chat-back-btn {
       transition: transform 0.12s ease, opacity 0.12s ease;
     }
 
     .action-item:active, .nav-item:active, .btn-follow:active, .btn-edit-profile:active,
     .custom-file-upload:active, .modal-btn:active, .comment-send-btn:active,
-    .search-result-card:active, .profile-menu-item:active {
+    .search-result-card:active, .profile-menu-item:active, .chat-icon-btn:active,
+    .chat-back-btn:active {
       transform: scale(0.94);
     }
 
@@ -1162,6 +1268,21 @@
       pointer-events: auto;
     }
 
+    .chat-menu-dropdown {
+      display: block;
+      opacity: 0;
+      transform: scale(0.92) translateY(-6px);
+      transform-origin: top right;
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .chat-menu-dropdown.active {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.001ms !important;
@@ -1224,6 +1345,10 @@
             <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l6.96-4.11c.52.48 1.2.78 1.96.78 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.33 6.82 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.82 0 1.5-.33 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
             <span class="action-count">Share</span>
           </div>
+          <div class="action-item" id="privacy-action-item" style="display:none;" onclick="toggleVideoPrivacy()">
+            <svg class="icon-svg" id="privacy-icon" viewBox="0 0 24 24"><path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 016 0v3H9z"/></svg>
+            <span class="action-count" id="privacy-label">Public</span>
+          </div>
         </div>
       </div>
     </section>
@@ -1279,10 +1404,32 @@
 
       <!-- Active Chat View -->
       <div id="dm-chat-container" class="active-chat-view">
-        <header class="dm-header">
-          <div class="dm-back-btn" onclick="closeActiveChat()">
+        <header class="chat-header-bar">
+          <div class="chat-back-btn" onclick="closeActiveChat()">
             <svg class="icon-svg" style="fill:#111; width:20px; height:20px;" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-            <span id="chat-target-name">Chat</span>
+          </div>
+          <img class="chat-header-avatar" id="chat-header-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='38' height='38'><circle cx='19' cy='19' r='19' fill='%23eee'/></svg>">
+          <div class="chat-header-info">
+            <span class="chat-header-name" id="chat-target-name">Chat</span>
+            <span class="chat-header-streak" id="chat-header-streak">🔥 <span id="chat-header-streak-count">0</span></span>
+          </div>
+          <div class="chat-header-icons">
+            <div class="chat-icon-btn" onclick="stubChatAction('Video call')" title="Video call">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+            </div>
+            <div class="chat-icon-btn" onclick="stubChatAction('Voice call')" title="Voice call">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            </div>
+            <div class="chat-icon-btn" onclick="stubChatAction('Report submitted')" title="Report">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
+            </div>
+            <div class="chat-icon-btn" onclick="toggleChatMenu()" title="More">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            </div>
+          </div>
+          <div class="chat-menu-dropdown" id="chat-menu-dropdown">
+            <div class="profile-menu-item" onclick="toggleChatMenu(true); stubChatAction('User blocked');">Block User</div>
+            <div class="profile-menu-item danger" onclick="toggleChatMenu(true); stubChatAction('Chat reported');">Report</div>
           </div>
         </header>
 
@@ -1499,11 +1646,28 @@
       menu.classList.toggle('active');
     };
 
+    window.toggleChatMenu = function(forceClose) {
+      const menu = document.getElementById('chat-menu-dropdown');
+      if (forceClose) { menu.classList.remove('active'); return; }
+      menu.classList.toggle('active');
+    };
+
+    window.stubChatAction = function(label) {
+      toggleChatMenu(true);
+      showToast(label);
+    };
+
     document.addEventListener('click', (e) => {
       const menu = document.getElementById('profile-menu-dropdown');
       const btn = document.querySelector('.menu-dots-btn');
       if (menu && menu.classList.contains('active') && !menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
         menu.classList.remove('active');
+      }
+
+      const chatMenu = document.getElementById('chat-menu-dropdown');
+      const chatBtn = document.querySelectorAll('.chat-icon-btn')[3];
+      if (chatMenu && chatMenu.classList.contains('active') && !chatMenu.contains(e.target) && (!chatBtn || (e.target !== chatBtn && !chatBtn.contains(e.target)))) {
+        chatMenu.classList.remove('active');
       }
     });
 
@@ -1583,11 +1747,12 @@
           }
         }
 
-        renderCurrentVideo();
+        loadFeed();
         loadFriendsAndDms();
       } else {
         loggedOutBox.style.display = 'flex';
         loggedInBox.style.display = 'none';
+        loadFeed();
       }
     });
 
@@ -1819,7 +1984,12 @@
         const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'), limit(30));
         const snap = await getDocs(q);
         videoQueue = [];
-        snap.forEach(d => videoQueue.push({ id: d.id, ...d.data() }));
+        snap.forEach(d => {
+          const data = d.data();
+          // Skip other people's private videos - only the owner can see their own private posts
+          if (data.isPrivate && (!currentUser || data.uid !== currentUser.uid)) return;
+          videoQueue.push({ id: d.id, ...data });
+        });
       } catch (e) {
         console.warn("Feed load error:", e);
         videoQueue = [];
@@ -1870,6 +2040,16 @@
       document.getElementById('like-count').innerText = likesBy.length;
       document.getElementById('like-icon').style.fill = isLiked ? '#ff2d55' : 'currentColor';
       document.getElementById('comment-count').innerText = v.commentsCount || 0;
+
+      // Owner-only privacy toggle
+      const privacyItem = document.getElementById('privacy-action-item');
+      if (currentUser && v.uid === currentUser.uid) {
+        privacyItem.style.display = 'flex';
+        document.getElementById('privacy-label').innerText = v.isPrivate ? 'Private' : 'Public';
+        document.getElementById('privacy-icon').style.fill = v.isPrivate ? '#ff2d55' : 'currentColor';
+      } else {
+        privacyItem.style.display = 'none';
+      }
     }
 
     function goToVideo(delta) {
@@ -1910,6 +2090,24 @@
     window.setActiveFeedTab = function(el) {
       document.querySelectorAll('.feed-tab').forEach(t => t.classList.remove('active'));
       el.classList.add('active');
+    };
+
+    // ---- Privacy toggle (video owner only) ----
+    window.toggleVideoPrivacy = async function() {
+      if (currentVideoIndex < 0) return;
+      const v = videoQueue[currentVideoIndex];
+      if (!currentUser || v.uid !== currentUser.uid) return;
+
+      v.isPrivate = !v.isPrivate;
+      renderCurrentVideo();
+      showToast(v.isPrivate ? 'Video set to private — only you can see it' : 'Video set to public');
+
+      try {
+        await updateDoc(doc(db, 'videos', v.id), { isPrivate: v.isPrivate });
+      } catch (e) {
+        console.warn('Privacy update error:', e);
+        showToast('Could not update privacy');
+      }
     };
 
     // ---- Upload flow ----
@@ -1959,6 +2157,7 @@
           videoUrl,
           likesBy: [],
           commentsCount: 0,
+          isPrivate: false,
           createdAt: serverTimestamp()
         });
 
@@ -1970,7 +2169,8 @@
           authorPfp: myProfileData?.pfp || '',
           videoUrl,
           likesBy: [],
-          commentsCount: 0
+          commentsCount: 0,
+          isPrivate: false
         });
         currentVideoIndex = 0;
         renderCurrentVideo();
@@ -2121,6 +2321,40 @@
       return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
     }
 
+    function getTodayStr() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function getYesterdayStr() {
+      return new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    }
+
+    // Compute the next streak state after `senderUid` sends a message.
+    // A streak increments once per calendar day, and only once BOTH participants
+    // of the chat have sent at least one message that day.
+    function computeStreakUpdate(chatData, uidA, uidB, senderUid) {
+      const today = getTodayStr();
+      const yesterday = getYesterdayStr();
+      const activeDates = { ...(chatData.activeDates || {}) };
+      activeDates[senderUid] = today;
+
+      let streak = chatData.streak || 0;
+      let lastStreakDate = chatData.lastStreakDate || null;
+
+      const bothActiveToday = activeDates[uidA] === today && activeDates[uidB] === today;
+
+      if (bothActiveToday && lastStreakDate !== today) {
+        if (lastStreakDate === yesterday) {
+          streak = streak + 1;
+        } else {
+          streak = 1; // fresh streak (either first ever, or there was a gap)
+        }
+        lastStreakDate = today;
+      }
+
+      return { activeDates, streak, lastStreakDate };
+    }
+
     async function loadFriendsAndDms() {
       if (!currentUser) return;
 
@@ -2147,9 +2381,12 @@
             const chatId = getChatId(currentUser.uid, uId);
             const chatSnap = await getDoc(doc(db, "chats", chatId));
             let lastMessage = null;
+            let streak = 0;
 
             if (chatSnap.exists()) {
-              lastMessage = chatSnap.data().lastMessage || null;
+              const cData = chatSnap.data();
+              lastMessage = cData.lastMessage || null;
+              streak = cData.streak || 0;
             }
 
             friends.push({
@@ -2157,7 +2394,8 @@
               name: uData.name || 'User',
               handle: uData.handle || 'user',
               pfp: uData.pfp || '',
-              lastMessage: lastMessage
+              lastMessage: lastMessage,
+              streak
             });
           }
         }
@@ -2176,14 +2414,16 @@
           const previewText = f.lastMessage 
             ? f.lastMessage 
             : `<span class="dm-active-prompt">${f.name} is active now, say hi!</span>`;
+          const streakBadge = f.streak > 0 ? `<span class="dm-friend-streak">🔥 ${f.streak}</span>` : '';
 
           return `
-            <div class="dm-friend-item" onclick="openActiveChat('${f.uid}', '${(f.name).replace(/'/g, "\\'")}')">
+            <div class="dm-friend-item" onclick="openActiveChat('${f.uid}', '${(f.name).replace(/'/g, "\\'")}', '${(f.pfp || '').replace(/'/g, "\\'")}')">
               <img class="dm-friend-avatar" src="${f.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><circle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%23eee\'/></svg>'}" />
               <div class="dm-friend-info">
                 <span class="dm-friend-name">${f.name}</span>
                 <span class="dm-friend-preview">${previewText}</span>
               </div>
+              ${streakBadge}
             </div>
           `;
         }).join('');
@@ -2194,12 +2434,33 @@
       }
     }
 
-    window.openActiveChat = function(friendUid, friendName) {
+    async function refreshChatHeaderStreak(chatId) {
+      try {
+        const chatSnap = await getDoc(doc(db, "chats", chatId));
+        const streak = chatSnap.exists() ? (chatSnap.data().streak || 0) : 0;
+        const streakEl = document.getElementById('chat-header-streak-count');
+        const prev = parseInt(streakEl.innerText || '0', 10);
+        streakEl.innerText = streak;
+        if (streak > prev) {
+          const wrapper = document.getElementById('chat-header-streak');
+          wrapper.classList.remove('streak-pop');
+          void wrapper.offsetWidth;
+          wrapper.classList.add('streak-pop');
+        }
+      } catch (e) {
+        console.warn('Streak refresh error:', e);
+      }
+    }
+
+    window.openActiveChat = function(friendUid, friendName, friendPfp) {
       activeChatFriendUid = friendUid;
       document.body.classList.add('in-active-chat');
       document.getElementById('dm-list-container').style.display = 'none';
       document.getElementById('dm-chat-container').classList.add('active');
       document.getElementById('chat-target-name').innerText = friendName;
+      document.getElementById('chat-header-avatar').src = friendPfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'38\' height=\'38\'><circle cx=\'19\' cy=\'19\' r=\'19\' fill=\'%23eee\'/></svg>';
+      document.getElementById('chat-header-streak-count').innerText = '0';
+      toggleChatMenu(true);
 
       const chatBody = document.getElementById('chat-body');
       chatBody.innerHTML = '';
@@ -2207,6 +2468,8 @@
       if (activeChatUnsubscribe) activeChatUnsubscribe();
 
       const chatId = getChatId(currentUser.uid, friendUid);
+      refreshChatHeaderStreak(chatId);
+
       const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
 
       activeChatUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -2244,6 +2507,7 @@
       input.value = '';
 
       const chatId = getChatId(currentUser.uid, activeChatFriendUid);
+      const [uidA, uidB] = chatId.split('_');
 
       try {
         await addDoc(collection(db, "chats", chatId, "messages"), {
@@ -2252,10 +2516,23 @@
           createdAt: serverTimestamp()
         });
 
-        await setDoc(doc(db, "chats", chatId), {
-          lastMessage: text,
-          updatedAt: serverTimestamp()
-        }, { merge: true });
+        // Transaction keeps the daily streak accurate even with concurrent sends
+        await runTransaction(db, async (tx) => {
+          const chatRef = doc(db, "chats", chatId);
+          const snap = await tx.get(chatRef);
+          const chatData = snap.exists() ? snap.data() : {};
+          const { activeDates, streak, lastStreakDate } = computeStreakUpdate(chatData, uidA, uidB, currentUser.uid);
+
+          tx.set(chatRef, {
+            lastMessage: text,
+            updatedAt: serverTimestamp(),
+            activeDates,
+            streak,
+            lastStreakDate
+          }, { merge: true });
+        });
+
+        refreshChatHeaderStreak(chatId);
 
       } catch (e) {
         console.error("Error sending DM:", e);
