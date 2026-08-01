@@ -1419,6 +1419,10 @@
     let currentVideoIndex = -1;
     let touchStartY = null;
 
+    function generateRandomUserHandle() {
+      return `user${Math.floor(100000 + Math.random() * 900000)}`;
+    }
+
     function showToast(msg, duration = 2200) {
       const el = document.getElementById('toast');
       el.textContent = msg;
@@ -1502,7 +1506,7 @@
         return newHandle;
       } catch (e) {
         console.warn('Counter transaction failed, falling back:', e);
-        return `user${Date.now()}`;
+        return generateRandomUserHandle();
       }
     }
 
@@ -1561,7 +1565,7 @@
         } catch (err) {
           console.warn("Profile sync error:", err);
           if (!myProfileData) {
-            myProfileData = { name: user.displayName || 'User', handle: `user${Date.now()}`, pfp: user.photoURL || '', uid: user.uid, following: [] };
+            myProfileData = { name: user.displayName || 'User', handle: generateRandomUserHandle(), pfp: user.photoURL || '', uid: user.uid, following: [] };
             updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true, user.uid);
           }
         }
@@ -1757,11 +1761,17 @@
     });
 
     window.saveProfileChanges = async function() {
-      const newName = document.getElementById('edit-name-input').value || "User";
-      const newHandle = document.getElementById('edit-handle-input').value || generateRandomUserHandle();
+      const newName = document.getElementById('edit-name-input').value.trim() || "User";
+      const newHandle = document.getElementById('edit-handle-input').value.trim() || generateRandomUserHandle();
       const currentPfp = uploadedProfilePicData || document.getElementById('profile-avatar-img').src;
 
-      myProfileData = { ...myProfileData, name: newName, handle: newHandle, pfp: currentPfp, uid: currentUser?.uid };
+      myProfileData = { 
+        ...myProfileData, 
+        name: newName, 
+        handle: newHandle, 
+        pfp: currentPfp, 
+        uid: currentUser?.uid || myProfileData?.uid 
+      };
 
       updateProfileDisplay(newName, newHandle, currentPfp, true, currentUser?.uid);
 
@@ -1775,6 +1785,7 @@
       }
 
       closeEditModal();
+      showToast('Profile updated');
     };
 
     window.openMyProfile = function(navElement) {
@@ -1872,11 +1883,6 @@
         if (deltaY < 0) goToVideo(1); else goToVideo(-1);
         return;
       }
-
-      if (e.target.closest('.right-action-bar') || e.target.closest('#upload-prompt')) return;
-      if (!videoPlayer.src) return;
-      if (videoPlayer.paused) { videoPlayer.play(); showPlayIndicator(false); }
-      else { videoPlayer.pause(); showPlayIndicator(true); }
     });
 
     videoContainer.addEventListener('click', function(e) {
@@ -1928,6 +1934,7 @@
           `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`,
           { method: 'POST', body: formData }
         );
+        
         const uploadResult = await uploadResponse.json();
         if (!uploadResponse.ok) {
           throw new Error(uploadResult?.error?.message || 'Cloudinary upload failed');
@@ -1960,7 +1967,7 @@
         showToast('Video posted!');
       } catch (err) {
         console.error('Upload error:', err);
-        showToast('Upload failed. Please try again.');
+        showToast(err.message || 'Upload failed. Please check preset settings.');
       }
     });
 
