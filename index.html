@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
   <title>Riven</title>
 
   <!-- Google Fonts: Poppins -->
@@ -58,11 +58,12 @@
       overflow: hidden;
     }
 
+    /* Screen View fits flex space cleanly without overlapping bottom nav */
     .screen-view {
       flex: 1;
       display: none;
       flex-direction: column;
-      height: calc(100dvh - (65px + var(--safe-bottom)));
+      height: 0; /* Allows flex-grow (flex:1) to calculate height strictly */
       overflow-y: auto;
       position: relative;
     }
@@ -416,7 +417,6 @@
       border-radius: 20px 20px 0 0;
       display: flex;
       flex-direction: column;
-      padding-bottom: var(--safe-bottom);
     }
 
     .comments-sheet-header {
@@ -481,11 +481,12 @@
     }
 
     .comments-input-wrapper {
-      padding: 10px 16px;
+      padding: 10px 16px calc(12px + var(--safe-bottom)) 16px;
       border-top: 1px solid var(--border-gray);
       display: flex;
       gap: 10px;
       align-items: center;
+      background: #fff;
     }
 
     .comments-input-wrapper input {
@@ -782,15 +783,15 @@
     /* DM SCREEN */
     #dm-screen {
       background-color: var(--bg-light);
-      padding-top: var(--safe-top);
     }
 
     .dm-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 20px;
+      padding: calc(var(--safe-top) + 12px) 20px 12px 20px;
       border-bottom: 1px solid var(--border-gray);
+      background: #fff;
     }
 
     .dm-title {
@@ -852,6 +853,7 @@
       display: none;
       flex-direction: column;
       height: 100%;
+      position: relative;
     }
 
     .active-chat-view.active {
@@ -869,7 +871,7 @@
 
     .chat-body {
       flex: 1;
-      padding: 20px;
+      padding: 16px 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -911,8 +913,12 @@
     }
 
     .dm-input-wrapper {
-      padding: 12px 16px;
+      padding: 10px 16px calc(10px + var(--safe-bottom)) 16px;
+      background: var(--bg-light);
       border-top: 1px solid var(--border-gray);
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
     }
 
     .dm-input-bubble {
@@ -922,6 +928,7 @@
       border-radius: var(--radius-squircle);
       padding: 10px 16px;
       gap: 10px;
+      background: #fff;
     }
 
     .dm-input-bubble input {
@@ -936,19 +943,24 @@
       cursor: pointer;
     }
 
+    /* BOTTOM NAV FIX */
     .bottom-nav {
-      height: calc(65px + var(--safe-bottom));
+      height: calc(58px + var(--safe-bottom));
       padding-bottom: var(--safe-bottom);
       background-color: #000;
       display: flex;
       justify-content: space-around;
       align-items: center;
       border-top: 1px solid #1a1a1a;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      position: relative;
       z-index: 100;
+      flex-shrink: 0;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    /* Hide Bottom Nav during active DM chat */
+    body.in-active-chat .bottom-nav {
+      display: none !important;
     }
 
     .nav-item {
@@ -1600,7 +1612,6 @@
         followBtn.style.display = 'block';
         editBtn.style.display = 'none';
 
-        // Check if currently following
         const myFollowing = myProfileData?.following || [];
         if (myFollowing.includes(viewedProfileUid)) {
           followBtn.innerText = "Following";
@@ -1611,7 +1622,6 @@
         }
       }
 
-      // Fetch Followers and Following count
       if (viewedProfileUid) {
         try {
           const userDoc = await getDoc(doc(db, "users", viewedProfileUid));
@@ -1620,7 +1630,6 @@
             document.getElementById('following-count').innerText = (data.following || []).length;
           }
 
-          // Count followers
           const q = query(collection(db, "users"));
           const snap = await getDocs(q);
           let followersCount = 0;
@@ -2126,7 +2135,6 @@
         
         let friends = [];
 
-        // Find mutual followers
         for (let userDoc of allUsersSnap.docs) {
           const uId = userDoc.id;
           if (uId === currentUser.uid) continue;
@@ -2135,7 +2143,6 @@
           const uFollowing = uData.following || [];
 
           if (myFollowing.includes(uId) && uFollowing.includes(currentUser.uid)) {
-            // Check last message in chat
             const chatId = getChatId(currentUser.uid, uId);
             const chatSnap = await getDoc(doc(db, "chats", chatId));
             let lastMessage = null;
@@ -2188,6 +2195,7 @@
 
     window.openActiveChat = function(friendUid, friendName) {
       activeChatFriendUid = friendUid;
+      document.body.classList.add('in-active-chat');
       document.getElementById('dm-list-container').style.display = 'none';
       document.getElementById('dm-chat-container').classList.add('active');
       document.getElementById('chat-target-name').innerText = friendName;
@@ -2220,6 +2228,7 @@
     window.closeActiveChat = function() {
       if (activeChatUnsubscribe) activeChatUnsubscribe();
       activeChatFriendUid = null;
+      document.body.classList.remove('in-active-chat');
       document.getElementById('dm-chat-container').classList.remove('active');
       document.getElementById('dm-list-container').style.display = 'flex';
       loadFriendsAndDms();
@@ -2254,6 +2263,10 @@
     };
 
     window.switchTab = function(screenId, navElement) {
+      if (document.body.classList.contains('in-active-chat')) {
+        closeActiveChat();
+      }
+
       document.querySelectorAll('.screen-view').forEach(screen => {
         screen.classList.remove('active');
       });
