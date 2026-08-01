@@ -254,9 +254,25 @@
       border: 1px solid rgba(255,255,255,0.6);
     }
 
+    .video-author-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+      min-width: 0;
+    }
+
     .video-author-handle {
       font-size: 14px;
       font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .video-author-date {
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.55);
     }
 
     /* ACTION BAR FIX */
@@ -677,6 +693,106 @@
       flex-direction: column;
       gap: 10px;
       margin-bottom: 20px;
+    }
+
+    /* PROFILE VIDEOS GRID */
+    .profile-videos-section {
+      border-top: 1px solid #f0f0f0;
+      padding-top: 2px;
+    }
+
+    .profile-videos-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+    }
+
+    .profile-video-cell {
+      position: relative;
+      aspect-ratio: 9 / 16;
+      background: #111;
+      overflow: hidden;
+    }
+
+    .profile-video-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #1a1a1a;
+      cursor: pointer;
+    }
+
+    .profile-video-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(0,0,0,0.55);
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .profile-video-plays {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+      cursor: pointer;
+    }
+
+    .video-cell-menu-btn {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .video-cell-menu-btn .icon-svg {
+      width: 14px;
+      height: 14px;
+      fill: #fff;
+    }
+
+    .video-cell-menu {
+      display: none;
+      position: absolute;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+      overflow: hidden;
+      z-index: 400;
+      min-width: 160px;
+    }
+
+    .video-cell-menu.active {
+      display: block;
+    }
+
+    .profile-videos-empty {
+      grid-column: span 3;
+      text-align: center;
+      color: #999;
+      font-size: 13px;
+      padding: 34px 0;
     }
 
     .btn-follow {
@@ -1542,7 +1658,10 @@
 
         <div class="video-author-bar" id="video-author-bar" style="display:none;">
           <img class="video-author-avatar" id="video-author-avatar" src="">
-          <span class="video-author-handle" id="video-author-handle">@user</span>
+          <div class="video-author-text">
+            <span class="video-author-handle" id="video-author-handle">@user</span>
+            <span class="video-author-date" id="video-author-date"></span>
+          </div>
         </div>
 
         <div class="upload-empty-state" id="upload-prompt">
@@ -1572,6 +1691,10 @@
           <div class="action-item" id="privacy-action-item" style="display:none;" onclick="toggleVideoPrivacy()">
             <svg class="icon-svg" id="privacy-icon" viewBox="0 0 24 24"><path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 016 0v3H9z"/></svg>
             <span class="action-count" id="privacy-label">Public</span>
+          </div>
+          <div class="action-item" id="delete-action-item" style="display:none;" onclick="confirmDeleteCurrentVideo()">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            <span class="action-count">Delete</span>
           </div>
         </div>
       </div>
@@ -1719,6 +1842,10 @@
           <button class="btn-follow" id="btn-follow-action" style="display:none;" onclick="toggleFollowUser()">Follow</button>
           <button class="btn-edit-profile" id="btn-edit-action" onclick="openEditModal()">Edit Profile</button>
         </div>
+
+        <div class="profile-videos-section">
+          <div class="profile-videos-grid" id="profile-videos-grid"></div>
+        </div>
       </div>
     </section>
 
@@ -1738,6 +1865,24 @@
         <div class="modal-buttons">
           <button class="modal-btn modal-btn-cancel" onclick="closeEditModal()">Cancel</button>
           <button class="modal-btn modal-btn-save" onclick="saveProfileChanges()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIDEO CELL MENU (privacy / delete on a profile grid thumbnail) -->
+    <div class="video-cell-menu" id="video-cell-menu">
+      <div class="profile-menu-item" id="video-cell-menu-privacy" onclick="cellMenuTogglePrivacy()">Make Private</div>
+      <div class="profile-menu-item danger" onclick="cellMenuDelete()">Delete</div>
+    </div>
+
+    <!-- GENERIC CONFIRM MODAL -->
+    <div class="modal-overlay" id="confirm-modal">
+      <div class="modal-content">
+        <h3 id="confirm-modal-title">Are you sure?</h3>
+        <p id="confirm-modal-text" style="font-size:14px; color:#666; line-height:1.4;"></p>
+        <div class="modal-buttons">
+          <button class="modal-btn modal-btn-cancel" onclick="closeConfirmModal()">Cancel</button>
+          <button class="modal-btn" id="confirm-modal-confirm-btn" style="background:var(--accent-pink); color:#fff;" onclick="confirmModalAction()">Delete</button>
         </div>
       </div>
     </div>
@@ -1814,7 +1959,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import {
-      getFirestore, doc, setDoc, getDoc, collection, getDocs,
+      getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs,
       addDoc, query, orderBy, where, limit, updateDoc, arrayUnion, arrayRemove,
       increment, serverTimestamp, runTransaction, onSnapshot
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -1839,6 +1984,9 @@
     let currentUser = null;
     let myProfileData = null;
     let viewedProfileUid = null;
+    let profileVideosCache = [];
+    let profileVideosIsOwn = false;
+    let videoCellMenuTargetId = null;
     let uploadedProfilePicData = null;
     let isLiked = false;
     let activeChatFriendUid = null;
@@ -1886,6 +2034,52 @@
       clearTimeout(showToast._t);
       showToast._t = setTimeout(() => el.classList.remove('visible'), duration);
     }
+
+    // Turns a Firestore Timestamp into a short, gray relative-date label
+    function formatUploadDate(timestamp) {
+      if (!timestamp) return 'Just now';
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+      if (diffSec < 60) return 'Just now';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `${diffMin}m ago`;
+      const diffHr = Math.floor(diffMin / 60);
+      if (diffHr < 24) return `${diffHr}h ago`;
+      const diffDay = Math.floor(diffHr / 24);
+      if (diffDay < 7) return `${diffDay}d ago`;
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: diffDay > 365 ? 'numeric' : undefined });
+    }
+
+    // Cloudinary auto-generates a jpg thumbnail (first frame) for a video
+    // just by swapping the file extension — no extra upload/API call needed.
+    function getVideoThumbnail(videoUrl) {
+      if (!videoUrl) return '';
+      const swapped = videoUrl.replace(/\.(mp4|mov|webm|mkv|avi|m4v)(\?.*)?$/i, '.jpg$2');
+      return swapped !== videoUrl ? swapped : videoUrl;
+    }
+
+    // ---- Generic confirm modal (used for destructive actions like delete) ----
+    let confirmModalCallback = null;
+
+    function openConfirmModal(title, text, confirmLabel, callback) {
+      document.getElementById('confirm-modal-title').innerText = title;
+      document.getElementById('confirm-modal-text').innerText = text;
+      document.getElementById('confirm-modal-confirm-btn').innerText = confirmLabel;
+      confirmModalCallback = callback;
+      document.getElementById('confirm-modal').classList.add('active');
+    }
+
+    window.closeConfirmModal = function() {
+      document.getElementById('confirm-modal').classList.remove('active');
+      confirmModalCallback = null;
+    };
+
+    window.confirmModalAction = function() {
+      const cb = confirmModalCallback;
+      document.getElementById('confirm-modal').classList.remove('active');
+      confirmModalCallback = null;
+      if (cb) cb();
+    };
 
     function loadCachedUserInstantly() {
       const lastUid = localStorage.getItem('riven_last_active_uid');
@@ -2107,8 +2301,114 @@
         } catch (e) {
           console.warn("Error getting counts:", e);
         }
+
+        loadProfileVideos(viewedProfileUid, isOwnProfile);
       }
     }
+
+    // ---- Profile videos grid (TikTok-style) ----
+    async function loadProfileVideos(targetUid, isOwn) {
+      profileVideosIsOwn = isOwn;
+      const grid = document.getElementById('profile-videos-grid');
+      if (!targetUid) { grid.innerHTML = ''; profileVideosCache = []; return; }
+      grid.innerHTML = `<div class="profile-videos-empty">Loading...</div>`;
+
+      try {
+        const q = query(collection(db, 'videos'), where('uid', '==', targetUid));
+        const snap = await getDocs(q);
+        let vids = [];
+        snap.forEach(d => {
+          const data = d.data();
+          if (data.isPrivate && !isOwn) return; // hide other people's private videos
+          vids.push({ id: d.id, ...data });
+        });
+        vids.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+        profileVideosCache = vids;
+        renderProfileVideosGrid(isOwn);
+      } catch (e) {
+        console.warn('Load profile videos error:', e);
+        grid.innerHTML = `<div class="profile-videos-empty">Could not load videos</div>`;
+      }
+    }
+
+    function renderProfileVideosGrid(isOwn) {
+      const grid = document.getElementById('profile-videos-grid');
+      if (!profileVideosCache || profileVideosCache.length === 0) {
+        grid.innerHTML = `<div class="profile-videos-empty">No videos yet</div>`;
+        return;
+      }
+
+      grid.innerHTML = profileVideosCache.map((v, idx) => `
+        <div class="profile-video-cell">
+          <img class="profile-video-thumb" src="${getVideoThumbnail(v.videoUrl)}" loading="lazy" onclick="openProfileVideo(${idx})" onerror="this.style.background='#1a1a1a'; this.removeAttribute('src');">
+          ${v.isPrivate ? `<div class="profile-video-badge"><svg class="icon-svg" style="width:12px;height:12px;fill:#fff;" viewBox="0 0 24 24"><path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 016 0v3H9z"/></svg></div>` : ''}
+          <div class="profile-video-plays" onclick="openProfileVideo(${idx})">
+            <svg class="icon-svg" style="width:11px;height:11px;fill:#fff;" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            ${(v.likesBy || []).length}
+          </div>
+          ${isOwn ? `<div class="video-cell-menu-btn" onclick="openVideoCellMenu(event, '${v.id}', ${!!v.isPrivate})"><svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    window.openProfileVideo = function(idx) {
+      if (!profileVideosCache || !profileVideosCache[idx]) return;
+      videoQueue = profileVideosCache.slice();
+      currentVideoIndex = idx;
+      switchTab('feed-screen', document.querySelector('.nav-item'));
+      renderCurrentVideo();
+    };
+
+    window.openVideoCellMenu = function(event, videoId, isPrivate) {
+      event.stopPropagation();
+      videoCellMenuTargetId = videoId;
+      const menu = document.getElementById('video-cell-menu');
+      document.getElementById('video-cell-menu-privacy').innerText = isPrivate ? 'Make Public' : 'Make Private';
+
+      const btn = event.currentTarget;
+      const rect = btn.getBoundingClientRect();
+      const containerRect = document.getElementById('app-container').getBoundingClientRect();
+      menu.style.top = (rect.bottom - containerRect.top + 4) + 'px';
+      menu.style.left = Math.max(8, Math.min(rect.left - containerRect.left, containerRect.width - 170)) + 'px';
+      menu.classList.add('active');
+    };
+
+    document.addEventListener('click', (e) => {
+      const cellMenu = document.getElementById('video-cell-menu');
+      if (cellMenu && cellMenu.classList.contains('active') && !cellMenu.contains(e.target) && !e.target.closest('.video-cell-menu-btn')) {
+        cellMenu.classList.remove('active');
+      }
+    });
+
+    window.cellMenuTogglePrivacy = async function() {
+      document.getElementById('video-cell-menu').classList.remove('active');
+      const id = videoCellMenuTargetId;
+      if (!id) return;
+      const v = profileVideosCache.find(pv => pv.id === id);
+      if (!v) return;
+
+      const newVal = !v.isPrivate;
+      v.isPrivate = newVal;
+      renderProfileVideosGrid(profileVideosIsOwn);
+      showToast(newVal ? 'Video set to private' : 'Video set to public');
+
+      try {
+        await updateDoc(doc(db, 'videos', id), { isPrivate: newVal });
+        const inFeed = videoQueue.find(qv => qv.id === id);
+        if (inFeed) inFeed.isPrivate = newVal;
+        if (currentVideoIndex >= 0 && videoQueue[currentVideoIndex]?.id === id) renderCurrentVideo();
+      } catch (e) {
+        console.warn('Privacy update error:', e);
+        showToast('Could not update privacy');
+      }
+    };
+
+    window.cellMenuDelete = function() {
+      document.getElementById('video-cell-menu').classList.remove('active');
+      const id = videoCellMenuTargetId;
+      if (!id) return;
+      openConfirmModal('Delete video?', 'This permanently removes the video from Riven. This cannot be undone.', 'Delete', () => deleteVideoById(id, false));
+    };
 
     // FOLLOW FUNCTIONALITY
     window.toggleFollowUser = async function() {
@@ -2333,6 +2633,7 @@
       rightActionBar.classList.add('visible');
       authorBar.style.display = 'flex';
       document.getElementById('video-author-handle').innerText = '@' + (v.authorHandle || 'user');
+      document.getElementById('video-author-date').innerText = formatUploadDate(v.createdAt);
       document.getElementById('video-author-avatar').src = v.authorPfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23333\'/></svg>';
 
       const likesBy = v.likesBy || [];
@@ -2341,14 +2642,18 @@
       document.getElementById('like-icon').style.fill = isLiked ? '#ff2d55' : 'currentColor';
       document.getElementById('comment-count').innerText = v.commentsCount || 0;
 
-      // Owner-only privacy toggle
+      // Owner-only privacy toggle + delete
       const privacyItem = document.getElementById('privacy-action-item');
-      if (currentUser && v.uid === currentUser.uid) {
+      const deleteItem = document.getElementById('delete-action-item');
+      const isOwner = currentUser && v.uid === currentUser.uid;
+      if (isOwner) {
         privacyItem.style.display = 'flex';
+        deleteItem.style.display = 'flex';
         document.getElementById('privacy-label').innerText = v.isPrivate ? 'Private' : 'Public';
         document.getElementById('privacy-icon').style.fill = v.isPrivate ? '#ff2d55' : 'currentColor';
       } else {
         privacyItem.style.display = 'none';
+        deleteItem.style.display = 'none';
       }
     }
 
@@ -2404,11 +2709,49 @@
 
       try {
         await updateDoc(doc(db, 'videos', v.id), { isPrivate: v.isPrivate });
+        if (profileVideosCache) {
+          const cached = profileVideosCache.find(pv => pv.id === v.id);
+          if (cached) cached.isPrivate = v.isPrivate;
+        }
       } catch (e) {
         console.warn('Privacy update error:', e);
         showToast('Could not update privacy');
       }
     };
+
+    window.confirmDeleteCurrentVideo = function() {
+      if (currentVideoIndex < 0) return;
+      const v = videoQueue[currentVideoIndex];
+      if (!currentUser || v.uid !== currentUser.uid) return;
+      openConfirmModal('Delete video?', 'This permanently removes the video from Riven. This cannot be undone.', 'Delete', () => deleteVideoById(v.id, true));
+    };
+
+    // Deletes a video's Firestore record. `fromFeed` re-renders the feed queue;
+    // otherwise the caller (e.g. the profile grid) handles its own re-render.
+    async function deleteVideoById(videoId, fromFeed) {
+      try {
+        await deleteDoc(doc(db, 'videos', videoId));
+        showToast('Video deleted');
+      } catch (e) {
+        console.error('Delete video error:', e);
+        showToast('Could not delete video');
+        return;
+      }
+
+      if (profileVideosCache) {
+        profileVideosCache = profileVideosCache.filter(pv => pv.id !== videoId);
+        renderProfileVideosGrid(profileVideosIsOwn);
+      }
+
+      if (fromFeed) {
+        const idx = videoQueue.findIndex(qv => qv.id === videoId);
+        if (idx >= 0) {
+          videoQueue.splice(idx, 1);
+          if (currentVideoIndex >= videoQueue.length) currentVideoIndex = videoQueue.length - 1;
+          renderCurrentVideo();
+        }
+      }
+    }
 
     // ---- Upload flow ----
     window.triggerUploadFlow = function() {
