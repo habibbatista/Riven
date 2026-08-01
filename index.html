@@ -315,6 +315,39 @@
       text-shadow: 0 1px 2px rgba(0,0,0,0.6);
     }
 
+    /* AUDIO SPINNING DISC */
+    .audio-disc-item {
+      margin-top: 2px;
+    }
+
+    .audio-disc {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,0.85);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+      background: #222;
+      animation: discSpin 3.2s linear infinite;
+      animation-play-state: paused;
+    }
+
+    .audio-disc.spinning {
+      animation-play-state: running;
+    }
+
+    .audio-disc img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    @keyframes discSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
     /* SEARCH OVERLAY */
     #search-overlay {
       position: absolute;
@@ -1649,6 +1682,7 @@
 
       <div class="video-viewport" id="video-container">
         <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted></video>
+        <audio id="feed-audio-player" style="display:none;"></audio>
 
         <div class="custom-play-overlay" id="custom-play-indicator">
           <div class="play-icon-circle">
@@ -1672,7 +1706,8 @@
             <svg class="icon-svg" style="width:18px; height:18px; fill:#000;" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
             Upload or Record Video
           </label>
-          <input type="file" id="video-file-input" accept="video/*" capture="environment">
+          <input type="file" id="video-file-input" accept="video/*">
+          <input type="file" id="audio-file-input" accept="audio/*">
         </div>
 
         <div class="right-action-bar" id="right-action-bar">
@@ -1695,6 +1730,11 @@
           <div class="action-item" id="delete-action-item" style="display:none;" onclick="confirmDeleteCurrentVideo()">
             <svg class="icon-svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             <span class="action-count">Delete</span>
+          </div>
+          <div class="action-item audio-disc-item" id="audio-disc-item" style="display:none;">
+            <div class="audio-disc" id="audio-disc">
+              <img id="audio-disc-img" src="" alt="">
+            </div>
           </div>
         </div>
       </div>
@@ -1869,6 +1909,21 @@
       </div>
     </div>
 
+    <!-- ADD AUDIO PROMPT MODAL -->
+    <div class="modal-overlay" id="audio-prompt-modal">
+      <div class="modal-content">
+        <h3>Add sound to your video?</h3>
+        <p style="font-size:14px; color:#666; line-height:1.4;">Choose an audio file from your device to play with this video, or skip to keep the video's original sound.</p>
+        <label for="audio-file-input" class="pfp-upload-label">
+          <svg class="icon-svg" style="width:16px; height:16px; fill:#333;" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z"/></svg>
+          Choose Audio from Device
+        </label>
+        <div class="modal-buttons">
+          <button class="modal-btn modal-btn-cancel" onclick="skipAudioAndPost()">Skip</button>
+        </div>
+      </div>
+    </div>
+
     <!-- VIDEO CELL MENU (privacy / delete on a profile grid thumbnail) -->
     <div class="video-cell-menu" id="video-cell-menu">
       <div class="profile-menu-item" id="video-cell-menu-privacy" onclick="cellMenuTogglePrivacy()">Make Private</div>
@@ -1991,6 +2046,8 @@
     let isLiked = false;
     let activeChatFriendUid = null;
     let activeChatUnsubscribe = null;
+    let pendingVideoFile = null;
+    let pendingAudioFile = null;
 
     // ---- Call state ----
     const RTC_CONFIG = {
@@ -2599,6 +2656,10 @@
     }
 
     function renderCurrentVideo() {
+      const feedAudio = document.getElementById('feed-audio-player');
+      const audioDiscItem = document.getElementById('audio-disc-item');
+      const audioDisc = document.getElementById('audio-disc');
+
       if (currentVideoIndex < 0 || videoQueue.length === 0) {
         videoPlayer.pause();
         videoPlayer.removeAttribute('src');
@@ -2606,6 +2667,11 @@
         rightActionBar.classList.remove('visible');
         authorBar.style.display = 'none';
         uploadPrompt.style.display = 'flex';
+
+        feedAudio.pause();
+        feedAudio.removeAttribute('src');
+        audioDiscItem.style.display = 'none';
+        audioDisc.classList.remove('spinning');
 
         if (currentUser) {
           document.getElementById('empty-feed-title').innerText = 'No videos yet';
@@ -2627,6 +2693,28 @@
       videoPlayer.classList.remove('video-fade-in');
       void videoPlayer.offsetWidth;
       videoPlayer.classList.add('video-fade-in');
+
+      // If this video has a separate audio track attached, mute the video's
+      // own sound and play the attached audio in sync instead.
+      if (v.audioUrl) {
+        videoPlayer.muted = true;
+        audioDiscItem.style.display = 'flex';
+        document.getElementById('audio-disc-img').src = v.audioOwnerPfp || v.authorPfp || DEFAULT_AVATAR_SVG;
+        if (feedAudio.getAttribute('src') !== v.audioUrl) {
+          feedAudio.src = v.audioUrl;
+        }
+        feedAudio.loop = true;
+        feedAudio.currentTime = 0;
+        feedAudio.play().catch(() => {});
+        audioDisc.classList.add('spinning');
+      } else {
+        videoPlayer.muted = false;
+        feedAudio.pause();
+        feedAudio.removeAttribute('src');
+        audioDiscItem.style.display = 'none';
+        audioDisc.classList.remove('spinning');
+      }
+
       videoPlayer.play().catch(() => {});
       showPlayIndicator(false);
 
@@ -2683,8 +2771,18 @@
     videoContainer.addEventListener('click', function(e) {
       if (e.target.closest('.right-action-bar') || e.target.closest('#upload-prompt')) return;
       if (!videoPlayer.src) return;
-      if (videoPlayer.paused) { videoPlayer.play(); showPlayIndicator(false); }
-      else { videoPlayer.pause(); showPlayIndicator(true); }
+      const feedAudio = document.getElementById('feed-audio-player');
+      const audioDisc = document.getElementById('audio-disc');
+      if (videoPlayer.paused) {
+        videoPlayer.play();
+        if (feedAudio.getAttribute('src')) { feedAudio.play().catch(() => {}); audioDisc.classList.add('spinning'); }
+        showPlayIndicator(false);
+      }
+      else {
+        videoPlayer.pause();
+        if (feedAudio.getAttribute('src')) { feedAudio.pause(); audioDisc.classList.remove('spinning'); }
+        showPlayIndicator(true);
+      }
     });
 
     function showPlayIndicator(paused) {
@@ -2763,7 +2861,10 @@
       document.getElementById('video-file-input').click();
     };
 
-    document.getElementById('video-file-input').addEventListener('change', async function(event) {
+    // Selecting a video no longer uploads immediately — it first asks whether
+    // to attach a separate audio track (picked from the device's file library,
+    // not a forced native camera/mic capture).
+    document.getElementById('video-file-input').addEventListener('change', function(event) {
       const file = event.target.files[0];
       event.target.value = '';
       if (!file) return;
@@ -2774,6 +2875,31 @@
         return;
       }
 
+      pendingVideoFile = file;
+      pendingAudioFile = null;
+      document.getElementById('audio-prompt-modal').classList.add('active');
+    });
+
+    window.skipAudioAndPost = function() {
+      document.getElementById('audio-prompt-modal').classList.remove('active');
+      const file = pendingVideoFile;
+      pendingVideoFile = null;
+      uploadVideoWithAudio(file, null);
+    };
+
+    document.getElementById('audio-file-input').addEventListener('change', function(event) {
+      const audioFile = event.target.files[0];
+      event.target.value = '';
+      document.getElementById('audio-prompt-modal').classList.remove('active');
+      if (!pendingVideoFile) return;
+      const videoFile = pendingVideoFile;
+      pendingVideoFile = null;
+      pendingAudioFile = null;
+      uploadVideoWithAudio(videoFile, audioFile || null);
+    });
+
+    async function uploadVideoWithAudio(file, audioFile) {
+      if (!file) return;
       try {
         showToast('Uploading video...', 60000);
 
@@ -2785,14 +2911,41 @@
           `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`,
           { method: 'POST', body: formData }
         );
-        
+
         const uploadResult = await uploadResponse.json();
         if (!uploadResponse.ok) {
           throw new Error(uploadResult?.error?.message || 'Cloudinary upload failed');
         }
         const videoUrl = uploadResult.secure_url;
 
-        const newDocRef = await addDoc(collection(db, 'videos'), {
+        let audioUrl = null;
+        let audioName = null;
+        if (audioFile) {
+          showToast('Uploading audio...', 60000);
+          const audioForm = new FormData();
+          audioForm.append('file', audioFile);
+          audioForm.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+          try {
+            const audioUploadResponse = await fetch(
+              `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`,
+              { method: 'POST', body: audioForm }
+            );
+            const audioUploadResult = await audioUploadResponse.json();
+            if (audioUploadResponse.ok) {
+              audioUrl = audioUploadResult.secure_url;
+              audioName = audioFile.name || 'Custom audio';
+            } else {
+              console.warn('Audio upload failed:', audioUploadResult);
+              showToast('Audio upload failed — posting with original sound');
+            }
+          } catch (audioErr) {
+            console.warn('Audio upload error:', audioErr);
+            showToast('Audio upload failed — posting with original sound');
+          }
+        }
+
+        const baseFields = {
           uid: currentUser.uid,
           authorName: myProfileData?.name || currentUser.displayName || 'User',
           authorHandle: myProfileData?.handle || 'user',
@@ -2800,29 +2953,28 @@
           videoUrl,
           likesBy: [],
           commentsCount: 0,
-          isPrivate: false,
+          isPrivate: false
+        };
+        if (audioUrl) {
+          baseFields.audioUrl = audioUrl;
+          baseFields.audioName = audioName;
+          baseFields.audioOwnerPfp = myProfileData?.pfp || currentUser.photoURL || '';
+        }
+
+        const newDocRef = await addDoc(collection(db, 'videos'), {
+          ...baseFields,
           createdAt: serverTimestamp()
         });
 
-        videoQueue.unshift({
-          id: newDocRef.id,
-          uid: currentUser.uid,
-          authorName: myProfileData?.name || 'User',
-          authorHandle: myProfileData?.handle || 'user',
-          authorPfp: myProfileData?.pfp || '',
-          videoUrl,
-          likesBy: [],
-          commentsCount: 0,
-          isPrivate: false
-        });
+        videoQueue.unshift({ id: newDocRef.id, ...baseFields });
         currentVideoIndex = 0;
         renderCurrentVideo();
-        showToast('Video posted!');
+        showToast(audioUrl ? 'Video posted with audio!' : 'Video posted!');
       } catch (err) {
         console.error('Upload error:', err);
         showToast(err.message || 'Upload failed. Please check preset settings.');
       }
-    });
+    }
 
     // ---- Like ----
     window.toggleLike = async function() {
