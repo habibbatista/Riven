@@ -149,6 +149,11 @@
       -webkit-appearance: none;
     }
 
+    .video-frame {
+      width: 100%;
+      height: 100%;
+    }
+
     video::-webkit-media-controls,
     video::-webkit-media-controls-container,
     video::-webkit-media-controls-panel,
@@ -929,6 +934,66 @@
 
     .modal-btn-cancel { background: #eee; color: #333; }
     .modal-btn-save { background: #000; color: #fff; }
+
+    /* SWITCH ACCOUNT LIST */
+    .switch-account-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .switch-account-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      background: #f7f7f7;
+    }
+
+    .switch-account-row:active {
+      background: #eee;
+    }
+
+    .switch-account-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #ddd;
+      flex-shrink: 0;
+    }
+
+    .switch-account-info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .switch-account-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .switch-account-handle {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .switch-account-empty {
+      color: #999;
+      font-size: 13px;
+      text-align: center;
+      padding: 14px 0;
+    }
 
     /* DM SCREEN */
     #dm-screen {
@@ -1711,7 +1776,9 @@
       </div>
 
       <div class="video-viewport" id="video-container">
-        <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted></video>
+        <div class="video-frame" id="video-frame">
+          <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted></video>
+        </div>
         <audio id="feed-audio-player" style="display:none;"></audio>
 
         <div class="custom-play-overlay" id="custom-play-indicator">
@@ -1877,6 +1944,7 @@
           </button>
           <div class="profile-menu-dropdown" id="profile-menu-dropdown">
             <div class="profile-menu-item" onclick="toggleProfileMenu(); openEditModal();">Edit Profile</div>
+            <div class="profile-menu-item" onclick="openSwitchAccountModal();">Switch Account</div>
             <div class="profile-menu-item danger" onclick="logoutUser()">Log Out</div>
           </div>
         </div>
@@ -1972,6 +2040,18 @@
       </div>
     </div>
 
+    <!-- SWITCH ACCOUNT MODAL -->
+    <div class="modal-overlay" id="switch-account-modal">
+      <div class="modal-content">
+        <h3>Switch Account</h3>
+        <div id="switch-account-list" class="switch-account-list"></div>
+        <div class="modal-buttons" style="justify-content: space-between;">
+          <button class="modal-btn modal-btn-cancel" onclick="closeSwitchAccountModal()">Cancel</button>
+          <button class="modal-btn modal-btn-save" onclick="addAnotherAccount()">+ Add Account</button>
+        </div>
+      </div>
+    </div>
+
     <!-- INCOMING CALL OVERLAY -->
     <div id="incoming-call-overlay">
       <div class="incoming-call-card">
@@ -2062,6 +2142,9 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
+    // Always show Google's account chooser instead of silently reusing the
+    // last session — required for a working "switch accounts" experience.
+    provider.setCustomParameters({ prompt: 'select_account' });
 
     const CLOUDINARY_CLOUD_NAME = "vmceqcad";
     const CLOUDINARY_UPLOAD_PRESET = "ml_default";
@@ -2284,6 +2367,92 @@
       }
     }
 
+    // ---- Switch Account ----
+    // We keep a small local (this-device-only) list of accounts that have
+    // signed in before, so the switcher can show a friendly picker. Actually
+    // switching still goes through Google's own account chooser (we can't
+    // securely re-authenticate as another account without it), but passing
+    // that account's email as a login_hint lets Google skip straight to it.
+    function getKnownAccounts() {
+      try {
+        return JSON.parse(localStorage.getItem('riven_known_accounts') || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveKnownAccount(uid, name, handle, pfp, email) {
+      if (!uid) return;
+      let list = getKnownAccounts().filter(a => a.uid !== uid);
+      list.unshift({ uid, name, handle, pfp, email: email || null });
+      localStorage.setItem('riven_known_accounts', JSON.stringify(list.slice(0, 6)));
+    }
+
+    function renderSwitchAccountList() {
+      const container = document.getElementById('switch-account-list');
+      const known = getKnownAccounts().filter(a => a.uid !== currentUser?.uid);
+
+      if (known.length === 0) {
+        container.innerHTML = `<div class="switch-account-empty">No other accounts on this device yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = known.map(a => `
+        <div class="switch-account-row" onclick="switchToAccount('${a.uid}')">
+          <img class="switch-account-avatar" src="${a.pfp || DEFAULT_AVATAR_SVG}">
+          <div class="switch-account-info">
+            <span class="switch-account-name">${a.name || 'User'}</span>
+            <span class="switch-account-handle">@${a.handle || 'user'}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.openSwitchAccountModal = function() {
+      toggleProfileMenu(true);
+      renderSwitchAccountList();
+      document.getElementById('switch-account-modal').classList.add('active');
+    };
+
+    window.closeSwitchAccountModal = function() {
+      document.getElementById('switch-account-modal').classList.remove('active');
+    };
+
+    window.switchToAccount = async function(uid) {
+      const known = getKnownAccounts().find(a => a.uid === uid);
+      document.getElementById('switch-account-modal').classList.remove('active');
+
+      try { await signOut(auth); } catch (e) {}
+
+      provider.setCustomParameters({
+        prompt: 'select_account',
+        login_hint: known?.email || ''
+      });
+
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        console.error('Switch account error:', e);
+        showToast('Could not switch accounts');
+      } finally {
+        provider.setCustomParameters({ prompt: 'select_account' });
+      }
+    };
+
+    window.addAnotherAccount = async function() {
+      document.getElementById('switch-account-modal').classList.remove('active');
+
+      try { await signOut(auth); } catch (e) {}
+      provider.setCustomParameters({ prompt: 'select_account' });
+
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        console.error('Add account error:', e);
+        showToast('Sign-in failed. Please try again.');
+      }
+    };
+
     onAuthStateChanged(auth, async (user) => {
       currentUser = user;
       const loggedOutBox = document.getElementById('logged-out-state');
@@ -2325,6 +2494,8 @@
             updateProfileDisplay(myProfileData.name, myProfileData.handle, myProfileData.pfp, true, user.uid);
           }
         }
+
+        saveKnownAccount(user.uid, myProfileData?.name, myProfileData?.handle, myProfileData?.pfp, user.email);
 
         loadFeed();
         loadFriendsAndDms();
@@ -2660,6 +2831,7 @@
     // ---------------- FEED / VIDEO FEATURE ----------------
 
     const videoPlayer = document.getElementById('feed-video-player');
+    const videoFrame = document.getElementById('video-frame');
     const videoContainer = document.getElementById('video-container');
     const uploadPrompt = document.getElementById('upload-prompt');
     const playIndicator = document.getElementById('custom-play-indicator');
@@ -2723,15 +2895,17 @@
 
       // Swipe navigation gets a 0.75s slide transition; any other trigger
       // (initial load, likes, privacy toggles, opening from a profile grid)
-      // keeps the quick fade-in instead.
-      videoPlayer.classList.remove('video-fade-in', 'video-slide-up', 'video-slide-down');
-      void videoPlayer.offsetWidth;
+      // keeps the quick fade-in instead. Animating the wrapper div instead of
+      // the <video> element itself avoids a Safari/iOS quirk where transforms
+      // applied directly to <video> don't reliably animate.
+      videoFrame.classList.remove('video-fade-in', 'video-slide-up', 'video-slide-down');
+      void videoFrame.offsetWidth;
       if (direction === 'up') {
-        videoPlayer.classList.add('video-slide-up');
+        videoFrame.classList.add('video-slide-up');
       } else if (direction === 'down') {
-        videoPlayer.classList.add('video-slide-down');
+        videoFrame.classList.add('video-slide-down');
       } else {
-        videoPlayer.classList.add('video-fade-in');
+        videoFrame.classList.add('video-fade-in');
       }
 
       // If this video has a separate audio track attached, mute the video's
@@ -2793,6 +2967,8 @@
       renderCurrentVideo(delta > 0 ? 'up' : 'down');
     }
 
+    let justSwiped = false;
+
     videoContainer.addEventListener('touchstart', (e) => {
       touchStartY = e.touches[0].clientY;
     }, { passive: true });
@@ -2803,12 +2979,20 @@
       touchStartY = null;
 
       if (Math.abs(deltaY) > 60) {
+        e.preventDefault();
+        // Mobile browsers fire a synthetic "click" right after touchend even
+        // when preventDefault is called on some engines; swallow it so it
+        // doesn't immediately pause the video we just swiped to.
+        justSwiped = true;
+        clearTimeout(justSwiped._t);
+        justSwiped._t = setTimeout(() => { justSwiped = false; }, 400);
         if (deltaY < 0) goToVideo(1); else goToVideo(-1);
         return;
       }
     });
 
     videoContainer.addEventListener('click', function(e) {
+      if (justSwiped) return;
       if (e.target.closest('.right-action-bar') || e.target.closest('#upload-prompt')) return;
       if (!videoPlayer.src) return;
       const feedAudio = document.getElementById('feed-audio-player');
