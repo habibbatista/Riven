@@ -144,7 +144,7 @@
     #feed-video-player {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       display: none;
       -webkit-appearance: none;
     }
@@ -2968,6 +2968,7 @@
     }
 
     let justSwiped = false;
+    let justSwipedTimeout = null;
 
     videoContainer.addEventListener('touchstart', (e) => {
       touchStartY = e.touches[0].clientY;
@@ -2984,8 +2985,8 @@
         // when preventDefault is called on some engines; swallow it so it
         // doesn't immediately pause the video we just swiped to.
         justSwiped = true;
-        clearTimeout(justSwiped._t);
-        justSwiped._t = setTimeout(() => { justSwiped = false; }, 400);
+        clearTimeout(justSwipedTimeout);
+        justSwipedTimeout = setTimeout(() => { justSwiped = false; }, 400);
         if (deltaY < 0) goToVideo(1); else goToVideo(-1);
         return;
       }
