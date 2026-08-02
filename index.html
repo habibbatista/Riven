@@ -7,6 +7,10 @@
 
   <!-- Preconnect to primary asset origins to speed up fetch/upload loading times -->
   <link rel="preconnect" href="https://api.cloudinary.com">
+  <!-- res.cloudinary.com is where the actual video/image bytes stream from —
+       distinct from api.cloudinary.com (uploads only) — so this is the
+       connection that matters for feed playback speed. -->
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com">
   <link rel="preconnect" href="https://www.gstatic.com">
 
@@ -152,6 +156,12 @@
       position: relative;
       background: #000;
       overflow: hidden;
+    }
+
+    /* Plain gray placeholder shown only while the feed is still fetching,
+       so there's no flash of the "No videos yet" empty state beforehand. */
+    .video-viewport.feed-loading {
+      background: #2c2c2e;
     }
 
     #feed-video-player {
@@ -1780,7 +1790,7 @@
 
       <div class="video-viewport" id="video-container">
         <div class="video-frame" id="video-frame">
-          <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted></video>
+          <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted preload="auto"></video>
 
           <div class="custom-play-overlay" id="custom-play-indicator">
             <div class="play-icon-circle">
@@ -1825,6 +1835,13 @@
           </div>
         </div>
         <audio id="feed-audio-player" style="display:none;"></audio>
+
+        <!-- Hidden buffers that silently start fetching the next/previous
+             video's bytes as soon as the current one renders, so by the time
+             the person actually swipes, the browser already has it cached
+             and playback starts instantly instead of stalling to buffer. -->
+        <video id="preload-video-next" style="display:none;" preload="auto" muted playsinline webkit-playsinline></video>
+        <video id="preload-video-prev" style="display:none;" preload="auto" muted playsinline webkit-playsinline></video>
 
         <div class="upload-empty-state" id="upload-prompt">
           <svg class="icon-svg" style="width:48px; height:48px; fill:#555;" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/></svg>
@@ -1909,7 +1926,7 @@
       </div>
 
       <div class="profile-authenticated" id="logged-in-state" style="display:none;">
-        <div class="profile-top-bar">
+        <div class="profile-top-bar" id="profile-top-bar">
           <button class="menu-dots-btn" onclick="toggleProfileMenu()">
             <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
           </button>
@@ -2225,6 +2242,10 @@
     let videoQueue = [];
     let currentVideoIndex = -1;
     let touchStartY = null;
+    // True until the first loadFeed() call resolves. While true, an empty
+    // queue means "still fetching," so we show a plain gray screen instead
+    // of flashing the "No videos yet / sign in to post" empty state first.
+    let feedLoading = true;
 
     function generateRandomUserHandle() {
       return `user${Math.floor(100000 + Math.random() * 900000)}`;
@@ -2555,6 +2576,15 @@
 
       const followBtn = document.getElementById('btn-follow-action');
       const editBtn = document.getElementById('btn-edit-action');
+      // The "..." menu (Edit Profile / Switch Account / Log Out) must only
+      // ever act on YOUR OWN account. It used to stay visible and functional
+      // while viewing someone else's profile, which let you open the edit
+      // modal pre-filled with their name/handle and glitch the UI (or worse,
+      // save changes that clobbered your own account's data). Hide it
+      // entirely unless this is truly your own profile.
+      const topBar = document.getElementById('profile-top-bar');
+      if (topBar) topBar.style.display = isOwnProfile ? 'flex' : 'none';
+      toggleProfileMenu(true);
 
       if (isOwnProfile) {
         followBtn.style.display = 'none';
@@ -2805,6 +2835,12 @@
 
     // EDIT PROFILE
     window.openEditModal = function() {
+      // Guard against editing anyone but yourself, even if triggered by a
+      // stale click on a menu that hadn't hidden yet.
+      if (!currentUser || viewedProfileUid !== currentUser.uid) {
+        showToast("You can only edit your own profile");
+        return;
+      }
       document.getElementById('edit-name-input').value = document.getElementById('user-display-name').innerText;
       document.getElementById('edit-handle-input').value = document.getElementById('user-display-handle').innerText.replace('@', '');
       uploadedProfilePicData = null;
@@ -2886,6 +2922,7 @@
         console.warn("Feed load error:", e);
         videoQueue = [];
       }
+      feedLoading = false;
       currentVideoIndex = videoQueue.length > 0 ? 0 : -1;
       renderCurrentVideo();
     }
@@ -2901,20 +2938,28 @@
         videoPlayer.style.display = 'none';
         rightActionBar.classList.remove('visible');
         authorBar.style.display = 'none';
-        uploadPrompt.style.display = 'flex';
 
         feedAudio.pause();
         feedAudio.removeAttribute('src');
         audioDiscItem.style.display = 'none';
         audioDisc.classList.remove('spinning');
 
-        if (currentUser) {
-          document.getElementById('empty-feed-title').innerText = 'No videos yet';
-          document.getElementById('empty-feed-text').innerText = 'Nobody has posted a video yet. Be the first to upload one.';
-          document.getElementById('upload-label').classList.remove('disabled');
+        if (feedLoading) {
+          // Still fetching — show a plain gray screen rather than flashing
+          // the "No videos yet" empty state for a moment before videos pop in.
+          uploadPrompt.style.display = 'none';
+          videoContainer.classList.add('feed-loading');
         } else {
-          document.getElementById('empty-feed-title').innerText = 'No videos yet';
-          document.getElementById('empty-feed-text').innerText = 'Sign in to be the first to post a video.';
+          // Fetch finished and there really are zero videos (true empty state).
+          videoContainer.classList.remove('feed-loading');
+          uploadPrompt.style.display = 'flex';
+          if (currentUser) {
+            document.getElementById('empty-feed-title').innerText = 'No videos yet';
+            document.getElementById('empty-feed-text').innerText = 'Nobody has posted a video yet. Be the first to upload one.';
+          } else {
+            document.getElementById('empty-feed-title').innerText = 'No videos yet';
+            document.getElementById('empty-feed-text').innerText = 'Sign in to be the first to post a video.';
+          }
           document.getElementById('upload-label').classList.remove('disabled');
         }
         return;
@@ -2922,6 +2967,7 @@
 
       const v = videoQueue[currentVideoIndex];
       uploadPrompt.style.display = 'none';
+      videoContainer.classList.remove('feed-loading');
       videoPlayer.style.display = 'block';
       videoPlayer.src = v.videoUrl;
       videoPlayer.currentTime = 0;
@@ -2966,6 +3012,7 @@
 
       videoPlayer.play().catch(() => {});
       showPlayIndicator(false);
+      preloadAdjacentVideos();
 
       rightActionBar.classList.add('visible');
       authorBar.style.display = 'flex';
@@ -2991,6 +3038,37 @@
       } else {
         privacyItem.style.display = 'none';
         deleteItem.style.display = 'none';
+      }
+    }
+
+    const preloadVideoNext = document.getElementById('preload-video-next');
+    const preloadVideoPrev = document.getElementById('preload-video-prev');
+
+    // Warms the browser's cache for the video one swipe away in each
+    // direction. It's a silent, muted, invisible <video> — we just set its
+    // src and let it start fetching; we never play it. When the person
+    // actually swipes there, the real player requests the same URL and gets
+    // served from cache instead of stalling on a fresh network fetch.
+    function preloadAdjacentVideos() {
+      const nextVideo = videoQueue[currentVideoIndex + 1];
+      const prevVideo = videoQueue[currentVideoIndex - 1];
+
+      if (nextVideo && preloadVideoNext.getAttribute('data-src') !== nextVideo.videoUrl) {
+        preloadVideoNext.setAttribute('data-src', nextVideo.videoUrl);
+        preloadVideoNext.src = nextVideo.videoUrl;
+        preloadVideoNext.load();
+      } else if (!nextVideo) {
+        preloadVideoNext.removeAttribute('data-src');
+        preloadVideoNext.removeAttribute('src');
+      }
+
+      if (prevVideo && preloadVideoPrev.getAttribute('data-src') !== prevVideo.videoUrl) {
+        preloadVideoPrev.setAttribute('data-src', prevVideo.videoUrl);
+        preloadVideoPrev.src = prevVideo.videoUrl;
+        preloadVideoPrev.load();
+      } else if (!prevVideo) {
+        preloadVideoPrev.removeAttribute('data-src');
+        preloadVideoPrev.removeAttribute('src');
       }
     }
 
