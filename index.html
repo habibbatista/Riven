@@ -1924,7 +1924,12 @@
       <div class="logged-out-box" id="logged-out-state">
         <svg class="icon-svg" style="width:64px; height:64px; fill:#ccc;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
         <h2>Please log in first</h2>
-        <p>Sign in with Google to view your profile.</p>
+        <p>Sign in to view your profile.</p>
+        <!-- Only shown on Apple platforms (iOS/iPadOS/macOS/watchOS/visionOS/tvOS) via isApplePlatform() at load time -->
+        <button class="btn-follow" id="apple-signin-btn" style="display:none; max-width: 240px; background:#000; gap:8px; align-items:center; justify-content:center;" onclick="signInWithApple()">
+          <svg class="icon-svg" style="width:18px; height:18px; fill:#fff; vertical-align:-4px; margin-right:6px;" viewBox="0 0 384 512"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+          Sign in with Apple
+        </button>
         <button class="btn-follow" style="max-width: 240px; background:#000;" onclick="signInWithGoogle()">Sign in with Google</button>
       </div>
 
@@ -2147,7 +2152,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import {
       getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs,
       addDoc, query, orderBy, where, limit, updateDoc, arrayUnion, arrayRemove,
@@ -2170,6 +2175,15 @@
     // Always show Google's account chooser instead of silently reusing the
     // last session — required for a working "switch accounts" experience.
     provider.setCustomParameters({ prompt: 'select_account' });
+
+    // "Sign in with Apple" — this ALSO requires the Apple provider to be
+    // configured in the Firebase console (Authentication → Sign-in method →
+    // Apple), with a Services ID, a key, and the authorized redirect URIs
+    // set up in the Apple Developer portal. Without that one-time setup,
+    // this will fail at runtime with auth/operation-not-allowed.
+    const appleProvider = new OAuthProvider('apple.com');
+    appleProvider.addScope('email');
+    appleProvider.addScope('name');
 
     const CLOUDINARY_CLOUD_NAME = "vmceqcad";
     const CLOUDINARY_UPLOAD_PRESET = "ml_default";
@@ -2365,6 +2379,40 @@
         showToast("Sign-in failed. Please try again.");
       }
     };
+
+    window.signInWithApple = async function() {
+      try {
+        await signInWithPopup(auth, appleProvider);
+      } catch (error) {
+        console.error("Apple Auth Error:", error);
+        if (error?.code === 'auth/operation-not-allowed') {
+          showToast("Apple sign-in isn't configured yet.");
+        } else {
+          showToast("Sign-in failed. Please try again.");
+        }
+      }
+    };
+
+    // Detects Apple platforms (iOS/iPadOS/macOS/watchOS/visionOS/tvOS) so
+    // the Apple sign-in button only shows there — best-effort via user
+    // agent, since there's no fully reliable cross-browser platform API.
+    function isApplePlatform() {
+      const ua = navigator.userAgent || '';
+      const platform = navigator.platform || '';
+      const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+      // iPadOS 13+ reports itself as "Macintosh" but exposes multitouch
+      const isIPadOS = platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+      const isMac = /Macintosh/.test(ua) && !isIPadOS;
+      const isAppleTV = /AppleTV/i.test(ua);
+      const isWatchOS = /Watch/i.test(ua) && /AppleWebKit/.test(ua);
+      const isVisionOS = /VisionOS|Vision Pro|XRVisionOS/i.test(ua);
+      return isIOS || isIPadOS || isMac || isAppleTV || isWatchOS || isVisionOS;
+    }
+
+    if (isApplePlatform()) {
+      const appleBtn = document.getElementById('apple-signin-btn');
+      if (appleBtn) appleBtn.style.display = 'flex';
+    }
 
     window.logoutUser = async function() {
       toggleProfileMenu(true);
