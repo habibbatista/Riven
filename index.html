@@ -2254,6 +2254,35 @@
       return `user${Math.floor(100000 + Math.random() * 900000)}`;
     }
 
+    // ---- Verified badges ----
+    // Simple client-side allowlist (case-insensitive, no leading @) of
+    // handles that get a verified checkmark wherever their handle/name is
+    // shown. Not a security feature — just a cosmetic badge.
+    const VERIFIED_HANDLES = new Set(['habib', 'okayy95', 'user6']);
+
+    function isVerifiedHandle(handle) {
+      if (!handle) return false;
+      return VERIFIED_HANDLES.has(handle.replace('@', '').toLowerCase());
+    }
+
+    // Plain blue circle + checkmark — generic badge shape, not tied to any
+    // specific platform's icon.
+    function verifiedBadgeHtml(size) {
+      size = size || 14;
+      return `<svg class="verified-badge" width="${size}" height="${size}" viewBox="0 0 22 22" style="flex-shrink:0; vertical-align:middle; margin-left:2px;"><circle cx="11" cy="11" r="11" fill="#3897f0"/><path d="M6.3 11.3l3 3L15.7 8" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    }
+
+    // Returns "@handle" (or plain name) with a badge appended if verified —
+    // for use in innerHTML. escapeHtml keeps user-entered names/handles safe.
+    function escapeHtml(str) {
+      return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function withVerifiedBadge(text, handleForCheck, size) {
+      const safe = escapeHtml(text);
+      return isVerifiedHandle(handleForCheck) ? `${safe}${verifiedBadgeHtml(size)}` : safe;
+    }
+
     function showToast(msg, duration = 2200) {
       const el = document.getElementById('toast');
       el.textContent = msg;
@@ -2569,7 +2598,7 @@
       viewedProfileUid = targetUid || (isOwnProfile ? currentUser?.uid : null);
       const cleanHandle = handle ? handle.replace('@', '').toLowerCase() : 'user';
       document.getElementById('user-display-name').innerText = name || 'User';
-      document.getElementById('user-display-handle').innerText = `@${cleanHandle}`;
+      document.getElementById('user-display-handle').innerHTML = withVerifiedBadge(`@${cleanHandle}`, cleanHandle, 15);
 
       setProfileUrl(cleanHandle);
 
@@ -2830,8 +2859,8 @@
         <div class="search-result-card" onclick="selectSearchResult('${m.handle}', '${(m.name || 'User').replace(/'/g, "\\'")}', '${m.pfp || ''}', '${m.uid || ''}')">
           <img class="search-avatar" src="${m.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 44 44\'><circle cx=\'22\' cy=\'22\' r=\'22\' fill=\'%23333\'/></svg>'}" />
           <div class="search-info">
-            <span class="title">${m.name || 'User'}</span>
-            <span class="subtitle">@${m.handle}</span>
+            <span class="title">${withVerifiedBadge(m.name || 'User', m.handle, 13)}</span>
+            <span class="subtitle">${withVerifiedBadge('@' + m.handle, m.handle, 12)}</span>
           </div>
         </div>
       `).join('');
@@ -3030,7 +3059,7 @@
 
       rightActionBar.classList.add('visible');
       authorBar.style.display = 'flex';
-      document.getElementById('video-author-handle').innerText = '@' + (v.authorHandle || 'user');
+      document.getElementById('video-author-handle').innerHTML = withVerifiedBadge('@' + (v.authorHandle || 'user'), v.authorHandle, 13);
       document.getElementById('video-author-date').innerText = formatUploadDate(v.createdAt);
       document.getElementById('video-author-avatar').src = v.authorPfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23333\'/></svg>';
 
@@ -3392,7 +3421,7 @@
       return `<div class="comment-row">
         <img class="comment-avatar" src="${avatar}">
         <div class="comment-body">
-          <div class="handle">@${c.handle || 'user'}</div>
+          <div class="handle">${withVerifiedBadge('@' + (c.handle || 'user'), c.handle, 12)}</div>
           <div class="text">${safeText}</div>
         </div>
       </div>`;
@@ -3564,10 +3593,10 @@
           const streakBadge = f.streak > 0 ? `<span class="dm-friend-streak">🔥 ${f.streak}</span>` : '';
 
           return `
-            <div class="dm-friend-item" onclick="openActiveChat('${f.uid}', '${(f.name).replace(/'/g, "\\'")}', '${(f.pfp || '').replace(/'/g, "\\'")}')">
+            <div class="dm-friend-item" onclick="openActiveChat('${f.uid}', '${(f.name).replace(/'/g, "\\'")}', '${(f.pfp || '').replace(/'/g, "\\'")}', '${(f.handle || '').replace(/'/g, "\\'")}')">
               <img class="dm-friend-avatar" src="${f.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><circle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%23eee\'/></svg>'}" />
               <div class="dm-friend-info">
-                <span class="dm-friend-name">${f.name}</span>
+                <span class="dm-friend-name">${withVerifiedBadge(f.name, f.handle, 13)}</span>
                 <span class="dm-friend-preview">${previewText}</span>
               </div>
               ${streakBadge}
@@ -3599,12 +3628,12 @@
       }
     }
 
-    window.openActiveChat = function(friendUid, friendName, friendPfp) {
+    window.openActiveChat = function(friendUid, friendName, friendPfp, friendHandle) {
       activeChatFriendUid = friendUid;
       document.body.classList.add('in-active-chat');
       document.getElementById('dm-list-container').style.display = 'none';
       document.getElementById('dm-chat-container').classList.add('active');
-      document.getElementById('chat-target-name').innerText = friendName;
+      document.getElementById('chat-target-name').innerHTML = withVerifiedBadge(friendName, friendHandle, 14);
       document.getElementById('chat-header-avatar').src = friendPfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'38\' height=\'38\'><circle cx=\'19\' cy=\'19\' r=\'19\' fill=\'%23eee\'/></svg>';
       document.getElementById('chat-header-streak-count').innerText = '0';
       toggleChatMenu(true);
