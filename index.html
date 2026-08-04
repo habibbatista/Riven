@@ -3,6 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+  <!-- Tells Safari (and Chrome/PWA installs) what color to tint the status
+       bar / bottom toolbar with. Updated live via JS as the active tab
+       changes — without this, Safari falls back to the page's static
+       background color, which was always black regardless of tab. -->
+  <meta name="theme-color" content="#000000" id="theme-color-meta" />
+  <!-- These only take effect once the app is added to the Home Screen
+       (standalone mode) or wrapped in a native shell — a normal Safari tab
+       ignores them for the actual system status bar. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="apple-status-bar-meta" />
   <title>Riven</title>
 
   <!-- Preconnect to primary asset origins to speed up fetch/upload loading times -->
@@ -557,6 +567,101 @@
       font-size: 14px;
       color: #111;
       margin-top: 2px;
+    }
+
+    .comment-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 6px;
+    }
+
+    .comment-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #999;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .comment-action-btn .icon-svg {
+      width: 14px;
+      height: 14px;
+      fill: #aaa;
+    }
+
+    .comment-action-btn.active-like {
+      color: #ff2d55;
+    }
+
+    .comment-action-btn.active-like .icon-svg {
+      fill: #ff2d55;
+    }
+
+    .comment-action-btn.active-dislike {
+      color: #3897f0;
+    }
+
+    .comment-action-btn.active-dislike .icon-svg {
+      fill: #3897f0;
+    }
+
+    .comment-reply-link {
+      font-size: 12px;
+      font-weight: 600;
+      color: #999;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .comment-replies {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+      padding-left: 14px;
+      border-left: 2px solid #f0f0f0;
+    }
+
+    .comment-reply-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .comment-reply-row .comment-avatar {
+      width: 24px;
+      height: 24px;
+    }
+
+    .comment-reply-input-wrapper {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .comment-reply-input-wrapper input {
+      flex: 1;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 7px 12px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .comment-reply-send-btn {
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
     }
 
     .comments-empty {
@@ -1252,6 +1357,31 @@
       border-bottom-left-radius: 4px;
     }
 
+    .dm-bubble-video {
+      padding: 6px;
+      cursor: pointer;
+      max-width: 60%;
+    }
+
+    .dm-shared-video-thumb {
+      width: 100%;
+      aspect-ratio: 9 / 16;
+      max-height: 220px;
+      object-fit: cover;
+      border-radius: 10px;
+      background: #2c2c2e;
+      display: block;
+    }
+
+    .dm-shared-video-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 4px 2px 4px;
+    }
+
     .dm-input-wrapper {
       padding: 10px 16px calc(10px + var(--safe-bottom)) 16px;
       background: var(--bg-light);
@@ -1822,6 +1952,10 @@
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l6.96-4.11c.52.48 1.2.78 1.96.78 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.33 6.82 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.82 0 1.5-.33 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
               <span class="action-count">Share</span>
             </div>
+            <div class="action-item" onclick="openShareToDmModal()">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              <span class="action-count">Send</span>
+            </div>
             <div class="action-item" id="privacy-action-item" style="display:none;" onclick="toggleVideoPrivacy()">
               <svg class="icon-svg" id="privacy-icon" viewBox="0 0 24 24"><path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 016 0v3H9z"/></svg>
               <span class="action-count" id="privacy-label">Public</span>
@@ -2078,6 +2212,17 @@
         <div class="modal-buttons" style="justify-content: space-between;">
           <button class="modal-btn modal-btn-cancel" onclick="closeSwitchAccountModal()">Cancel</button>
           <button class="modal-btn modal-btn-save" onclick="addAnotherAccount()">+ Add Account</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHARE VIDEO TO DM MODAL -->
+    <div class="modal-overlay" id="share-to-dm-modal">
+      <div class="modal-content">
+        <h3>Send to</h3>
+        <div id="share-to-dm-list" class="switch-account-list"></div>
+        <div class="modal-buttons">
+          <button class="modal-btn modal-btn-cancel" onclick="closeShareToDmModal()">Cancel</button>
         </div>
       </div>
     </div>
@@ -2768,6 +2913,31 @@
       renderCurrentVideo();
     };
 
+    // Opens a video shared into a DM chat. Fetches it fresh since it likely
+    // isn't in the currently-loaded feed queue.
+    window.openSharedVideo = async function(videoId) {
+      if (!videoId) return;
+      try {
+        const snap = await getDoc(doc(db, 'videos', videoId));
+        if (!snap.exists()) {
+          showToast('This video is no longer available');
+          return;
+        }
+        const data = snap.data();
+        if (data.isPrivate && (!currentUser || data.uid !== currentUser.uid)) {
+          showToast('This video is private');
+          return;
+        }
+        videoQueue = [{ id: snap.id, ...data }];
+        currentVideoIndex = 0;
+        switchTab('feed-screen', document.querySelector('.nav-item'));
+        renderCurrentVideo();
+      } catch (e) {
+        console.warn('Open shared video error:', e);
+        showToast('Could not open video');
+      }
+    };
+
     window.openVideoCellMenu = function(event, videoId, isPrivate) {
       event.stopPropagation();
       videoCellMenuTargetId = videoId;
@@ -3438,9 +3608,14 @@
     };
 
     // ---- Comments ----
+    // ---- Comments (with likes, dislikes, and replies) ----
+    let currentCommentsVideoId = null;
+    let currentComments = []; // [{id, uid, name, handle, pfp, text, createdAt, likesBy, dislikesBy, replies}]
+
     window.openComments = async function() {
       if (currentVideoIndex < 0) return;
       const v = videoQueue[currentVideoIndex];
+      currentCommentsVideoId = v.id;
       document.getElementById('comments-overlay').classList.add('active');
       const list = document.getElementById('comments-list');
       list.innerHTML = `<div class="comments-empty">Loading comments...</div>`;
@@ -3448,32 +3623,179 @@
       try {
         const q = query(collection(db, 'videos', v.id, 'comments'), orderBy('createdAt', 'asc'));
         const snap = await getDocs(q);
-        if (snap.empty) {
-          list.innerHTML = `<div class="comments-empty">No comments yet</div>`;
-        } else {
-          list.innerHTML = '';
-          snap.forEach(d => {
-            const c = d.data();
-            list.innerHTML += renderCommentRow(c);
-          });
-        }
+        currentComments = [];
+        snap.forEach(d => currentComments.push({ id: d.id, ...d.data() }));
+        renderCommentsList();
       } catch (e) {
         console.warn('Comments load error:', e);
         list.innerHTML = `<div class="comments-empty">No comments yet</div>`;
       }
     };
 
+    function renderCommentsList() {
+      const list = document.getElementById('comments-list');
+      if (!currentComments.length) {
+        list.innerHTML = `<div class="comments-empty">No comments yet</div>`;
+        return;
+      }
+      list.innerHTML = currentComments.map(c => renderCommentRow(c)).join('');
+    }
+
+    function renderReplyRow(r) {
+      const avatar = r.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\'><circle cx=\'12\' cy=\'12\' r=\'12\' fill=\'%23eee\'/></svg>';
+      return `<div class="comment-reply-row">
+        <img class="comment-avatar" src="${avatar}">
+        <div class="comment-body">
+          <div class="handle">${withVerifiedBadge('@' + (r.handle || 'user'), r.handle, 11)}</div>
+          <div class="text">${escapeHtml(r.text || '')}</div>
+        </div>
+      </div>`;
+    }
+
     function renderCommentRow(c) {
       const avatar = c.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23eee\'/></svg>';
-      const safeText = (c.text || '').replace(/</g, '&lt;');
+      const safeText = escapeHtml(c.text || '');
+      const likesBy = c.likesBy || [];
+      const dislikesBy = c.dislikesBy || [];
+      const liked = !!(currentUser && likesBy.includes(currentUser.uid));
+      const disliked = !!(currentUser && dislikesBy.includes(currentUser.uid));
+      const replies = c.replies || [];
+
       return `<div class="comment-row">
         <img class="comment-avatar" src="${avatar}">
         <div class="comment-body">
           <div class="handle">${withVerifiedBadge('@' + (c.handle || 'user'), c.handle, 12)}</div>
           <div class="text">${safeText}</div>
+          <div class="comment-actions">
+            <span class="comment-action-btn ${liked ? 'active-like' : ''}" onclick="toggleCommentReaction('${c.id}', 'like')">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              ${likesBy.length}
+            </span>
+            <span class="comment-action-btn ${disliked ? 'active-dislike' : ''}" onclick="toggleCommentReaction('${c.id}', 'dislike')">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23 15.41 17.41c.36-.36.59-.86.59-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+              ${dislikesBy.length}
+            </span>
+            <span class="comment-reply-link" onclick="toggleReplyInput('${c.id}')">Reply</span>
+          </div>
+          ${replies.length ? `<div class="comment-replies">${replies.map(r => renderReplyRow(r)).join('')}</div>` : ''}
+          <div class="comment-reply-input-wrapper" id="reply-input-${c.id}">
+            <input type="text" id="reply-text-${c.id}" placeholder="Write a reply..." onkeydown="if(event.key==='Enter'){submitCommentReply('${c.id}');}">
+            <button class="comment-reply-send-btn" onclick="submitCommentReply('${c.id}')">Reply</button>
+          </div>
         </div>
       </div>`;
     }
+
+    window.toggleCommentReaction = async function(commentId, type) {
+      if (!currentUser) {
+        showToast('Sign in to react to comments');
+        return;
+      }
+      if (!currentCommentsVideoId) return;
+      const c = currentComments.find(cm => cm.id === commentId);
+      if (!c) return;
+      c.likesBy = c.likesBy || [];
+      c.dislikesBy = c.dislikesBy || [];
+      const uid = currentUser.uid;
+      const likedNow = c.likesBy.includes(uid);
+      const dislikedNow = c.dislikesBy.includes(uid);
+
+      const updates = {};
+      if (type === 'like') {
+        if (likedNow) {
+          c.likesBy = c.likesBy.filter(id => id !== uid);
+          updates.likesBy = arrayRemove(uid);
+        } else {
+          c.likesBy = [...c.likesBy, uid];
+          updates.likesBy = arrayUnion(uid);
+          if (dislikedNow) {
+            c.dislikesBy = c.dislikesBy.filter(id => id !== uid);
+            updates.dislikesBy = arrayRemove(uid);
+          }
+        }
+      } else {
+        if (dislikedNow) {
+          c.dislikesBy = c.dislikesBy.filter(id => id !== uid);
+          updates.dislikesBy = arrayRemove(uid);
+        } else {
+          c.dislikesBy = [...c.dislikesBy, uid];
+          updates.dislikesBy = arrayUnion(uid);
+          if (likedNow) {
+            c.likesBy = c.likesBy.filter(id => id !== uid);
+            updates.likesBy = arrayRemove(uid);
+          }
+        }
+      }
+
+      renderCommentsList();
+
+      try {
+        await updateDoc(doc(db, 'videos', currentCommentsVideoId, 'comments', commentId), updates);
+      } catch (e) {
+        console.warn('Comment reaction sync error:', e);
+      }
+    };
+
+    window.toggleReplyInput = function(commentId) {
+      const el = document.getElementById(`reply-input-${commentId}`);
+      if (!el) return;
+      const isOpening = getComputedStyle(el).display === 'none';
+      document.querySelectorAll('.comment-reply-input-wrapper').forEach(w => { w.style.display = 'none'; });
+      if (isOpening) {
+        el.style.display = 'flex';
+        const input = document.getElementById(`reply-text-${commentId}`);
+        if (input) setTimeout(() => input.focus(), 50);
+      }
+    };
+
+    window.submitCommentReply = async function(commentId) {
+      if (!currentUser) {
+        showToast('Sign in to reply');
+        return;
+      }
+      if (!currentCommentsVideoId) return;
+      const input = document.getElementById(`reply-text-${commentId}`);
+      if (!input) return;
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+
+      const c = currentComments.find(cm => cm.id === commentId);
+      if (!c) return;
+
+      // serverTimestamp() isn't allowed as an array element, so replies use
+      // a plain client-side millisecond timestamp instead.
+      const replyData = {
+        uid: currentUser.uid,
+        name: myProfileData?.name || 'User',
+        handle: myProfileData?.handle || 'user',
+        pfp: myProfileData?.pfp || '',
+        text,
+        createdAt: Date.now()
+      };
+
+      c.replies = [...(c.replies || []), replyData];
+      renderCommentsList();
+      const wrapper = document.getElementById(`reply-input-${commentId}`);
+      if (wrapper) wrapper.style.display = 'flex';
+
+      const v = videoQueue.find(vq => vq.id === currentCommentsVideoId);
+      if (v) {
+        v.commentsCount = (v.commentsCount || 0) + 1;
+        const countEl = document.getElementById('comment-count');
+        if (countEl) countEl.innerText = v.commentsCount;
+      }
+
+      try {
+        await updateDoc(doc(db, 'videos', currentCommentsVideoId, 'comments', commentId), {
+          replies: arrayUnion(replyData)
+        });
+        await updateDoc(doc(db, 'videos', currentCommentsVideoId), { commentsCount: increment(1) });
+      } catch (e) {
+        console.warn('Reply save error:', e);
+        showToast('Could not save reply');
+      }
+    };
 
     window.closeComments = function() {
       document.getElementById('comments-overlay').classList.remove('active');
@@ -3497,20 +3819,22 @@
         handle: myProfileData?.handle || 'user',
         pfp: myProfileData?.pfp || '',
         text,
+        likesBy: [],
+        dislikesBy: [],
+        replies: [],
         createdAt: serverTimestamp()
       };
-
-      const list = document.getElementById('comments-list');
-      if (list.querySelector('.comments-empty')) list.innerHTML = '';
-      list.innerHTML += renderCommentRow(commentData);
-      list.scrollTop = list.scrollHeight;
 
       v.commentsCount = (v.commentsCount || 0) + 1;
       document.getElementById('comment-count').innerText = v.commentsCount;
 
       try {
-        await addDoc(collection(db, 'videos', v.id, 'comments'), commentData);
+        const newDocRef = await addDoc(collection(db, 'videos', v.id, 'comments'), commentData);
         await updateDoc(doc(db, 'videos', v.id), { commentsCount: increment(1) });
+        currentComments.push({ id: newDocRef.id, ...commentData, createdAt: Date.now() });
+        renderCommentsList();
+        const list = document.getElementById('comments-list');
+        list.scrollTop = list.scrollHeight;
       } catch (e) {
         console.warn('Comment save error:', e);
         showToast('Could not save comment');
@@ -3536,6 +3860,74 @@
         }
       } else {
         showToast('Sharing not supported on this device');
+      }
+    };
+
+    // ---- Send a video into a Riven DM ----
+    window.openShareToDmModal = async function() {
+      if (currentVideoIndex < 0) return;
+      if (!currentUser) {
+        showToast('Sign in to send videos in DMs');
+        return;
+      }
+
+      const listEl = document.getElementById('share-to-dm-list');
+      listEl.innerHTML = `<div class="switch-account-empty">Loading friends...</div>`;
+      document.getElementById('share-to-dm-modal').classList.add('active');
+
+      try {
+        const friends = await getMutualFriendsBasic();
+        if (friends.length === 0) {
+          listEl.innerHTML = `<div class="switch-account-empty">No mutual friends yet. Follow each other to DM.</div>`;
+          return;
+        }
+        listEl.innerHTML = friends.map(f => `
+          <div class="switch-account-row" onclick="sendVideoToFriend('${f.uid}', '${(f.name || 'User').replace(/'/g, "\\'")}')">
+            <img class="switch-account-avatar" src="${f.pfp || DEFAULT_AVATAR_SVG}">
+            <div class="switch-account-info">
+              <span class="switch-account-name">${withVerifiedBadge(f.name, f.handle, 12)}</span>
+              <span class="switch-account-handle">@${escapeHtml(f.handle)}</span>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.warn('Load share targets error:', e);
+        listEl.innerHTML = `<div class="switch-account-empty">Could not load friends</div>`;
+      }
+    };
+
+    window.closeShareToDmModal = function() {
+      document.getElementById('share-to-dm-modal').classList.remove('active');
+    };
+
+    window.sendVideoToFriend = async function(friendUid, friendName) {
+      if (currentVideoIndex < 0 || !currentUser) return;
+      const v = videoQueue[currentVideoIndex];
+      document.getElementById('share-to-dm-modal').classList.remove('active');
+
+      const chatId = getChatId(currentUser.uid, friendUid);
+      const [uidA, uidB] = chatId.split('_');
+
+      try {
+        await addDoc(collection(db, "chats", chatId, "messages"), {
+          senderUid: currentUser.uid,
+          type: 'video-share',
+          videoId: v.id,
+          videoThumb: getVideoThumbnail(v.videoUrl),
+          videoAuthorHandle: v.authorHandle || 'user',
+          createdAt: serverTimestamp()
+        });
+
+        await setDoc(doc(db, "chats", chatId), {
+          participants: [uidA, uidB],
+          lastMessage: '📹 Sent a video',
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        showToast(`Sent to ${friendName}`);
+      } catch (e) {
+        console.error('Send video to DM error:', e);
+        showToast('Could not send video');
       }
     };
 
@@ -3577,6 +3969,27 @@
       }
 
       return { activeDates, streak, lastStreakDate };
+    }
+
+    // Lightweight version of the mutual-friends lookup (no chat/streak data)
+    // — used by the "Send to" share picker, which just needs who to list.
+    async function getMutualFriendsBasic() {
+      if (!currentUser) return [];
+      const myDoc = await getDoc(doc(db, "users", currentUser.uid));
+      if (!myDoc.exists()) return [];
+      const myFollowing = myDoc.data().following || [];
+      const allUsersSnap = await getDocs(collection(db, "users"));
+      const friends = [];
+      allUsersSnap.forEach(userDoc => {
+        const uId = userDoc.id;
+        if (uId === currentUser.uid) return;
+        const uData = userDoc.data();
+        const uFollowing = uData.following || [];
+        if (myFollowing.includes(uId) && uFollowing.includes(currentUser.uid)) {
+          friends.push({ uid: uId, name: uData.name || 'User', handle: uData.handle || 'user', pfp: uData.pfp || '' });
+        }
+      });
+      return friends;
     }
 
     async function loadFriendsAndDms() {
@@ -3703,9 +4116,24 @@
         } else {
           snapshot.forEach(docSnap => {
             const msg = docSnap.data();
+            const isMine = msg.senderUid === currentUser.uid;
             const bubble = document.createElement('div');
-            bubble.className = `dm-bubble ${msg.senderUid === currentUser.uid ? 'mine' : 'theirs'}`;
-            bubble.textContent = msg.text;
+
+            if (msg.type === 'video-share') {
+              bubble.className = `dm-bubble dm-bubble-video ${isMine ? 'mine' : 'theirs'}`;
+              bubble.innerHTML = `
+                <img class="dm-shared-video-thumb" src="${msg.videoThumb || ''}" onerror="this.style.background='#2c2c2e'; this.removeAttribute('src');">
+                <div class="dm-shared-video-label">
+                  <svg class="icon-svg" style="width:14px; height:14px; fill:currentColor;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  Video from @${escapeHtml(msg.videoAuthorHandle || 'user')}
+                </div>
+              `;
+              bubble.onclick = () => openSharedVideo(msg.videoId);
+            } else {
+              bubble.className = `dm-bubble ${isMine ? 'mine' : 'theirs'}`;
+              bubble.textContent = msg.text;
+            }
+
             chatBody.appendChild(bubble);
           });
           chatBody.scrollTop = chatBody.scrollHeight;
@@ -4225,6 +4653,31 @@
       videoUpgradeHandled = false;
     }
 
+    // Syncs Safari's toolbar tint (theme-color) and the page's own
+    // background to whichever tab is active — feed is a dark/immersive
+    // video experience, DM and profile are light, standard app chrome.
+    // Safari frequently ignores an in-place `setAttribute` on an existing
+    // theme-color meta tag (it caches the value from when the tag was
+    // inserted), so instead we remove the old node and insert a brand new
+    // one each time — that reliably forces it to re-read the color.
+    function syncChromeTheme(screenId) {
+      const isDarkScreen = screenId === 'feed-screen';
+      const color = isDarkScreen ? '#000000' : '#ffffff';
+
+      const oldMeta = document.getElementById('theme-color-meta');
+      if (oldMeta) oldMeta.remove();
+      const newMeta = document.createElement('meta');
+      newMeta.name = 'theme-color';
+      newMeta.id = 'theme-color-meta';
+      newMeta.content = color;
+      document.head.appendChild(newMeta);
+
+      const statusBarMeta = document.getElementById('apple-status-bar-meta');
+      if (statusBarMeta) statusBarMeta.setAttribute('content', isDarkScreen ? 'black-translucent' : 'default');
+
+      document.body.style.backgroundColor = color;
+    }
+
     window.switchTab = function(screenId, navElement) {
       if (document.body.classList.contains('in-active-chat')) {
         closeActiveChat();
@@ -4244,6 +4697,7 @@
       if (navElement) navElement.classList.add('active');
 
       document.querySelector('.bottom-nav').classList.toggle('light-nav', screenId !== 'feed-screen');
+      syncChromeTheme(screenId);
 
       if (screenId === 'dm-screen') {
         loadFriendsAndDms();
@@ -4258,6 +4712,7 @@
 
     // Set the initial screen stacking without an entrance animation
     positionScreens(currentScreenId, false);
+    syncChromeTheme(currentScreenId);
 
     // Initial feed load
     loadFeed();
