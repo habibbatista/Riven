@@ -486,8 +486,9 @@
       font-size: 13px;
     }
 
-    /* COMMENTS BOTTOM SHEET */
-    #comments-overlay {
+    /* COMMENTS BOTTOM SHEET (also reused by the share sheet, since they're
+       both simple slide-up sheets — same look, different content) */
+    #comments-overlay, #share-sheet-overlay {
       position: absolute;
       inset: 0;
       z-index: 99998;
@@ -495,7 +496,7 @@
       align-items: flex-end;
     }
 
-    #comments-overlay.active {
+    #comments-overlay.active, #share-sheet-overlay.active {
       display: flex;
     }
 
@@ -1131,6 +1132,60 @@
       padding: 14px 0;
     }
 
+    /* SHARE SHEET */
+    .share-sheet-section-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin: 4px 4px 2px 4px;
+    }
+
+    .share-sheet-actions {
+      display: flex;
+      flex-direction: column;
+      padding-top: 8px;
+      border-top: 1px solid #f0f0f0;
+      margin-top: 4px;
+    }
+
+    .share-sheet-action-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 6px;
+      cursor: pointer;
+      border-radius: 10px;
+    }
+
+    .share-sheet-action-row:active {
+      background: #f5f5f5;
+    }
+
+    .share-sheet-action-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #f2f2f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .share-sheet-action-icon .icon-svg {
+      width: 19px;
+      height: 19px;
+      fill: #111;
+    }
+
+    .share-sheet-action-row span {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+    }
+
     /* DM SCREEN */
     #dm-screen {
       background-color: var(--bg-light);
@@ -1522,25 +1577,25 @@
       animation: videoFadeIn 0.25s ease;
     }
 
-    /* Swipe-to-next/previous scroll transition. Applied to .video-frame,
-       which now wraps the video, caption bar, and action bar together, so
-       all three move as a single unit during the swipe. */
-    @keyframes videoSlideUpIn {
-      from { transform: translateY(100%); }
-      to   { transform: translateY(0); }
+    /* Finger-tracking swipe: .video-frame's transform is set directly by JS
+       during the drag (1:1 with the touch, no transition/easing so it feels
+       immediate). This class is added only for the "settle" phase after
+       release — animating the rest of the way to the next video, or back to
+       start if the swipe wasn't far enough. 0.75s deliberately slower than
+       a typical snappy feed transition; a fast snap looked too abrupt here. */
+    .video-frame-settling {
+      transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    @keyframes videoSlideDownIn {
-      from { transform: translateY(-100%); }
-      to   { transform: translateY(0); }
-    }
-
-    .video-slide-up {
-      animation: videoSlideUpIn 0.75s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    .video-slide-down {
-      animation: videoSlideDownIn 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+    .video-drag-preview {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000;
+      pointer-events: none;
+      display: none;
     }
 
     @keyframes dmBubbleIn {
@@ -1599,14 +1654,14 @@
       transform: translateY(0);
     }
 
-    #comments-overlay {
+    #comments-overlay, #share-sheet-overlay {
       display: flex;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
     }
 
-    #comments-overlay.active {
+    #comments-overlay.active, #share-sheet-overlay.active {
       opacity: 1;
       pointer-events: auto;
     }
@@ -1616,7 +1671,7 @@
       transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    #comments-overlay.active .comments-sheet {
+    #comments-overlay.active .comments-sheet, #share-sheet-overlay.active .comments-sheet {
       transform: translateY(0);
     }
 
@@ -1948,13 +2003,9 @@
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
               <span class="action-count" id="comment-count">0</span>
             </div>
-            <div class="action-item" onclick="shareVideo()">
+            <div class="action-item" onclick="openShareSheet()">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l6.96-4.11c.52.48 1.2.78 1.96.78 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.33 6.82 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.82 0 1.5-.33 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
               <span class="action-count">Share</span>
-            </div>
-            <div class="action-item" onclick="openShareToDmModal()">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-              <span class="action-count">Send</span>
             </div>
             <div class="action-item" id="privacy-action-item" style="display:none;" onclick="toggleVideoPrivacy()">
               <svg class="icon-svg" id="privacy-icon" viewBox="0 0 24 24"><path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 016 0v3H9z"/></svg>
@@ -1971,6 +2022,12 @@
             </div>
           </div>
         </div>
+        <!-- Thumbnail previews shown only during an active drag — as the
+             current video-frame is dragged off-screen by the finger, the
+             incoming one's thumbnail is revealed underneath in real time.
+             Swaps to the actual playing video only once the drag settles. -->
+        <img class="video-drag-preview" id="video-drag-preview-next" alt="">
+        <img class="video-drag-preview" id="video-drag-preview-prev" alt="">
         <audio id="feed-audio-player" style="display:none;"></audio>
 
         <!-- Hidden buffers that silently start fetching the next/previous
@@ -2216,13 +2273,30 @@
       </div>
     </div>
 
-    <!-- SHARE VIDEO TO DM MODAL -->
-    <div class="modal-overlay" id="share-to-dm-modal">
-      <div class="modal-content">
-        <h3>Send to</h3>
-        <div id="share-to-dm-list" class="switch-account-list"></div>
-        <div class="modal-buttons">
-          <button class="modal-btn modal-btn-cancel" onclick="closeShareToDmModal()">Cancel</button>
+    <!-- SHARE SHEET (friends to DM + copy link / native share, one button) -->
+    <div id="share-sheet-overlay">
+      <div class="comments-backdrop" onclick="closeShareSheet()"></div>
+      <div class="comments-sheet">
+        <div class="comments-sheet-header">
+          <span>Share</span>
+          <span class="comments-close-btn" onclick="closeShareSheet()">✕</span>
+        </div>
+        <div class="comments-list" id="share-sheet-friends-list">
+          <div class="comments-empty">Loading friends...</div>
+        </div>
+        <div class="share-sheet-actions">
+          <div class="share-sheet-action-row" onclick="copyVideoLink()">
+            <div class="share-sheet-action-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+            </div>
+            <span>Copy Link</span>
+          </div>
+          <div class="share-sheet-action-row" id="share-sheet-native-row" onclick="shareVideoNative()" style="display:none;">
+            <div class="share-sheet-action-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l6.96-4.11c.52.48 1.2.78 1.96.78 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.33 6.82 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.82 0 1.5-.33 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+            </div>
+            <span>Share via...</span>
+          </div>
         </div>
       </div>
     </div>
@@ -2404,10 +2478,6 @@
     let videoQueue = [];
     let currentVideoIndex = -1;
     let touchStartY = null;
-    // True until the first loadFeed() call resolves. While true, an empty
-    // queue means "still fetching," so we show a plain gray screen instead
-    // of flashing the "No videos yet / sign in to post" empty state first.
-    let feedLoading = true;
 
     function generateRandomUserHandle() {
       return `user${Math.floor(100000 + Math.random() * 900000)}`;
@@ -2469,8 +2539,23 @@
     // just by swapping the file extension — no extra upload/API call needed.
     function getVideoThumbnail(videoUrl) {
       if (!videoUrl) return '';
-      const swapped = videoUrl.replace(/\.(mp4|mov|webm|mkv|avi|m4v)(\?.*)?$/i, '.jpg$2');
-      return swapped !== videoUrl ? swapped : videoUrl;
+      const optimized = getOptimizedVideoUrl(videoUrl);
+      const swapped = optimized.replace(/\.(mp4|mov|webm|mkv|avi|m4v)(\?.*)?$/i, '.jpg$2');
+      return swapped !== optimized ? swapped : optimized;
+    }
+
+    // Caps delivered video (and, via getVideoThumbnail above, its jpg
+    // thumbnail) at 720p and lets Cloudinary auto-pick quality/format. This
+    // is a read-time transformation — Cloudinary generates and CDN-caches
+    // the smaller derivative on first request, so it applies to every video
+    // already on the platform too, not just new uploads, with no re-upload
+    // or storage migration needed. c_limit means it only ever shrinks,
+    // never upscales a smaller source.
+    function getOptimizedVideoUrl(videoUrl) {
+      if (!videoUrl) return videoUrl;
+      const transform = 'w_1280,h_720,c_limit,q_auto,f_auto';
+      if (videoUrl.includes('/upload/' + transform)) return videoUrl; // already applied
+      return videoUrl.replace('/upload/', `/upload/${transform}/`);
     }
 
     // ---- Generic confirm modal (used for destructive actions like delete) ----
@@ -3180,7 +3265,6 @@
         console.warn("Feed load error:", e);
         videoQueue = [];
       }
-      feedLoading = false;
       currentVideoIndex = videoQueue.length > 0 ? 0 : -1;
       renderCurrentVideo();
     }
@@ -3202,24 +3286,12 @@
         audioDiscItem.style.display = 'none';
         audioDisc.classList.remove('spinning');
 
-        if (feedLoading) {
-          // Still fetching — show a plain gray screen rather than flashing
-          // the "No videos yet" empty state for a moment before videos pop in.
-          uploadPrompt.style.display = 'none';
-          videoContainer.classList.add('feed-loading');
-        } else {
-          // Fetch finished and there really are zero videos (true empty state).
-          videoContainer.classList.remove('feed-loading');
-          uploadPrompt.style.display = 'flex';
-          if (currentUser) {
-            document.getElementById('empty-feed-title').innerText = 'No videos yet';
-            document.getElementById('empty-feed-text').innerText = 'Nobody has posted a video yet. Be the first to upload one.';
-          } else {
-            document.getElementById('empty-feed-title').innerText = 'No videos yet';
-            document.getElementById('empty-feed-text').innerText = 'Sign in to be the first to post a video.';
-          }
-          document.getElementById('upload-label').classList.remove('disabled');
-        }
+        // Always a plain gray placeholder now — there are already videos on
+        // the platform, so this only ever shows briefly while loading (or,
+        // rarely, if a fetch fails). Upload still works via the nav bar's
+        // "+" button; it just doesn't need its own on-feed CTA anymore.
+        uploadPrompt.style.display = 'none';
+        videoContainer.classList.add('feed-loading');
         return;
       }
 
@@ -3230,23 +3302,24 @@
       // Shows the (already-cached) thumbnail immediately, so the swap to a
       // new video never shows a blank black rectangle while it buffers.
       videoPlayer.poster = getVideoThumbnail(v.videoUrl);
-      videoPlayer.src = v.videoUrl;
+      videoPlayer.src = getOptimizedVideoUrl(v.videoUrl);
       videoPlayer.currentTime = 0;
 
-      // Swipe navigation gets a 0.75s slide transition; any other trigger
-      // (initial load, likes, privacy toggles, opening from a profile grid)
-      // keeps the quick fade-in instead. Animating the wrapper div instead of
-      // the <video> element itself avoids a Safari/iOS quirk where transforms
-      // applied directly to <video> don't reliably animate. The caption bar
-      // and action bar now live inside this same wrapper, so they slide
-      // together with the video instead of staying pinned in place.
-      videoFrame.classList.remove('video-fade-in', 'video-slide-up', 'video-slide-down');
-      void videoFrame.offsetWidth;
-      if (direction === 'up') {
-        videoFrame.classList.add('video-slide-up');
-      } else if (direction === 'down') {
-        videoFrame.classList.add('video-slide-down');
-      } else {
+      // The live finger-drag (see the touch handlers below) already
+      // provides the visual transition when swiping between videos — by
+      // the time this runs after a committed swipe, the frame has already
+      // been animated into place. This just resets it to a clean slate and
+      // gives non-drag triggers (initial load, likes, privacy toggle,
+      // opening from a profile grid or a shared DM link) a quick fade-in.
+      // Animating the wrapper div instead of the <video> element itself
+      // avoids a Safari/iOS quirk where transforms applied directly to
+      // <video> don't reliably animate. The caption bar and action bar
+      // live inside this same wrapper, so they move together with it.
+      videoFrame.classList.remove('video-fade-in', 'video-frame-settling');
+      videoFrame.style.transform = '';
+      hideDragPreviews();
+      if (!direction) {
+        void videoFrame.offsetWidth;
         videoFrame.classList.add('video-fade-in');
       }
 
@@ -3316,7 +3389,7 @@
 
       if (nextVideo && preloadVideoNext.getAttribute('data-src') !== nextVideo.videoUrl) {
         preloadVideoNext.setAttribute('data-src', nextVideo.videoUrl);
-        preloadVideoNext.src = nextVideo.videoUrl;
+        preloadVideoNext.src = getOptimizedVideoUrl(nextVideo.videoUrl);
         preloadVideoNext.load();
       } else if (!nextVideo) {
         preloadVideoNext.removeAttribute('data-src');
@@ -3325,7 +3398,7 @@
 
       if (prevVideo && preloadVideoPrev.getAttribute('data-src') !== prevVideo.videoUrl) {
         preloadVideoPrev.setAttribute('data-src', prevVideo.videoUrl);
-        preloadVideoPrev.src = prevVideo.videoUrl;
+        preloadVideoPrev.src = getOptimizedVideoUrl(prevVideo.videoUrl);
         preloadVideoPrev.load();
       } else if (!prevVideo) {
         preloadVideoPrev.removeAttribute('data-src');
@@ -3333,36 +3406,136 @@
       }
     }
 
-    function goToVideo(delta) {
-      if (videoQueue.length === 0) return;
-      const next = currentVideoIndex + delta;
-      if (next < 0 || next >= videoQueue.length) return;
-      currentVideoIndex = next;
-      renderCurrentVideo(delta > 0 ? 'up' : 'down');
+    function hideDragPreviews() {
+      ['video-drag-preview-next', 'video-drag-preview-prev'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.display = 'none';
+        el.style.transform = '';
+        el.classList.remove('video-frame-settling');
+        el.removeAttribute('src');
+      });
     }
 
+    // ---- Finger-tracking swipe between videos ----
+    // The frame follows the touch 1:1 while dragging (no transition — pure
+    // 1-to-1 tracking). On release it either finishes the swipe or snaps
+    // back, both using a deliberately slow 0.75s settle (DRAG_SETTLE_MS) —
+    // a quick/snappy transition looked too abrupt for this design.
+    const DRAG_ACTIVATE_PX = 6;   // movement needed before it counts as a drag, not a tap
+    const DRAG_COMMIT_PX = 90;    // how far you must drag to commit to the next/prev video
+    const DRAG_SETTLE_MS = 750;
+
+    let isDragging = false;
+    let dragDirection = null; // 'next' | 'prev'
+    let dragViewportHeight = 0;
     let justSwiped = false;
     let justSwipedTimeout = null;
 
+    function beginDrag(direction) {
+      isDragging = true;
+      dragDirection = direction;
+      dragViewportHeight = videoContainer.clientHeight || 1;
+      videoFrame.classList.remove('video-frame-settling', 'video-fade-in');
+
+      const targetVideo = videoQueue[currentVideoIndex + (direction === 'next' ? 1 : -1)];
+      const previewEl = document.getElementById(direction === 'next' ? 'video-drag-preview-next' : 'video-drag-preview-prev');
+      if (previewEl) {
+        previewEl.classList.remove('video-frame-settling');
+        if (targetVideo) {
+          previewEl.src = getVideoThumbnail(targetVideo.videoUrl);
+          previewEl.style.display = 'block';
+          previewEl.style.transform = `translateY(${direction === 'next' ? dragViewportHeight : -dragViewportHeight}px)`;
+        } else {
+          previewEl.style.display = 'none';
+        }
+      }
+    }
+
+    function applyDragTransform(deltaY) {
+      const hasTarget = !!videoQueue[currentVideoIndex + (dragDirection === 'next' ? 1 : -1)];
+      // Rubber-band resistance at the start/end of the queue (nothing to swipe to)
+      const effectiveDelta = hasTarget ? deltaY : deltaY * 0.3;
+      videoFrame.style.transform = `translateY(${effectiveDelta}px)`;
+
+      if (hasTarget) {
+        const previewEl = document.getElementById(dragDirection === 'next' ? 'video-drag-preview-next' : 'video-drag-preview-prev');
+        if (previewEl) {
+          const startOffset = dragDirection === 'next' ? dragViewportHeight : -dragViewportHeight;
+          previewEl.style.transform = `translateY(${startOffset + effectiveDelta}px)`;
+        }
+      }
+    }
+
+    function endDrag(deltaY) {
+      const hasTarget = !!videoQueue[currentVideoIndex + (dragDirection === 'next' ? 1 : -1)];
+      const committed = hasTarget && Math.abs(deltaY) > DRAG_COMMIT_PX;
+      const direction = dragDirection;
+      const previewEl = document.getElementById(direction === 'next' ? 'video-drag-preview-next' : 'video-drag-preview-prev');
+
+      // Swallow the synthetic click mobile browsers fire right after
+      // touchend, for any real drag gesture — committed or not.
+      justSwiped = true;
+      clearTimeout(justSwipedTimeout);
+      justSwipedTimeout = setTimeout(() => { justSwiped = false; }, DRAG_SETTLE_MS + 250);
+
+      videoFrame.classList.add('video-frame-settling');
+      if (previewEl) previewEl.classList.add('video-frame-settling');
+
+      if (committed) {
+        const finalOffset = direction === 'next' ? -dragViewportHeight : dragViewportHeight;
+        videoFrame.style.transform = `translateY(${finalOffset}px)`;
+        if (previewEl) previewEl.style.transform = 'translateY(0px)';
+
+        setTimeout(() => {
+          currentVideoIndex += (direction === 'next' ? 1 : -1);
+          renderCurrentVideo('drag');
+        }, DRAG_SETTLE_MS);
+      } else {
+        videoFrame.style.transform = 'translateY(0px)';
+        if (previewEl) {
+          const startOffset = direction === 'next' ? dragViewportHeight : -dragViewportHeight;
+          previewEl.style.transform = `translateY(${startOffset}px)`;
+        }
+        setTimeout(() => {
+          videoFrame.classList.remove('video-frame-settling');
+          videoFrame.style.transform = '';
+          hideDragPreviews();
+        }, DRAG_SETTLE_MS);
+      }
+
+      isDragging = false;
+      dragDirection = null;
+    }
+
     videoContainer.addEventListener('touchstart', (e) => {
+      if (e.target.closest('.right-action-bar') || e.target.closest('#upload-prompt')) {
+        touchStartY = null;
+        return;
+      }
       touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    videoContainer.addEventListener('touchmove', (e) => {
+      if (touchStartY === null) return;
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - touchStartY;
+
+      if (!isDragging) {
+        if (Math.abs(deltaY) < DRAG_ACTIVATE_PX || videoQueue.length === 0) return;
+        beginDrag(deltaY < 0 ? 'next' : 'prev');
+      }
+      applyDragTransform(deltaY);
     }, { passive: true });
 
     videoContainer.addEventListener('touchend', (e) => {
       if (touchStartY === null) return;
-      const deltaY = e.changedTouches[0].clientY - touchStartY;
+      const endY = e.changedTouches[0].clientY;
+      const deltaY = endY - touchStartY;
       touchStartY = null;
 
-      if (Math.abs(deltaY) > 60) {
-        e.preventDefault();
-        // Mobile browsers fire a synthetic "click" right after touchend even
-        // when preventDefault is called on some engines; swallow it so it
-        // doesn't immediately pause the video we just swiped to.
-        justSwiped = true;
-        clearTimeout(justSwipedTimeout);
-        justSwipedTimeout = setTimeout(() => { justSwiped = false; }, 400);
-        if (deltaY < 0) goToVideo(1); else goToVideo(-1);
-        return;
+      if (isDragging) {
+        endDrag(deltaY);
       }
     });
 
@@ -3843,43 +4016,26 @@
     };
 
     // ---- Share ----
-    window.shareVideo = async function() {
+    // ---- Unified share sheet: mutual friends (in-app DM) + copy link + native share ----
+    window.openShareSheet = async function() {
       if (currentVideoIndex < 0) return;
-      const v = videoQueue[currentVideoIndex];
-      const shareUrl = `${window.location.origin}${window.location.pathname}#/v/${v.id}`;
 
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: 'Riven', text: `Check out this video by @${v.authorHandle}`, url: shareUrl });
-        } catch (e) { }
-      } else if (navigator.clipboard) {
-        try {
-          await navigator.clipboard.writeText(shareUrl);
-          showToast('Link copied to clipboard');
-        } catch (e) {
-          showToast('Could not copy link');
-        }
-      } else {
-        showToast('Sharing not supported on this device');
-      }
-    };
+      const nativeRow = document.getElementById('share-sheet-native-row');
+      if (nativeRow) nativeRow.style.display = navigator.share ? 'flex' : 'none';
 
-    // ---- Send a video into a Riven DM ----
-    window.openShareToDmModal = async function() {
-      if (currentVideoIndex < 0) return;
+      const listEl = document.getElementById('share-sheet-friends-list');
+      document.getElementById('share-sheet-overlay').classList.add('active');
+
       if (!currentUser) {
-        showToast('Sign in to send videos in DMs');
+        listEl.innerHTML = `<div class="comments-empty">Sign in to send videos to friends in Riven DMs</div>`;
         return;
       }
 
-      const listEl = document.getElementById('share-to-dm-list');
-      listEl.innerHTML = `<div class="switch-account-empty">Loading friends...</div>`;
-      document.getElementById('share-to-dm-modal').classList.add('active');
-
+      listEl.innerHTML = `<div class="comments-empty">Loading friends...</div>`;
       try {
         const friends = await getMutualFriendsBasic();
         if (friends.length === 0) {
-          listEl.innerHTML = `<div class="switch-account-empty">No mutual friends yet. Follow each other to DM.</div>`;
+          listEl.innerHTML = `<div class="comments-empty">No mutual friends yet — follow each other to send videos in DMs</div>`;
           return;
         }
         listEl.innerHTML = friends.map(f => `
@@ -3893,18 +4049,45 @@
         `).join('');
       } catch (e) {
         console.warn('Load share targets error:', e);
-        listEl.innerHTML = `<div class="switch-account-empty">Could not load friends</div>`;
+        listEl.innerHTML = `<div class="comments-empty">Could not load friends</div>`;
       }
     };
 
-    window.closeShareToDmModal = function() {
-      document.getElementById('share-to-dm-modal').classList.remove('active');
+    window.closeShareSheet = function() {
+      document.getElementById('share-sheet-overlay').classList.remove('active');
+    };
+
+    window.copyVideoLink = async function() {
+      if (currentVideoIndex < 0) return;
+      const v = videoQueue[currentVideoIndex];
+      const shareUrl = `${window.location.origin}${window.location.pathname}#/v/${v.id}`;
+      closeShareSheet();
+      if (navigator.clipboard) {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          showToast('Link copied to clipboard');
+        } catch (e) {
+          showToast('Could not copy link');
+        }
+      } else {
+        showToast('Copying not supported on this device');
+      }
+    };
+
+    window.shareVideoNative = async function() {
+      if (currentVideoIndex < 0 || !navigator.share) return;
+      const v = videoQueue[currentVideoIndex];
+      const shareUrl = `${window.location.origin}${window.location.pathname}#/v/${v.id}`;
+      closeShareSheet();
+      try {
+        await navigator.share({ title: 'Riven', text: `Check out this video by @${v.authorHandle}`, url: shareUrl });
+      } catch (e) { /* user cancelled the native sheet — not an error */ }
     };
 
     window.sendVideoToFriend = async function(friendUid, friendName) {
       if (currentVideoIndex < 0 || !currentUser) return;
       const v = videoQueue[currentVideoIndex];
-      document.getElementById('share-to-dm-modal').classList.remove('active');
+      closeShareSheet();
 
       const chatId = getChatId(currentUser.uid, friendUid);
       const [uidA, uidB] = chatId.split('_');
