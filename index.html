@@ -3733,6 +3733,7 @@
         await updateDoc(doc(db, 'videos', currentCommentsVideoId, 'comments', commentId), updates);
       } catch (e) {
         console.warn('Comment reaction sync error:', e);
+        showToast('Could not save that: ' + (e.code || e.message || 'unknown error'), 4000);
       }
     };
 
@@ -3793,7 +3794,7 @@
         await updateDoc(doc(db, 'videos', currentCommentsVideoId), { commentsCount: increment(1) });
       } catch (e) {
         console.warn('Reply save error:', e);
-        showToast('Could not save reply');
+        showToast('Could not save reply: ' + (e.code || e.message || 'unknown error'), 5000);
       }
     };
 
@@ -4658,22 +4659,28 @@
     // video experience, DM and profile are light, standard app chrome.
     // Safari frequently ignores an in-place `setAttribute` on an existing
     // theme-color meta tag (it caches the value from when the tag was
-    // inserted), so instead we remove the old node and insert a brand new
-    // one each time — that reliably forces it to re-read the color.
+    // inserted), so instead we remove the node(s) and insert a brand new
+    // one each time. We also remove ALL meta[name=theme-color] elements
+    // (not just the one matched by id) in case more than one ever ends up
+    // in the document — if two exist, Safari can keep reading the first
+    // (stale) one instead of the one we just updated. The actual DOM swap
+    // is deferred to the next animation frame, since applying it mid-frame
+    // is part of why Safari sometimes silently drops the update.
     function syncChromeTheme(screenId) {
       const isDarkScreen = screenId === 'feed-screen';
       const color = isDarkScreen ? '#000000' : '#ffffff';
 
-      const oldMeta = document.getElementById('theme-color-meta');
-      if (oldMeta) oldMeta.remove();
-      const newMeta = document.createElement('meta');
-      newMeta.name = 'theme-color';
-      newMeta.id = 'theme-color-meta';
-      newMeta.content = color;
-      document.head.appendChild(newMeta);
+      requestAnimationFrame(() => {
+        document.querySelectorAll('meta[name="theme-color"]').forEach(el => el.remove());
+        const newMeta = document.createElement('meta');
+        newMeta.name = 'theme-color';
+        newMeta.id = 'theme-color-meta';
+        newMeta.content = color;
+        document.head.appendChild(newMeta);
 
-      const statusBarMeta = document.getElementById('apple-status-bar-meta');
-      if (statusBarMeta) statusBarMeta.setAttribute('content', isDarkScreen ? 'black-translucent' : 'default');
+        const statusBarMeta = document.getElementById('apple-status-bar-meta');
+        if (statusBarMeta) statusBarMeta.setAttribute('content', isDarkScreen ? 'black-translucent' : 'default');
+      });
 
       document.body.style.backgroundColor = color;
     }
