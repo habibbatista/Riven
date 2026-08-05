@@ -2181,7 +2181,7 @@
       <div class="search-header">
         <div class="search-input-box">
           <svg class="icon-svg" style="width:18px; height:18px; fill:#888;" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          <input type="text" id="search-input" placeholder="Search accounts..." oninput="handleSearch(this.value)">
+          <input type="text" id="search-input" placeholder="Search accounts..." oninput="debouncedHandleSearch(this.value)">
         </div>
         <span class="cancel-search-btn" onclick="closeSearchOverlay()">Cancel</span>
       </div>
@@ -2373,7 +2373,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import {
-      getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs,
+      initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+      doc, setDoc, getDoc, deleteDoc, collection, getDocs,
       addDoc, query, orderBy, where, limit, updateDoc, arrayUnion, arrayRemove,
       increment, serverTimestamp, runTransaction, onSnapshot
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -2389,7 +2390,21 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db = getFirestore(app);
+    // A persistent local cache (IndexedDB-backed) means repeat reads —
+    // reopening a profile, re-searching the same name, scrolling back to a
+    // video — are served instantly from disk while Firestore syncs fresh
+    // data in the background, instead of every single read waiting on a
+    // network round-trip. persistentMultipleTabManager lets it work
+    // correctly even with the app open in more than one tab.
+    let db;
+    try {
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+      });
+    } catch (e) {
+      console.warn('Persistent cache unavailable, falling back to in-memory:', e);
+      db = initializeFirestore(app, {});
+    }
     const provider = new GoogleAuthProvider();
     // Always show Google's account chooser instead of silently reusing the
     // last session — required for a working "switch accounts" experience.
@@ -2478,6 +2493,31 @@
     let videoQueue = [];
     let currentVideoIndex = -1;
     let touchStartY = null;
+
+    // ---- Shared users-collection cache ----
+    // Search, the DM friends list, and the share-to-DM picker each used to
+    // run their own full `users` collection scan independently — up to 3x
+    // redundant reads for the same data in quick succession. This caches
+    // one fetch for a short window and lets all three reuse it; filtering
+    // after that is done in memory (instant) instead of hitting Firestore
+    // again on every keystroke or every open.
+    let usersCache = null;
+    let usersCacheAt = 0;
+    const USERS_CACHE_TTL_MS = 60000;
+
+    async function getAllUsersCached(forceRefresh) {
+      const isFresh = usersCache && (Date.now() - usersCacheAt) < USERS_CACHE_TTL_MS;
+      if (isFresh && !forceRefresh) return usersCache;
+      const snap = await getDocs(collection(db, "users"));
+      usersCache = [];
+      snap.forEach(d => usersCache.push({ uid: d.id, ...d.data() }));
+      usersCacheAt = Date.now();
+      return usersCache;
+    }
+
+    function invalidateUsersCache() {
+      usersCache = null;
+    }
 
     function generateRandomUserHandle() {
       return `user${Math.floor(100000 + Math.random() * 900000)}`;
@@ -2827,6 +2867,11 @@
         loggedOutBox.style.display = 'none';
         loggedInBox.style.display = 'flex';
 
+        // Doesn't depend on the profile fetch below — start it immediately
+        // instead of waiting for that to resolve first.
+        loadFeed();
+        startIncomingCallListener();
+
         const cachedStr = localStorage.getItem(`riven_user_${user.uid}`);
         if (cachedStr) {
           try {
@@ -2861,9 +2906,7 @@
 
         saveKnownAccount(user.uid, myProfileData?.name, myProfileData?.handle, myProfileData?.pfp, user.email);
 
-        loadFeed();
         loadFriendsAndDms();
-        startIncomingCallListener();
       } else {
         loggedOutBox.style.display = 'flex';
         loggedInBox.style.display = 'none';
@@ -2922,26 +2965,46 @@
       }
 
       if (viewedProfileUid) {
-        try {
-          const userDoc = await getDoc(doc(db, "users", viewedProfileUid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            document.getElementById('following-count').innerText = (data.following || []).length;
+        // Following count, followers count, and the video grid are all
+        // independent reads — fire them off together instead of awaiting
+        // one after another.
+        const countsPromise = (async () => {
+          try {
+            const userDoc = await getDoc(doc(db, "users", viewedProfileUid));
+            if (userDoc.exists()) {
+              const data = userDoc.data();
+              document.getElementById('following-count').innerText = (data.following || []).length;
+              const followersCount = await getFollowersCountFast(viewedProfileUid, data);
+              document.getElementById('followers-count').innerText = followersCount;
+            }
+          } catch (e) {
+            console.warn("Error getting counts:", e);
           }
-
-          const q = query(collection(db, "users"));
-          const snap = await getDocs(q);
-          let followersCount = 0;
-          snap.forEach(d => {
-            const fList = d.data().following || [];
-            if (fList.includes(viewedProfileUid)) followersCount++;
-          });
-          document.getElementById('followers-count').innerText = followersCount;
-        } catch (e) {
-          console.warn("Error getting counts:", e);
-        }
+        })();
 
         loadProfileVideos(viewedProfileUid, isOwnProfile);
+        await countsPromise;
+      }
+    }
+
+    // Followers count used to require scanning the entire `users` collection
+    // on every single profile view (checking whose `following` array
+    // contains this uid) — slow, and it gets slower as the user base grows.
+    // Now it's a denormalized `followersCount` field, kept in sync by
+    // toggleFollowUser via increment()/decrement(). Profiles that predate
+    // this field get a one-time lazy backfill: compute it the old (slow) way
+    // just once, then persist it so every future view of that profile is a
+    // single fast field read instead of a full scan.
+    async function getFollowersCountFast(targetUid, userData) {
+      if (typeof userData.followersCount === 'number') return userData.followersCount;
+      try {
+        const allUsers = await getAllUsersCached();
+        const count = allUsers.filter(u => (u.following || []).includes(targetUid)).length;
+        updateDoc(doc(db, 'users', targetUid), { followersCount: count }).catch(() => {});
+        return count;
+      } catch (e) {
+        console.warn('Followers backfill error:', e);
+        return 0;
       }
     }
 
@@ -3100,9 +3163,15 @@
       localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
 
       try {
-        await updateDoc(doc(db, "users", currentUser.uid), {
-          following: isFollowing ? arrayRemove(viewedProfileUid) : arrayUnion(viewedProfileUid)
-        });
+        await Promise.all([
+          updateDoc(doc(db, "users", currentUser.uid), {
+            following: isFollowing ? arrayRemove(viewedProfileUid) : arrayUnion(viewedProfileUid)
+          }),
+          updateDoc(doc(db, "users", viewedProfileUid), {
+            followersCount: increment(isFollowing ? -1 : 1)
+          })
+        ]);
+        invalidateUsersCache();
         updateProfileDisplay(
           document.getElementById('user-display-name').innerText,
           document.getElementById('user-display-handle').innerText,
@@ -3142,13 +3211,10 @@
       let matches = [];
 
       try {
-        const querySnapshot = await getDocs(collection(db, "users"));
-        querySnapshot.forEach((docSnap) => {
-          const userData = docSnap.data();
-          if ((userData.name?.toLowerCase().includes(q) || userData.handle?.toLowerCase().includes(q))) {
-            matches.push({ ...userData, uid: docSnap.id });
-          }
-        });
+        const allUsers = await getAllUsersCached();
+        matches = allUsers.filter(userData =>
+          userData.name?.toLowerCase().includes(q) || userData.handle?.toLowerCase().includes(q)
+        );
       } catch(e) {
         console.warn("Firestore search warning:", e);
       }
@@ -3167,6 +3233,12 @@
           </div>
         </div>
       `).join('');
+    };
+
+    let searchDebounceTimer = null;
+    window.debouncedHandleSearch = function(value) {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => handleSearch(value), 220);
     };
 
     window.selectSearchResult = function(handle, name, pfp, uid) {
@@ -3961,10 +4033,12 @@
       }
 
       try {
-        await updateDoc(doc(db, 'videos', currentCommentsVideoId, 'comments', commentId), {
-          replies: arrayUnion(replyData)
-        });
-        await updateDoc(doc(db, 'videos', currentCommentsVideoId), { commentsCount: increment(1) });
+        await Promise.all([
+          updateDoc(doc(db, 'videos', currentCommentsVideoId, 'comments', commentId), {
+            replies: arrayUnion(replyData)
+          }),
+          updateDoc(doc(db, 'videos', currentCommentsVideoId), { commentsCount: increment(1) })
+        ]);
       } catch (e) {
         console.warn('Reply save error:', e);
         showToast('Could not save reply: ' + (e.code || e.message || 'unknown error'), 5000);
@@ -4003,8 +4077,10 @@
       document.getElementById('comment-count').innerText = v.commentsCount;
 
       try {
-        const newDocRef = await addDoc(collection(db, 'videos', v.id, 'comments'), commentData);
-        await updateDoc(doc(db, 'videos', v.id), { commentsCount: increment(1) });
+        const [newDocRef] = await Promise.all([
+          addDoc(collection(db, 'videos', v.id, 'comments'), commentData),
+          updateDoc(doc(db, 'videos', v.id), { commentsCount: increment(1) })
+        ]);
         currentComments.push({ id: newDocRef.id, ...commentData, createdAt: Date.now() });
         renderCommentsList();
         const list = document.getElementById('comments-list');
@@ -4093,20 +4169,21 @@
       const [uidA, uidB] = chatId.split('_');
 
       try {
-        await addDoc(collection(db, "chats", chatId, "messages"), {
-          senderUid: currentUser.uid,
-          type: 'video-share',
-          videoId: v.id,
-          videoThumb: getVideoThumbnail(v.videoUrl),
-          videoAuthorHandle: v.authorHandle || 'user',
-          createdAt: serverTimestamp()
-        });
-
-        await setDoc(doc(db, "chats", chatId), {
-          participants: [uidA, uidB],
-          lastMessage: '📹 Sent a video',
-          updatedAt: serverTimestamp()
-        }, { merge: true });
+        await Promise.all([
+          addDoc(collection(db, "chats", chatId, "messages"), {
+            senderUid: currentUser.uid,
+            type: 'video-share',
+            videoId: v.id,
+            videoThumb: getVideoThumbnail(v.videoUrl),
+            videoAuthorHandle: v.authorHandle || 'user',
+            createdAt: serverTimestamp()
+          }),
+          setDoc(doc(db, "chats", chatId), {
+            participants: [uidA, uidB],
+            lastMessage: '📹 Sent a video',
+            updatedAt: serverTimestamp()
+          }, { merge: true })
+        ]);
 
         showToast(`Sent to ${friendName}`);
       } catch (e) {
@@ -4162,18 +4239,10 @@
       const myDoc = await getDoc(doc(db, "users", currentUser.uid));
       if (!myDoc.exists()) return [];
       const myFollowing = myDoc.data().following || [];
-      const allUsersSnap = await getDocs(collection(db, "users"));
-      const friends = [];
-      allUsersSnap.forEach(userDoc => {
-        const uId = userDoc.id;
-        if (uId === currentUser.uid) return;
-        const uData = userDoc.data();
-        const uFollowing = uData.following || [];
-        if (myFollowing.includes(uId) && uFollowing.includes(currentUser.uid)) {
-          friends.push({ uid: uId, name: uData.name || 'User', handle: uData.handle || 'user', pfp: uData.pfp || '' });
-        }
-      });
-      return friends;
+      const allUsers = await getAllUsersCached();
+      return allUsers
+        .filter(u => u.uid !== currentUser.uid && myFollowing.includes(u.uid) && (u.following || []).includes(currentUser.uid))
+        .map(u => ({ uid: u.uid, name: u.name || 'User', handle: u.handle || 'user', pfp: u.pfp || '' }));
     }
 
     async function loadFriendsAndDms() {
@@ -4187,39 +4256,40 @@
         if (!myDoc.exists()) return;
 
         const myFollowing = myDoc.data().following || [];
-        const allUsersSnap = await getDocs(collection(db, "users"));
-        
-        let friends = [];
+        const allUsers = await getAllUsersCached();
 
-        for (let userDoc of allUsersSnap.docs) {
-          const uId = userDoc.id;
-          if (uId === currentUser.uid) continue;
+        const mutuals = allUsers.filter(u =>
+          u.uid !== currentUser.uid &&
+          myFollowing.includes(u.uid) &&
+          (u.following || []).includes(currentUser.uid)
+        );
 
-          const uData = userDoc.data();
-          const uFollowing = uData.following || [];
-
-          if (myFollowing.includes(uId) && uFollowing.includes(currentUser.uid)) {
-            const chatId = getChatId(currentUser.uid, uId);
+        // Each mutual friend needs its chat doc (for streak/last message) —
+        // fetching those in parallel instead of one at a time in a loop
+        // turns N sequential round-trips into a single wave of concurrent ones.
+        const friends = await Promise.all(mutuals.map(async (uData) => {
+          const chatId = getChatId(currentUser.uid, uData.uid);
+          let lastMessage = null;
+          let streak = 0;
+          try {
             const chatSnap = await getDoc(doc(db, "chats", chatId));
-            let lastMessage = null;
-            let streak = 0;
-
             if (chatSnap.exists()) {
               const cData = chatSnap.data();
               lastMessage = cData.lastMessage || null;
               streak = cData.streak || 0;
             }
-
-            friends.push({
-              uid: uId,
-              name: uData.name || 'User',
-              handle: uData.handle || 'user',
-              pfp: uData.pfp || '',
-              lastMessage: lastMessage,
-              streak
-            });
+          } catch (e) {
+            console.warn('Chat lookup error for', chatId, e);
           }
-        }
+          return {
+            uid: uData.uid,
+            name: uData.name || 'User',
+            handle: uData.handle || 'user',
+            pfp: uData.pfp || '',
+            lastMessage,
+            streak
+          };
+        }));
 
         if (friends.length === 0) {
           friendsListEl.innerHTML = `
