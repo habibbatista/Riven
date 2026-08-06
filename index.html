@@ -1959,56 +1959,38 @@
       background: #ff3b30;
     }
 
-    /* Hidden on mobile — the bottom-nav is a horizontal tab bar there and
-       has no room for this; it only appears once the sidebar layout kicks
-       in at the desktop breakpoint below. */
-    .sidebar-profile-header {
-      display: none;
-    }
-
-    .sidebar-profile-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-
-    .sidebar-profile-name {
-      font-size: 14px;
-      font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
     /* ---- TABLET (PORTRAIT) LAYOUT ----
        iPad portrait is ~768-834px wide; Android tablets vary but land
        similarly in portrait despite being 16:9/16:10 panels rather than
-       iPad's 4:3. Both are too narrow for a 3-column sidebar+video+comments
-       layout to fit comfortably, but were previously stuck at the phone's
-       430px cap — wasting most of the screen as black bars either side.
-       This tier keeps the familiar single-column mobile structure (bottom
-       tab bar, full-height video) but lets it use much more of that width. */
+       iPad's 4:3. Both are too narrow for the full 3-column layout below
+       to fit comfortably, but were previously stuck at the phone's 430px
+       cap — wasting most of the screen as black bars either side. This
+       tier keeps the familiar single-column mobile structure (bottom tab
+       bar, full-height video) but lets it use much more of that width. */
     @media (min-width: 600px) and (max-width: 999.98px) {
       #app-container {
         max-width: 720px;
       }
     }
 
+    /* Hidden by default (mobile) — only shown inside the desktop feed
+       column layout below. */
+    #desktop-profile-panel {
+      display: none;
+    }
+
     /* ---- DESKTOP / LANDSCAPE-TABLET LAYOUT ----
        Both iPad landscape (~1024px+) and Android tablets in landscape
        (~960px-1400px+, despite their different 16:9/16:10 aspect ratio)
-       land at or above this width, alongside actual desktop windows. At
-       and above it: a wider stage, the bottom tab bar becomes a left-hand
-       sidebar, and comments/share become a persistent-feeling side panel
-       that slides in from the right instead of a bottom sheet — closer to
-       the spirit of a real desktop/tablet app than just stretching the
-       phone layout wider. */
+       land at or above this width, alongside actual desktop windows.
+       The bottom tab bar becomes a top bar, and the feed screen splits
+       into three columns: whoever's video is playing (left), the video
+       itself (center), and comments as a permanent panel (right) instead
+       of a bottom sheet — matching the reference layout directly rather
+       than just stretching the phone UI wider. */
     @media (min-width: 1000px) {
       #app-container {
-        max-width: 1200px;
-        flex-direction: row;
+        max-width: 1400px;
         border-radius: 20px;
         overflow: hidden;
         box-shadow: 0 10px 60px rgba(0,0,0,0.35);
@@ -2016,38 +1998,39 @@
 
       .bottom-nav {
         order: -1;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: stretch;
-        width: 220px;
-        height: 100%;
-        padding: 24px 12px;
-        gap: 8px;
-        border-top: none;
-        border-right: 1px solid #1a1a1a;
-      }
-
-      .sidebar-profile-header {
-        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
         align-items: center;
-        gap: 10px;
-        padding: 8px 10px 18px 10px;
-        color: #fff;
-      }
-
-      .bottom-nav.light-nav .sidebar-profile-header {
-        color: #111;
+        width: 100%;
+        height: 64px;
+        padding: 0 24px;
+        gap: 22px;
+        border-top: none;
+        border-bottom: 1px solid #1a1a1a;
+        flex-shrink: 0;
       }
 
       .bottom-nav.light-nav {
-        border-right: 1px solid #eee;
+        border-bottom: 1px solid #eee;
+      }
+
+      .bottom-nav::before {
+        content: "Riven";
+        margin-right: auto;
+        font-size: 18px;
+        font-weight: 800;
+        color: #fff;
+      }
+
+      .bottom-nav.light-nav::before {
+        color: #111;
       }
 
       .nav-item {
-        width: 100%;
-        height: 52px;
-        border-radius: var(--radius-squircle);
-        gap: 10px;
+        width: 44px;
+        height: 44px;
+        flex: none;
+        border-radius: 50%;
       }
 
       .nav-item:hover {
@@ -2059,32 +2042,145 @@
       }
 
       .nav-upload-btn {
-        width: 44px;
-        height: 34px;
+        width: 40px;
+        height: 30px;
       }
 
       #screens-wrapper {
         border-radius: 0;
       }
 
-      /* Comments and the share sheet become a fixed-width right-hand panel
-         that slides in from the right, instead of a bottom sheet. */
-      #comments-overlay, #share-sheet-overlay {
+      /* The feed screen becomes a 3-column row: profile panel / video /
+         comments — everything else (DM, profile screens) stays a normal
+         single centered column, since a 3-way split doesn't apply there. */
+      #feed-screen {
+        flex-direction: row;
+        align-items: stretch;
+        justify-content: center;
+        background: #f0f0f0;
+      }
+
+      #desktop-profile-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 280px;
+        flex-shrink: 0;
+        background: #fff;
+        padding: 32px 24px;
+        border-right: 1px solid #eee;
+        overflow-y: auto;
+      }
+
+      .desktop-panel-brand {
+        align-self: flex-start;
+        font-size: 20px;
+        font-weight: 800;
+        color: #111;
+        margin-bottom: 28px;
+      }
+
+      .desktop-panel-avatar {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #eee;
+        border: 1px solid #ddd;
+      }
+
+      .desktop-panel-name {
+        font-size: 18px;
+        font-weight: 700;
+        margin-top: 14px;
+      }
+
+      .desktop-panel-handle {
+        font-size: 14px;
+        color: #666;
+        margin-top: 2px;
+        margin-bottom: 16px;
+      }
+
+      #desktop-panel-follow-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      .desktop-panel-stats {
+        display: flex;
+        gap: 28px;
+        margin-top: 20px;
+      }
+
+      .video-viewport {
+        flex: none;
+        width: 420px;
+        margin: auto 0;
+        height: 92%;
+        border-radius: 16px;
+        overflow: hidden;
+      }
+
+      .feed-header {
+        border-radius: 16px 16px 0 0;
+      }
+
+      /* Comments become a permanent right-hand column instead of a
+         toggleable bottom sheet — always visible, always in sync with
+         whichever video is playing (see updateDesktopProfilePanel/JS). */
+      #comments-overlay {
+        position: static !important;
+        display: flex !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 380px;
+        flex-shrink: 0;
+        background: #fff;
+        border-left: 1px solid #eee;
+      }
+
+      #comments-overlay .comments-backdrop {
+        display: none;
+      }
+
+      #comments-overlay .comments-sheet {
+        width: 100%;
+        max-height: 100%;
+        height: 100%;
+        border-radius: 0;
+        transform: none;
+        transition: none;
+      }
+
+      #comments-overlay .comments-close-btn {
+        display: none;
+      }
+
+      /* The comment-bubble action button on the video no longer needs to
+         "open" anything at this width — comments are always visible — so
+         it's redundant; hide it to avoid a dead-looking control. */
+      #comments-nav-item {
+        display: none !important;
+      }
+
+      /* The share sheet stays a slide-in panel (it's an occasional action,
+         not a permanent fixture like comments). */
+      #share-sheet-overlay {
         align-items: stretch;
         justify-content: flex-end;
       }
 
-      .comments-sheet {
+      #share-sheet-overlay .comments-sheet {
         width: 400px;
         max-width: 45%;
-        height: 100%;
-        max-height: 100%;
-        border-radius: 0;
         transform: translateX(100%);
         transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
       }
 
-      #comments-overlay.active .comments-sheet, #share-sheet-overlay.active .comments-sheet {
+      #share-sheet-overlay.active .comments-sheet {
         transform: translateX(0);
       }
     }
@@ -2105,6 +2201,26 @@
 
     <!-- 1. FEED SCREEN -->
     <section id="feed-screen" class="screen-view" data-pos="center">
+      <!-- Desktop-only: shows whoever authored the currently-playing video.
+           Hidden on mobile; populated by updateDesktopProfilePanel(). -->
+      <div id="desktop-profile-panel">
+        <div class="desktop-panel-brand">Riven</div>
+        <img class="desktop-panel-avatar" id="desktop-panel-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><circle cx='45' cy='45' r='45' fill='%23eee'/></svg>">
+        <div class="desktop-panel-name" id="desktop-panel-name">DisplayName</div>
+        <div class="desktop-panel-handle" id="desktop-panel-handle">@handle</div>
+        <button class="btn-follow" id="desktop-panel-follow-btn" style="display:none;">Follow</button>
+        <div class="desktop-panel-stats">
+          <div class="stat-item">
+            <span class="stat-value" id="desktop-panel-following-count">0</span>
+            <span class="stat-label">Following</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="desktop-panel-followers-count">0</span>
+            <span class="stat-label">Followers</span>
+          </div>
+        </div>
+      </div>
+
       <div class="feed-header">
         <div class="feed-tabs">
           <span class="feed-tab" id="tab-friends" onclick="setActiveFeedTab(this)">Friends</span>
@@ -2138,7 +2254,7 @@
               <svg class="icon-svg" id="like-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               <span class="action-count" id="like-count">0</span>
             </div>
-            <div class="action-item" onclick="openComments()">
+            <div class="action-item" id="comments-nav-item" onclick="openComments()">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
               <span class="action-count" id="comment-count">0</span>
             </div>
@@ -2186,6 +2302,29 @@
           </label>
           <input type="file" id="video-file-input" accept="video/*">
           <input type="file" id="audio-file-input" accept="audio/*">
+        </div>
+      </div>
+
+      <!-- Comments: bottom sheet on mobile (unchanged), permanent right
+           column on desktop — see the desktop media query. -->
+      <div id="comments-overlay">
+        <div class="comments-backdrop" onclick="closeComments()"></div>
+        <div class="comments-sheet">
+          <div class="comments-sheet-header">
+            <span id="comments-sheet-title">Comments</span>
+            <span class="comments-close-btn" onclick="closeComments()">✕</span>
+          </div>
+          <div class="comments-list" id="comments-list">
+            <div class="comments-empty">No comments yet</div>
+          </div>
+          <div class="comments-input-wrapper">
+            <label for="comment-image-input" class="chat-icon-btn" id="comment-image-btn" style="display:none;" title="Attach image">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/></svg>
+            </label>
+            <input type="file" id="comment-image-input" accept="image/*" style="display:none;">
+            <input type="text" id="comment-input" placeholder="Add a comment...">
+            <button class="comment-send-btn" onclick="submitComment()">Post</button>
+          </div>
         </div>
       </div>
     </section>
@@ -2330,27 +2469,6 @@
     </div>
 
     <!-- COMMENTS BOTTOM SHEET -->
-    <div id="comments-overlay">
-      <div class="comments-backdrop" onclick="closeComments()"></div>
-      <div class="comments-sheet">
-        <div class="comments-sheet-header">
-          <span id="comments-sheet-title">Comments</span>
-          <span class="comments-close-btn" onclick="closeComments()">✕</span>
-        </div>
-        <div class="comments-list" id="comments-list">
-          <div class="comments-empty">No comments yet</div>
-        </div>
-        <div class="comments-input-wrapper">
-          <label for="comment-image-input" class="chat-icon-btn" id="comment-image-btn" style="display:none;" title="Attach image">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/></svg>
-          </label>
-          <input type="file" id="comment-image-input" accept="image/*" style="display:none;">
-          <input type="text" id="comment-input" placeholder="Add a comment...">
-          <button class="comment-send-btn" onclick="submitComment()">Post</button>
-        </div>
-      </div>
-    </div>
-
     <!-- EDIT PROFILE MODAL -->
     <div class="modal-overlay" id="edit-modal">
       <div class="modal-content">
@@ -2376,9 +2494,9 @@
          existing accounts that predate this. -->
     <div class="modal-overlay" id="age-gate-modal">
       <div class="modal-content">
-        <h3 id="age-gate-title">How old are you?</h3>
+        <h3 id="age-gate-title">What's your birthdate?</h3>
         <p style="font-size:13px; color:#666; line-height:1.4;">Riven tailors your experience based on age — this determines things like whether DMs are available and your default privacy. You can't skip this step.</p>
-        <input type="number" id="age-gate-input" class="modal-input" placeholder="Your age" min="1" max="120" inputmode="numeric">
+        <input type="date" id="age-gate-input" class="modal-input">
         <p id="age-gate-error" style="font-size:12px; color:#ff2d55; display:none;"></p>
         <div class="modal-buttons" style="justify-content: space-between;">
           <button class="modal-btn modal-btn-cancel" onclick="logoutUser()">Log Out</button>
@@ -2508,10 +2626,6 @@
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
-      <div class="sidebar-profile-header" id="sidebar-profile-header">
-        <img class="sidebar-profile-avatar" id="sidebar-profile-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><circle cx='18' cy='18' r='18' fill='%23444'/></svg>">
-        <span class="sidebar-profile-name" id="sidebar-profile-name">Riven</span>
-      </div>
       <div class="nav-item active" onclick="switchTab('feed-screen', this)">
         <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       </div>
@@ -2942,20 +3056,47 @@
     function canPostImagesInComments(ageGroup) { return ageGroup === '16+'; }
     function defaultsToPrivate(ageGroup) { return ageGroup === '9-12'; }
 
+    // Birthdate (not a static age) is the actual source of truth — an age
+    // typed in today goes stale the moment a birthday passes, while a
+    // stored birthdate lets the correct tier be recomputed any time.
+    function computeAgeFromBirthdate(dobStr) {
+      const dob = new Date(dobStr + 'T00:00:00');
+      if (isNaN(dob.getTime())) return null;
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+      return age;
+    }
+
     window.showAgeGateModal = function() {
       const errorEl = document.getElementById('age-gate-error');
+      const input = document.getElementById('age-gate-input');
       errorEl.style.display = 'none';
-      document.getElementById('age-gate-input').value = '';
+      input.value = '';
+      // Can't be born in the future, and cap how far back the picker needs
+      // to scroll for a reasonable max age.
+      const today = new Date();
+      input.max = today.toISOString().slice(0, 10);
+      const minDate = new Date(today.getFullYear() - 120, today.getMonth(), today.getDate());
+      input.min = minDate.toISOString().slice(0, 10);
       document.getElementById('age-gate-modal').classList.add('active');
     };
 
     window.submitAgeGate = async function() {
       const input = document.getElementById('age-gate-input');
       const errorEl = document.getElementById('age-gate-error');
-      const age = parseInt(input.value, 10);
+      const dobStr = input.value;
 
-      if (isNaN(age) || age < 1 || age > 120) {
-        errorEl.textContent = 'Please enter a valid age.';
+      if (!dobStr) {
+        errorEl.textContent = 'Please select your birthdate.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const age = computeAgeFromBirthdate(dobStr);
+      if (age === null || age < 0 || age > 120) {
+        errorEl.textContent = 'Please enter a valid birthdate.';
         errorEl.style.display = 'block';
         return;
       }
@@ -2966,12 +3107,12 @@
       }
 
       const ageGroup = getAgeGroupForAge(age);
-      myProfileData = { ...myProfileData, age, ageGroup };
+      myProfileData = { ...myProfileData, birthdate: dobStr, age, ageGroup };
 
       if (currentUser) {
         localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
         try {
-          await setDoc(doc(db, 'users', currentUser.uid), { age, ageGroup }, { merge: true });
+          await setDoc(doc(db, 'users', currentUser.uid), { birthdate: dobStr, age, ageGroup }, { merge: true });
         } catch (e) {
           console.warn('Age save error:', e);
         }
@@ -3239,13 +3380,6 @@
       document.getElementById('user-display-name').innerText = name || 'User';
       document.getElementById('user-display-handle').innerHTML = withVerifiedBadge(`@${cleanHandle}`, cleanHandle, 15);
 
-      if (isOwnProfile) {
-        const sidebarAvatar = document.getElementById('sidebar-profile-avatar');
-        const sidebarName = document.getElementById('sidebar-profile-name');
-        if (sidebarAvatar && pfp) sidebarAvatar.src = pfp;
-        if (sidebarName) sidebarName.innerText = name || 'User';
-      }
-
       setProfileUrl(cleanHandle);
 
       if (pfp) {
@@ -3332,6 +3466,88 @@
         return 0;
       }
     }
+
+    // ---- Desktop profile panel (shows whoever authored the current video) ----
+    let desktopPanelUid = null;
+
+    async function updateDesktopProfilePanel(video) {
+      const panel = document.getElementById('desktop-profile-panel');
+      if (!panel) return;
+
+      if (!video) {
+        desktopPanelUid = null;
+        return;
+      }
+
+      desktopPanelUid = video.uid;
+      document.getElementById('desktop-panel-avatar').src = video.authorPfp || DEFAULT_AVATAR_SVG;
+      document.getElementById('desktop-panel-name').innerHTML = withVerifiedBadge(video.authorName || video.authorHandle || 'User', video.authorHandle, 15);
+      document.getElementById('desktop-panel-handle').innerHTML = withVerifiedBadge('@' + (video.authorHandle || 'user'), video.authorHandle, 13);
+
+      const followBtn = document.getElementById('desktop-panel-follow-btn');
+      const isOwn = currentUser && video.uid === currentUser.uid;
+      if (isOwn) {
+        followBtn.style.display = 'none';
+      } else {
+        followBtn.style.display = 'block';
+        const isFollowing = (myProfileData?.following || []).includes(video.uid);
+        followBtn.innerText = isFollowing ? 'Following' : 'Follow';
+        followBtn.classList.toggle('following', isFollowing);
+        followBtn.onclick = () => toggleFollowFromDesktopPanel(video.uid);
+      }
+
+      // Only worth the extra reads if the panel is actually visible.
+      if (window.innerWidth < 1000) return;
+
+      try {
+        const userDoc = await getDoc(doc(db, 'users', video.uid));
+        if (desktopPanelUid !== video.uid) return; // video changed again while this was in flight
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          document.getElementById('desktop-panel-following-count').innerText = (data.following || []).length;
+          const followers = await getFollowersCountFast(video.uid, data);
+          if (desktopPanelUid !== video.uid) return;
+          document.getElementById('desktop-panel-followers-count').innerText = followers;
+        }
+      } catch (e) {
+        console.warn('Desktop panel stats error:', e);
+      }
+    }
+
+    // Self-contained so it never touches the profile SCREEN's own DOM state
+    // (which might be showing a completely different person at the time).
+    window.toggleFollowFromDesktopPanel = async function(targetUid) {
+      if (!currentUser) {
+        showToast('Sign in to follow users');
+        return;
+      }
+      if (!targetUid || targetUid === currentUser.uid) return;
+
+      let myFollowing = myProfileData?.following || [];
+      const isFollowing = myFollowing.includes(targetUid);
+      myFollowing = isFollowing ? myFollowing.filter(id => id !== targetUid) : [...myFollowing, targetUid];
+      myProfileData.following = myFollowing;
+      localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
+
+      const v = videoQueue[currentVideoIndex];
+      if (v) updateDesktopProfilePanel(v);
+
+      try {
+        await Promise.all([
+          updateDoc(doc(db, "users", currentUser.uid), {
+            following: isFollowing ? arrayRemove(targetUid) : arrayUnion(targetUid)
+          }),
+          updateDoc(doc(db, "users", targetUid), {
+            followersCount: increment(isFollowing ? -1 : 1)
+          })
+        ]);
+        invalidateUsersCache();
+        loadFriendsAndDms();
+      } catch (e) {
+        console.error('Follow error (desktop panel):', e);
+        showToast('Error updating follow status');
+      }
+    };
 
     // ---- Profile videos grid (TikTok-style) ----
     async function loadProfileVideos(targetUid, isOwn) {
@@ -3689,10 +3905,13 @@
         // "+" button; it just doesn't need its own on-feed CTA anymore.
         uploadPrompt.style.display = 'none';
         videoContainer.classList.add('feed-loading');
+        updateDesktopProfilePanel(null);
         return;
       }
 
       const v = videoQueue[currentVideoIndex];
+      updateDesktopProfilePanel(v);
+      syncDesktopComments(v);
       uploadPrompt.style.display = 'none';
       videoContainer.classList.remove('feed-loading');
       videoPlayer.style.display = 'block';
@@ -4230,6 +4449,22 @@
         list.innerHTML = `<div class="comments-empty">No comments yet</div>`;
       }
     };
+
+    // At desktop widths comments are a permanent visible panel, not
+    // something opened by tapping the comment icon — so they need to load
+    // automatically whenever the video changes. Below that width this is a
+    // no-op; the mobile bottom sheet still opens on demand via openComments().
+    function syncDesktopComments(video) {
+      if (window.innerWidth < 1000 || !video) return;
+      if (currentCommentsVideoId === video.id) return; // already showing this video's comments
+      openComments();
+    }
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 1000 && currentVideoIndex >= 0) {
+        syncDesktopComments(videoQueue[currentVideoIndex]);
+      }
+    });
 
     function renderCommentsList() {
       const list = document.getElementById('comments-list');
