@@ -570,6 +570,15 @@
       margin-top: 2px;
     }
 
+    .comment-image {
+      max-width: 160px;
+      max-height: 160px;
+      border-radius: 10px;
+      margin-top: 6px;
+      display: block;
+      object-fit: cover;
+    }
+
     .comment-actions {
       display: flex;
       align-items: center;
@@ -1584,7 +1593,7 @@
        start if the swipe wasn't far enough. 0.75s deliberately slower than
        a typical snappy feed transition; a fast snap looked too abrupt here. */
     .video-frame-settling {
-      transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .video-drag-preview {
@@ -1950,6 +1959,136 @@
       background: #ff3b30;
     }
 
+    /* Hidden on mobile — the bottom-nav is a horizontal tab bar there and
+       has no room for this; it only appears once the sidebar layout kicks
+       in at the desktop breakpoint below. */
+    .sidebar-profile-header {
+      display: none;
+    }
+
+    .sidebar-profile-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .sidebar-profile-name {
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ---- TABLET (PORTRAIT) LAYOUT ----
+       iPad portrait is ~768-834px wide; Android tablets vary but land
+       similarly in portrait despite being 16:9/16:10 panels rather than
+       iPad's 4:3. Both are too narrow for a 3-column sidebar+video+comments
+       layout to fit comfortably, but were previously stuck at the phone's
+       430px cap — wasting most of the screen as black bars either side.
+       This tier keeps the familiar single-column mobile structure (bottom
+       tab bar, full-height video) but lets it use much more of that width. */
+    @media (min-width: 600px) and (max-width: 999.98px) {
+      #app-container {
+        max-width: 720px;
+      }
+    }
+
+    /* ---- DESKTOP / LANDSCAPE-TABLET LAYOUT ----
+       Both iPad landscape (~1024px+) and Android tablets in landscape
+       (~960px-1400px+, despite their different 16:9/16:10 aspect ratio)
+       land at or above this width, alongside actual desktop windows. At
+       and above it: a wider stage, the bottom tab bar becomes a left-hand
+       sidebar, and comments/share become a persistent-feeling side panel
+       that slides in from the right instead of a bottom sheet — closer to
+       the spirit of a real desktop/tablet app than just stretching the
+       phone layout wider. */
+    @media (min-width: 1000px) {
+      #app-container {
+        max-width: 1200px;
+        flex-direction: row;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 60px rgba(0,0,0,0.35);
+      }
+
+      .bottom-nav {
+        order: -1;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: stretch;
+        width: 220px;
+        height: 100%;
+        padding: 24px 12px;
+        gap: 8px;
+        border-top: none;
+        border-right: 1px solid #1a1a1a;
+      }
+
+      .sidebar-profile-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px 18px 10px;
+        color: #fff;
+      }
+
+      .bottom-nav.light-nav .sidebar-profile-header {
+        color: #111;
+      }
+
+      .bottom-nav.light-nav {
+        border-right: 1px solid #eee;
+      }
+
+      .nav-item {
+        width: 100%;
+        height: 52px;
+        border-radius: var(--radius-squircle);
+        gap: 10px;
+      }
+
+      .nav-item:hover {
+        background: rgba(255,255,255,0.08);
+      }
+
+      .bottom-nav.light-nav .nav-item:hover {
+        background: #f2f2f7;
+      }
+
+      .nav-upload-btn {
+        width: 44px;
+        height: 34px;
+      }
+
+      #screens-wrapper {
+        border-radius: 0;
+      }
+
+      /* Comments and the share sheet become a fixed-width right-hand panel
+         that slides in from the right, instead of a bottom sheet. */
+      #comments-overlay, #share-sheet-overlay {
+        align-items: stretch;
+        justify-content: flex-end;
+      }
+
+      .comments-sheet {
+        width: 400px;
+        max-width: 45%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+        transform: translateX(100%);
+        transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      #comments-overlay.active .comments-sheet, #share-sheet-overlay.active .comments-sheet {
+        transform: translateX(0);
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.001ms !important;
@@ -2131,7 +2270,7 @@
           </button>
           <div class="profile-menu-dropdown" id="profile-menu-dropdown">
             <div class="profile-menu-item" onclick="toggleProfileMenu(); openEditModal();">Edit Profile</div>
-            <div class="profile-menu-item" onclick="openSwitchAccountModal();">Switch Account</div>
+            <div class="profile-menu-item" id="switch-account-menu-item" onclick="openSwitchAccountModal();">Switch Account</div>
             <div class="profile-menu-item danger" onclick="logoutUser()">Log Out</div>
           </div>
         </div>
@@ -2202,6 +2341,10 @@
           <div class="comments-empty">No comments yet</div>
         </div>
         <div class="comments-input-wrapper">
+          <label for="comment-image-input" class="chat-icon-btn" id="comment-image-btn" style="display:none;" title="Attach image">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/></svg>
+          </label>
+          <input type="file" id="comment-image-input" accept="image/*" style="display:none;">
           <input type="text" id="comment-input" placeholder="Add a comment...">
           <button class="comment-send-btn" onclick="submitComment()">Post</button>
         </div>
@@ -2224,6 +2367,22 @@
         <div class="modal-buttons">
           <button class="modal-btn modal-btn-cancel" onclick="closeEditModal()">Cancel</button>
           <button class="modal-btn modal-btn-save" onclick="saveProfileChanges()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGE GATE MODAL — mandatory, no dismiss. Shown first thing when a
+         new account is created, and once (as a one-time prompt) for
+         existing accounts that predate this. -->
+    <div class="modal-overlay" id="age-gate-modal">
+      <div class="modal-content">
+        <h3 id="age-gate-title">How old are you?</h3>
+        <p style="font-size:13px; color:#666; line-height:1.4;">Riven tailors your experience based on age — this determines things like whether DMs are available and your default privacy. You can't skip this step.</p>
+        <input type="number" id="age-gate-input" class="modal-input" placeholder="Your age" min="1" max="120" inputmode="numeric">
+        <p id="age-gate-error" style="font-size:12px; color:#ff2d55; display:none;"></p>
+        <div class="modal-buttons" style="justify-content: space-between;">
+          <button class="modal-btn modal-btn-cancel" onclick="logoutUser()">Log Out</button>
+          <button class="modal-btn modal-btn-save" onclick="submitAgeGate()">Continue</button>
         </div>
       </div>
     </div>
@@ -2349,6 +2508,10 @@
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
+      <div class="sidebar-profile-header" id="sidebar-profile-header">
+        <img class="sidebar-profile-avatar" id="sidebar-profile-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><circle cx='18' cy='18' r='18' fill='%23444'/></svg>">
+        <span class="sidebar-profile-name" id="sidebar-profile-name">Riven</span>
+      </div>
       <div class="nav-item active" onclick="switchTab('feed-screen', this)">
         <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       </div>
@@ -2357,7 +2520,7 @@
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
         </div>
       </div>
-      <div class="nav-item" onclick="switchTab('dm-screen', this)">
+      <div class="nav-item" onclick="openDmTab(this)">
         <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
       </div>
       <div class="nav-item" id="nav-profile-btn" onclick="openMyProfile(this)">
@@ -2575,22 +2738,29 @@
       return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: diffDay > 365 ? 'numeric' : undefined });
     }
 
-    // Cloudinary auto-generates a jpg thumbnail (first frame) for a video
-    // just by swapping the file extension — no extra upload/API call needed.
+    // Explicit frame-at-1-second + crop for the thumbnail, rather than the
+    // implicit "just swap the extension" trick. The implicit approach can
+    // be inconsistent — it's what was causing some videos to show the wrong
+    // or a blank/black thumbnail (a screen recording's first frame is often
+    // a flash of black before content starts; so_1 skips past that). This
+    // is also sized for how it's actually displayed (~130-400px), not the
+    // full 720p video-playback size, which was wasted bandwidth for a grid
+    // thumbnail.
     function getVideoThumbnail(videoUrl) {
       if (!videoUrl) return '';
-      const optimized = getOptimizedVideoUrl(videoUrl);
-      const swapped = optimized.replace(/\.(mp4|mov|webm|mkv|avi|m4v)(\?.*)?$/i, '.jpg$2');
-      return swapped !== optimized ? swapped : optimized;
+      const transform = 'so_1,w_400,h_711,c_fill,g_auto,q_auto,f_auto';
+      const swapped = videoUrl.replace(/\.(mp4|mov|webm|mkv|avi|m4v)(\?.*)?$/i, '.jpg$2');
+      if (swapped === videoUrl) return getOptimizedVideoUrl(videoUrl); // unrecognized extension, fall back
+      if (swapped.includes('/upload/' + transform)) return swapped; // already applied
+      return swapped.replace('/upload/', `/upload/${transform}/`);
     }
 
-    // Caps delivered video (and, via getVideoThumbnail above, its jpg
-    // thumbnail) at 720p and lets Cloudinary auto-pick quality/format. This
-    // is a read-time transformation — Cloudinary generates and CDN-caches
-    // the smaller derivative on first request, so it applies to every video
-    // already on the platform too, not just new uploads, with no re-upload
-    // or storage migration needed. c_limit means it only ever shrinks,
-    // never upscales a smaller source.
+    // Caps delivered video at 720p and lets Cloudinary auto-pick
+    // quality/format. This is a read-time transformation — Cloudinary
+    // generates and CDN-caches the smaller derivative on first request, so
+    // it applies to every video already on the platform too, not just new
+    // uploads, with no re-upload or storage migration needed. c_limit means
+    // it only ever shrinks, never upscales a smaller source.
     function getOptimizedVideoUrl(videoUrl) {
       if (!videoUrl) return videoUrl;
       const transform = 'w_1280,h_720,c_limit,q_auto,f_auto';
@@ -2753,6 +2923,145 @@
       }
     }
 
+    // ---- Age tiers ----
+    // 9-12: no DMs, videos default to private, can't switch accounts.
+    // 13-15: DMs + video uploads allowed, can switch accounts, moderate
+    //        content filtering (based on the CURRENT VIEWER's own tier).
+    // 16+: images in comments, least filtering.
+    // This is a client-side experience gate, not a robust identity/age
+    // verification system — see the note on the self-report safety net
+    // further down for its limits.
+    function getAgeGroupForAge(age) {
+      if (age >= 16) return '16+';
+      if (age >= 13) return '13-15';
+      return '9-12';
+    }
+    function canUseDMs(ageGroup) { return ageGroup !== '9-12'; }
+    function canSwitchAccounts(ageGroup) { return ageGroup !== '9-12'; }
+    function canUploadVideos(ageGroup) { return ageGroup === '13-15' || ageGroup === '16+'; }
+    function canPostImagesInComments(ageGroup) { return ageGroup === '16+'; }
+    function defaultsToPrivate(ageGroup) { return ageGroup === '9-12'; }
+
+    window.showAgeGateModal = function() {
+      const errorEl = document.getElementById('age-gate-error');
+      errorEl.style.display = 'none';
+      document.getElementById('age-gate-input').value = '';
+      document.getElementById('age-gate-modal').classList.add('active');
+    };
+
+    window.submitAgeGate = async function() {
+      const input = document.getElementById('age-gate-input');
+      const errorEl = document.getElementById('age-gate-error');
+      const age = parseInt(input.value, 10);
+
+      if (isNaN(age) || age < 1 || age > 120) {
+        errorEl.textContent = 'Please enter a valid age.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (age < 9) {
+        errorEl.textContent = "Sorry, you must be at least 9 years old to use Riven.";
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const ageGroup = getAgeGroupForAge(age);
+      myProfileData = { ...myProfileData, age, ageGroup };
+
+      if (currentUser) {
+        localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
+        try {
+          await setDoc(doc(db, 'users', currentUser.uid), { age, ageGroup }, { merge: true });
+        } catch (e) {
+          console.warn('Age save error:', e);
+        }
+      }
+
+      document.getElementById('age-gate-modal').classList.remove('active');
+      applyAgeGroupUI();
+    };
+
+    // Re-applies every age-gated piece of UI — called after the age gate is
+    // submitted, after loading a profile, and after any safety downgrade.
+    function applyAgeGroupUI() {
+      const ageGroup = myProfileData?.ageGroup;
+      if (!ageGroup) return;
+
+      const switchAccountItem = document.getElementById('switch-account-menu-item');
+      if (switchAccountItem) switchAccountItem.style.display = canSwitchAccounts(ageGroup) ? 'block' : 'none';
+
+      const commentImageBtn = document.getElementById('comment-image-btn');
+      if (commentImageBtn) commentImageBtn.style.display = canPostImagesInComments(ageGroup) ? 'flex' : 'none';
+    }
+
+    // ---- Age self-report safety net ----
+    // If someone states an age under 13 in a comment/reply, their account is
+    // automatically moved to the 9-12 tier — DMs get disabled and their
+    // existing videos are switched to private, regardless of what tier they
+    // originally signed up under. This is a best-effort text match, not a
+    // verification system: it only catches explicit statements in comments
+    // people choose to post, it can be fooled or miss phrasing it doesn't
+    // recognize, and it only runs on newly-submitted comments/replies (it
+    // doesn't retroactively scan old ones).
+    const AGE_SELF_REPORT_REGEX = /\b(?:i'?m|i am)\s+(\d{1,2})\b(?:\s*(?:years?\s*old|yo\b|y\.?o\.?))?/i;
+
+    function detectSelfReportedAge(text) {
+      if (!text) return null;
+      const match = text.match(AGE_SELF_REPORT_REGEX);
+      if (!match) return null;
+      const num = parseInt(match[1], 10);
+      if (isNaN(num) || num < 5 || num > 17) return null;
+      return num;
+    }
+
+    async function maybeApplyAgeSafetyDowngrade(text) {
+      if (!currentUser || !myProfileData) return;
+      const reportedAge = detectSelfReportedAge(text);
+      if (reportedAge === null || reportedAge >= 13) return;
+      if (myProfileData.ageGroup === '9-12') return; // already at the safest tier
+
+      myProfileData.age = reportedAge;
+      myProfileData.ageGroup = '9-12';
+      localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
+      applyAgeGroupUI();
+
+      try {
+        await setDoc(doc(db, 'users', currentUser.uid), { age: reportedAge, ageGroup: '9-12' }, { merge: true });
+        // 9-12 accounts default to private — make their existing videos
+        // private too, not just future ones.
+        const q = query(collection(db, 'videos'), where('uid', '==', currentUser.uid));
+        const snap = await getDocs(q);
+        const updates = [];
+        snap.forEach(d => {
+          if (!d.data().isPrivate) updates.push(updateDoc(doc(db, 'videos', d.id), { isPrivate: true }));
+        });
+        await Promise.all(updates);
+      } catch (e) {
+        console.warn('Age safety downgrade sync error:', e);
+      }
+
+      showToast("For your safety, we've updated your account based on what you posted.", 6000);
+    }
+
+    // ---- Basic content filter (viewer-side, by the CURRENT user's tier) ----
+    // A small representative word list, not an exhaustive or production-grade
+    // moderation system — swap in a proper library/moderation API for real
+    // use. Filtering is based on the person VIEWING the comment, not who
+    // posted it: a 9-12 viewer sees things censored regardless of who wrote it.
+    const PROFANITY_WORDS = ['fuck', 'shit', 'bitch', 'ass', 'damn', 'hell', 'crap'];
+    const PROFANITY_REGEX = new RegExp('\\b(' + PROFANITY_WORDS.join('|') + ')\\w*\\b', 'gi');
+
+    function filterTextForViewer(text) {
+      if (!text) return text;
+      const ageGroup = myProfileData?.ageGroup;
+      // 16+ sees everything as posted. 13-15 and 9-12 both get profanity
+      // censored — 9-12 is intentionally the same filter for now (a real
+      // system would draw a finer line for the 13-15 tier's "more
+      // unfiltered" content; this covers the clearest, safest case first).
+      if (ageGroup === '16+') return text;
+      return text.replace(PROFANITY_REGEX, (m) => m[0] + '*'.repeat(Math.max(m.length - 1, 1)));
+    }
+
     async function saveUserData(uid, data) {
       localStorage.setItem('riven_last_active_uid', uid);
       localStorage.setItem(`riven_user_${uid}`, JSON.stringify(data));
@@ -2814,6 +3123,10 @@
 
     window.openSwitchAccountModal = function() {
       toggleProfileMenu(true);
+      if (myProfileData?.ageGroup && !canSwitchAccounts(myProfileData.ageGroup)) {
+        showToast("Account switching isn't available for accounts under 13");
+        return;
+      }
       renderSwitchAccountList();
       document.getElementById('switch-account-modal').classList.add('active');
     };
@@ -2906,6 +3219,11 @@
 
         saveKnownAccount(user.uid, myProfileData?.name, myProfileData?.handle, myProfileData?.pfp, user.email);
 
+        applyAgeGroupUI();
+        if (typeof myProfileData.age !== 'number') {
+          showAgeGateModal();
+        }
+
         loadFriendsAndDms();
       } else {
         loggedOutBox.style.display = 'flex';
@@ -2920,6 +3238,13 @@
       const cleanHandle = handle ? handle.replace('@', '').toLowerCase() : 'user';
       document.getElementById('user-display-name').innerText = name || 'User';
       document.getElementById('user-display-handle').innerHTML = withVerifiedBadge(`@${cleanHandle}`, cleanHandle, 15);
+
+      if (isOwnProfile) {
+        const sidebarAvatar = document.getElementById('sidebar-profile-avatar');
+        const sidebarName = document.getElementById('sidebar-profile-name');
+        if (sidebarAvatar && pfp) sidebarAvatar.src = pfp;
+        if (sidebarName) sidebarName.innerText = name || 'User';
+      }
 
       setProfileUrl(cleanHandle);
 
@@ -3389,6 +3714,7 @@
       // live inside this same wrapper, so they move together with it.
       videoFrame.classList.remove('video-fade-in', 'video-frame-settling');
       videoFrame.style.transform = '';
+      videoFrame.style.opacity = '';
       hideDragPreviews();
       if (!direction) {
         void videoFrame.offsetWidth;
@@ -3484,6 +3810,7 @@
         if (!el) return;
         el.style.display = 'none';
         el.style.transform = '';
+        el.style.opacity = '';
         el.classList.remove('video-frame-settling');
         el.removeAttribute('src');
       });
@@ -3509,6 +3836,7 @@
       dragDirection = direction;
       dragViewportHeight = videoContainer.clientHeight || 1;
       videoFrame.classList.remove('video-frame-settling', 'video-fade-in');
+      videoFrame.style.opacity = '1';
 
       const targetVideo = videoQueue[currentVideoIndex + (direction === 'next' ? 1 : -1)];
       const previewEl = document.getElementById(direction === 'next' ? 'video-drag-preview-next' : 'video-drag-preview-prev');
@@ -3517,6 +3845,7 @@
         if (targetVideo) {
           previewEl.src = getVideoThumbnail(targetVideo.videoUrl);
           previewEl.style.display = 'block';
+          previewEl.style.opacity = '0';
           previewEl.style.transform = `translateY(${direction === 'next' ? dragViewportHeight : -dragViewportHeight}px)`;
         } else {
           previewEl.style.display = 'none';
@@ -3531,10 +3860,16 @@
       videoFrame.style.transform = `translateY(${effectiveDelta}px)`;
 
       if (hasTarget) {
+        // Progress toward a full swipe (0 to 1), used to cross-fade the
+        // outgoing frame with the incoming preview as they slide.
+        const progress = Math.min(Math.abs(effectiveDelta) / dragViewportHeight, 1);
+        videoFrame.style.opacity = String(1 - progress * 0.6);
+
         const previewEl = document.getElementById(dragDirection === 'next' ? 'video-drag-preview-next' : 'video-drag-preview-prev');
         if (previewEl) {
           const startOffset = dragDirection === 'next' ? dragViewportHeight : -dragViewportHeight;
           previewEl.style.transform = `translateY(${startOffset + effectiveDelta}px)`;
+          previewEl.style.opacity = String(progress);
         }
       }
     }
@@ -3557,7 +3892,11 @@
       if (committed) {
         const finalOffset = direction === 'next' ? -dragViewportHeight : dragViewportHeight;
         videoFrame.style.transform = `translateY(${finalOffset}px)`;
-        if (previewEl) previewEl.style.transform = 'translateY(0px)';
+        videoFrame.style.opacity = '0.4';
+        if (previewEl) {
+          previewEl.style.transform = 'translateY(0px)';
+          previewEl.style.opacity = '1';
+        }
 
         setTimeout(() => {
           currentVideoIndex += (direction === 'next' ? 1 : -1);
@@ -3565,13 +3904,16 @@
         }, DRAG_SETTLE_MS);
       } else {
         videoFrame.style.transform = 'translateY(0px)';
+        videoFrame.style.opacity = '1';
         if (previewEl) {
           const startOffset = direction === 'next' ? dragViewportHeight : -dragViewportHeight;
           previewEl.style.transform = `translateY(${startOffset}px)`;
+          previewEl.style.opacity = '0';
         }
         setTimeout(() => {
           videoFrame.classList.remove('video-frame-settling');
           videoFrame.style.transform = '';
+          videoFrame.style.opacity = '';
           hideDragPreviews();
         }, DRAG_SETTLE_MS);
       }
@@ -3702,7 +4044,19 @@
         switchTab('profile-screen', document.getElementById('nav-profile-btn'));
         return;
       }
+      if (myProfileData?.ageGroup && !canUploadVideos(myProfileData.ageGroup)) {
+        showToast("Video uploads are available for accounts 13 and up");
+        return;
+      }
       document.getElementById('video-file-input').click();
+    };
+
+    window.openDmTab = function(navElement) {
+      if (currentUser && myProfileData?.ageGroup && !canUseDMs(myProfileData.ageGroup)) {
+        showToast("DMs aren't available for accounts under 13");
+        return;
+      }
+      switchTab('dm-screen', navElement);
     };
 
     // Selecting a video no longer uploads immediately — it first asks whether
@@ -3797,7 +4151,7 @@
           videoUrl,
           likesBy: [],
           commentsCount: 0,
-          isPrivate: false
+          isPrivate: defaultsToPrivate(myProfileData?.ageGroup)
         };
         if (audioUrl) {
           baseFields.audioUrl = audioUrl;
@@ -3892,25 +4246,30 @@
         <img class="comment-avatar" src="${avatar}">
         <div class="comment-body">
           <div class="handle">${withVerifiedBadge('@' + (r.handle || 'user'), r.handle, 11)}</div>
-          <div class="text">${escapeHtml(r.text || '')}</div>
+          <div class="text">${filterTextForViewer(escapeHtml(r.text || ''))}</div>
         </div>
       </div>`;
     }
 
     function renderCommentRow(c) {
       const avatar = c.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23eee\'/></svg>';
-      const safeText = escapeHtml(c.text || '');
+      const safeText = filterTextForViewer(escapeHtml(c.text || ''));
       const likesBy = c.likesBy || [];
       const dislikesBy = c.dislikesBy || [];
       const liked = !!(currentUser && likesBy.includes(currentUser.uid));
       const disliked = !!(currentUser && dislikesBy.includes(currentUser.uid));
       const replies = c.replies || [];
+      // Comment images are a 16+ feature — but if a younger viewer somehow
+      // sees an old comment with one attached, we still just show it (image
+      // moderation is a separate concern from this age gate).
+      const imageHtml = c.imageUrl ? `<img class="comment-image" src="${c.imageUrl}" loading="lazy">` : '';
 
       return `<div class="comment-row">
         <img class="comment-avatar" src="${avatar}">
         <div class="comment-body">
           <div class="handle">${withVerifiedBadge('@' + (c.handle || 'user'), c.handle, 12)}</div>
           <div class="text">${safeText}</div>
+          ${imageHtml}
           <div class="comment-actions">
             <span class="comment-action-btn ${liked ? 'active-like' : ''}" onclick="toggleCommentReaction('${c.id}', 'like')">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
@@ -4039,6 +4398,7 @@
           }),
           updateDoc(doc(db, 'videos', currentCommentsVideoId), { commentsCount: increment(1) })
         ]);
+        maybeApplyAgeSafetyDowngrade(text);
       } catch (e) {
         console.warn('Reply save error:', e);
         showToast('Could not save reply: ' + (e.code || e.message || 'unknown error'), 5000);
@@ -4049,6 +4409,8 @@
       document.getElementById('comments-overlay').classList.remove('active');
     };
 
+    let pendingCommentImageFile = null;
+
     window.submitComment = async function() {
       if (currentVideoIndex < 0) return;
       if (!currentUser) {
@@ -4057,7 +4419,7 @@
       }
       const input = document.getElementById('comment-input');
       const text = input.value.trim();
-      if (!text) return;
+      if (!text && !pendingCommentImageFile) return;
       input.value = '';
 
       const v = videoQueue[currentVideoIndex];
@@ -4073,6 +4435,23 @@
         createdAt: serverTimestamp()
       };
 
+      // Comment images are a 16+ feature.
+      if (pendingCommentImageFile && myProfileData?.ageGroup === '16+') {
+        try {
+          const formData = new FormData();
+          formData.append('file', pendingCommentImageFile);
+          formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+          const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
+          const uploadResult = await uploadRes.json();
+          if (uploadRes.ok) commentData.imageUrl = uploadResult.secure_url;
+        } catch (e) {
+          console.warn('Comment image upload error:', e);
+        }
+      }
+      pendingCommentImageFile = null;
+      const imageInput = document.getElementById('comment-image-input');
+      if (imageInput) imageInput.value = '';
+
       v.commentsCount = (v.commentsCount || 0) + 1;
       document.getElementById('comment-count').innerText = v.commentsCount;
 
@@ -4085,11 +4464,17 @@
         renderCommentsList();
         const list = document.getElementById('comments-list');
         list.scrollTop = list.scrollHeight;
+        maybeApplyAgeSafetyDowngrade(text);
       } catch (e) {
         console.warn('Comment save error:', e);
         showToast('Could not save comment');
       }
     };
+
+    document.getElementById('comment-image-input').addEventListener('change', function(e) {
+      pendingCommentImageFile = e.target.files[0] || null;
+      if (pendingCommentImageFile) showToast('Image attached — tap Post to send it with your comment');
+    });
 
     // ---- Share ----
     // ---- Unified share sheet: mutual friends (in-app DM) + copy link + native share ----
@@ -4104,6 +4489,11 @@
 
       if (!currentUser) {
         listEl.innerHTML = `<div class="comments-empty">Sign in to send videos to friends in Riven DMs</div>`;
+        return;
+      }
+
+      if (myProfileData?.ageGroup && !canUseDMs(myProfileData.ageGroup)) {
+        listEl.innerHTML = `<div class="comments-empty">DMs aren't available for accounts under 13</div>`;
         return;
       }
 
