@@ -1269,6 +1269,33 @@
       background: #eee;
     }
 
+    /* Wraps any avatar that needs the small green online-presence dot
+       badge at its bottom-right corner (Instagram/Messenger-style). Only
+       rendered when the person is actually online — hidden otherwise
+       rather than shown gray, to match how the reference mockup only
+       marked the currently-active person. */
+    .avatar-with-status {
+      position: relative;
+      flex-shrink: 0;
+      display: inline-flex;
+    }
+
+    .presence-dot {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #34c759;
+      border: 2.5px solid #fff;
+      display: none;
+    }
+
+    .presence-dot.online {
+      display: block;
+    }
+
     .dm-friend-info {
       display: flex;
       flex-direction: column;
@@ -2437,7 +2464,10 @@
           <div class="chat-back-btn" onclick="closeActiveChat()">
             <svg class="icon-svg" style="fill:#111; width:20px; height:20px;" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
           </div>
-          <img class="chat-header-avatar" id="chat-header-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='38' height='38'><circle cx='19' cy='19' r='19' fill='%23eee'/></svg>">
+          <div class="avatar-with-status">
+            <img class="chat-header-avatar" id="chat-header-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='38' height='38'><circle cx='19' cy='19' r='19' fill='%23eee'/></svg>">
+            <span class="presence-dot" id="chat-header-presence-dot"></span>
+          </div>
           <div class="chat-header-info">
             <span class="chat-header-name" id="chat-target-name">Chat</span>
             <span class="chat-header-streak" id="chat-header-streak">🔥 <span id="chat-header-streak-count">0</span></span>
@@ -2697,7 +2727,7 @@
       </div>
       <div class="call-controls-bar">
         <div class="call-control-btn" id="call-mute-btn" onclick="toggleCallMute()" title="Mute">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+          <svg class="icon-svg" viewBox="0 0 24 24"><path id="call-mute-icon-path" d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
         </div>
         <div class="call-control-btn" id="call-switch-video-btn" onclick="switchToVideoCall()" title="Switch to video" style="display:none;">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
@@ -2706,7 +2736,7 @@
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 3.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.68-1.36-2.66-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
         </div>
         <div class="call-control-btn" id="call-cam-btn" onclick="toggleCallCamera()" title="Camera">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+          <svg class="icon-svg" viewBox="0 0 24 24"><path id="call-cam-icon-path" d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
         </div>
       </div>
     </div>
@@ -2991,11 +3021,18 @@
 
     // Updates an already-rendered .activity-status element in place (dot +
     // text + online class) without touching the rest of its container.
-    function applyActivityStatus(el, lastActiveTimestamp) {
-      if (!el) return;
+    // `el` is the .activity-status text line; `dotEl`, if given, is the
+    // separate presence-dot badge overlaid on that person's avatar — both
+    // driven off the same lastActive timestamp so they never disagree.
+    function applyActivityStatus(el, lastActiveTimestamp, dotEl) {
       const status = getActivityStatus(lastActiveTimestamp);
-      el.classList.toggle('online', status.online);
-      el.innerHTML = `<span class="dot"></span>${status.text}`;
+      if (el) {
+        el.classList.toggle('online', status.online);
+        el.innerHTML = `<span class="dot"></span>${status.text}`;
+      }
+      if (dotEl) {
+        dotEl.classList.toggle('online', status.online);
+      }
     }
 
     async function writePresenceHeartbeat() {
@@ -3034,7 +3071,7 @@
         if (document.body.classList.contains('in-active-chat') && activeChatFriendUid) {
           try {
             const snap = await getDoc(doc(db, 'users', activeChatFriendUid));
-            applyActivityStatus(document.getElementById('chat-header-activity'), snap.exists() ? snap.data().lastActive : null);
+            applyActivityStatus(document.getElementById('chat-header-activity'), snap.exists() ? snap.data().lastActive : null, document.getElementById('chat-header-presence-dot'));
           } catch (e) { /* keep showing the last known status */ }
         } else {
           const rows = document.querySelectorAll('#dm-friends-list .dm-friend-item[data-uid]');
@@ -3044,7 +3081,7 @@
               rows.forEach(row => {
                 const uid = row.getAttribute('data-uid');
                 const uData = allUsers.find(u => u.uid === uid);
-                applyActivityStatus(row.querySelector('.activity-status'), uData ? uData.lastActive : null);
+                applyActivityStatus(row.querySelector('.activity-status'), uData ? uData.lastActive : null, row.querySelector('.presence-dot'));
               });
             } catch (e) { /* keep showing last known statuses */ }
           }
@@ -5248,7 +5285,10 @@
 
           return `
             <div class="dm-friend-item" data-uid="${f.uid}" onclick="openActiveChat('${f.uid}', '${(f.name).replace(/'/g, "\\'")}', '${(f.pfp || '').replace(/'/g, "\\'")}', '${(f.handle || '').replace(/'/g, "\\'")}')">
-              <img class="dm-friend-avatar" src="${f.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><circle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%23eee\'/></svg>'}" />
+              <div class="avatar-with-status">
+                <img class="dm-friend-avatar" src="${f.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><circle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%23eee\'/></svg>'}" />
+                <span class="presence-dot ${status.online ? 'online' : ''}"></span>
+              </div>
               <div class="dm-friend-info">
                 <span class="dm-friend-name">${withVerifiedBadge(f.name, f.handle, 13)}</span>
                 <span class="dm-friend-preview">${previewText}</span>
@@ -5497,6 +5537,10 @@
       isCallCameraOff = false;
       document.getElementById('call-mute-btn').classList.remove('active-off');
       document.getElementById('call-cam-btn').classList.remove('active-off');
+      const muteIconPath = document.getElementById('call-mute-icon-path');
+      if (muteIconPath) muteIconPath.setAttribute('d', ICON_PATHS.mic);
+      const camIconPath = document.getElementById('call-cam-icon-path');
+      if (camIconPath) camIconPath.setAttribute('d', ICON_PATHS.cam);
       document.getElementById('call-cam-btn').style.display = type === 'video' ? 'flex' : 'none';
       document.getElementById('call-switch-video-btn').style.display = type === 'voice' ? 'flex' : 'none';
     }
@@ -5793,12 +5837,25 @@
       startCallTimer();
     }
 
+    // Standard mic / mic-off and videocam / videocam-off icon paths — swapped
+    // in directly rather than only recoloring the button, so muted/camera-off
+    // is visually unmistakable instead of looking like the control didn't
+    // actually do anything.
+    const ICON_PATHS = {
+      mic: 'M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5-3c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z',
+      micOff: 'M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z',
+      cam: 'M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z',
+      camOff: 'M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z'
+    };
+
     window.toggleCallMute = function() {
       if (!localCallStream) return;
       triggerHaptic('light');
       isCallMuted = !isCallMuted;
       localCallStream.getAudioTracks().forEach(t => t.enabled = !isCallMuted);
       document.getElementById('call-mute-btn').classList.toggle('active-off', isCallMuted);
+      const iconPath = document.getElementById('call-mute-icon-path');
+      if (iconPath) iconPath.setAttribute('d', isCallMuted ? ICON_PATHS.micOff : ICON_PATHS.mic);
     };
 
     window.toggleCallCamera = function() {
@@ -5807,6 +5864,8 @@
       isCallCameraOff = !isCallCameraOff;
       localCallStream.getVideoTracks().forEach(t => t.enabled = !isCallCameraOff);
       document.getElementById('call-cam-btn').classList.toggle('active-off', isCallCameraOff);
+      const iconPath = document.getElementById('call-cam-icon-path');
+      if (iconPath) iconPath.setAttribute('d', isCallCameraOff ? ICON_PATHS.camOff : ICON_PATHS.cam);
     };
 
     window.hangUpCall = async function() {
@@ -5839,6 +5898,29 @@
       const overlay = document.getElementById('active-call-overlay');
       overlay.classList.remove('active');
       overlay.classList.remove('voice-mode');
+
+      // Belt-and-suspenders reset of every piece of call-control UI state,
+      // so a second call started right after this one always begins from
+      // a clean slate instead of possibly inheriting a stale muted/camera-
+      // off icon or button color from the call that just ended.
+      isCallMuted = false;
+      isCallCameraOff = false;
+      const muteBtn = document.getElementById('call-mute-btn');
+      const camBtn = document.getElementById('call-cam-btn');
+      if (muteBtn) muteBtn.classList.remove('active-off');
+      if (camBtn) camBtn.classList.remove('active-off');
+      const muteIconPath = document.getElementById('call-mute-icon-path');
+      if (muteIconPath) muteIconPath.setAttribute('d', ICON_PATHS.mic);
+      const camIconPath = document.getElementById('call-cam-icon-path');
+      if (camIconPath) camIconPath.setAttribute('d', ICON_PATHS.cam);
+      setCallStatusText('Calling...');
+
+      // If an unrelated incoming call happened to be ringing at the same
+      // moment this one ended, force it closed too rather than risk it
+      // being left half-shown behind the now-hidden active-call overlay.
+      if (pendingIncomingCall) {
+        hideIncomingCall();
+      }
 
       if (wasActive) triggerHaptic('end');
 
