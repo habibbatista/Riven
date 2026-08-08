@@ -2005,12 +2005,14 @@
         height: 64px;
         padding: 0 24px;
         gap: 22px;
-        border-top: none;
-        border-bottom: 1px solid #1a1a1a;
         flex-shrink: 0;
-      }
-
-      .bottom-nav.light-nav {
+        /* Desktop's top bar is always light, regardless of whether the
+           feed's own dark video viewport is currently showing — that
+           dark/light toggle is a mobile-only concept for the bottom tab
+           bar sitting flush against a full-bleed dark video. */
+        background-color: #fff !important;
+        color: #111 !important;
+        border-top: none;
         border-bottom: 1px solid #eee;
       }
 
@@ -2019,18 +2021,27 @@
         margin-right: auto;
         font-size: 18px;
         font-weight: 800;
-        color: #fff;
+        color: #111;
+        cursor: pointer;
       }
 
-      .bottom-nav.light-nav::before {
-        color: #111;
-      }
+      /* Icon order matches the reference mockup, left to right after the
+         "Riven" wordmark pushes everything else to the right: Profile,
+         DM, Upload, then the account "..." menu. The plain feed/home icon
+         is redundant with the "Riven" wordmark at this width, so it's
+         hidden rather than reordered in. */
+      #nav-feed-item { display: none; }
+      #nav-profile-btn { order: 1; }
+      #nav-dm-item { order: 2; }
+      #nav-upload-item { order: 3; }
+      #nav-more-item { display: flex; order: 4; }
 
       .nav-item {
         width: 44px;
         height: 44px;
         flex: none;
         border-radius: 50%;
+        color: #111;
       }
 
       .nav-item:hover {
@@ -2051,8 +2062,9 @@
       }
 
       /* The feed screen becomes a 3-column row: profile panel / video /
-         comments — everything else (DM, profile screens) stays a normal
-         single centered column, since a 3-way split doesn't apply there. */
+         action bar / comments — everything else (DM, profile screens)
+         stays a normal single centered column, since a 3-way split
+         doesn't apply there. */
       #feed-screen {
         flex-direction: row;
         align-items: stretch;
@@ -2147,6 +2159,44 @@
         border-radius: 16px 16px 0 0;
       }
 
+      /* On mobile the like/comment/share/privacy/delete icons overlay the
+         bottom-right corner of the video itself. The reference mockup
+         instead shows them as their own vertical strip in the gap between
+         the video and the comments panel ("Action bar"), on the page's
+         white background rather than floating over the black video — so
+         icons switch from white-on-video to dark-on-white here. */
+      .video-frame .right-action-bar {
+        display: none !important;
+      }
+
+      #desktop-action-bar {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        width: 76px;
+        flex-shrink: 0;
+        background: #fff;
+      }
+
+      #desktop-action-bar .action-item {
+        color: #111;
+      }
+
+      #desktop-action-bar .action-item .icon-svg {
+        filter: none;
+      }
+
+      #desktop-action-bar .action-count {
+        color: #111;
+        text-shadow: none;
+      }
+
+      #desktop-action-bar .audio-disc {
+        border-color: rgba(0,0,0,0.15);
+      }
+
       /* Comments become a permanent right-hand column instead of a
          toggleable bottom sheet — always visible, always in sync with
          whichever video is playing (see updateDesktopProfilePanel/JS). */
@@ -2178,9 +2228,9 @@
         display: none;
       }
 
-      /* The comment-bubble action button on the video no longer needs to
-         "open" anything at this width — comments are always visible — so
-         it's redundant; hide it to avoid a dead-looking control. */
+      /* The comment-bubble action button no longer needs to "open"
+         anything at this width — comments are always visible, and it now
+         lives in the desktop action bar strip, not on the video. */
       #comments-nav-item {
         display: none !important;
       }
@@ -2267,31 +2317,6 @@
           </div>
 
           <div class="right-action-bar" id="right-action-bar">
-            <div class="action-item" onclick="toggleLike()">
-              <svg class="icon-svg" id="like-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-              <span class="action-count" id="like-count">0</span>
-            </div>
-            <div class="action-item" id="comments-nav-item" onclick="openComments()">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-              <span class="action-count" id="comment-count">0</span>
-            </div>
-            <div class="action-item" onclick="openShareSheet()">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l6.96-4.11c.52.48 1.2.78 1.96.78 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.33 6.82 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.82 0 1.5-.33 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
-              <span class="action-count">Share</span>
-            </div>
-            <div class="action-item" id="privacy-action-item" style="display:none;" onclick="toggleVideoPrivacy()">
-              <svg class="icon-svg" id="privacy-icon" viewBox="0 0 24 24"><path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 016 0v3H9z"/></svg>
-              <span class="action-count" id="privacy-label">Public</span>
-            </div>
-            <div class="action-item" id="delete-action-item" style="display:none;" onclick="confirmDeleteCurrentVideo()">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-              <span class="action-count">Delete</span>
-            </div>
-            <div class="action-item audio-disc-item" id="audio-disc-item" style="display:none;">
-              <div class="audio-disc" id="audio-disc">
-                <img id="audio-disc-img" src="" alt="">
-              </div>
-            </div>
           </div>
         </div>
         <!-- Thumbnail previews shown only during an active drag — as the
@@ -2321,6 +2346,13 @@
           <input type="file" id="audio-file-input" accept="audio/*">
         </div>
       </div>
+
+      <!-- Desktop-only vertical action bar (like/comment/share/privacy/
+           delete) — mirrors #right-action-bar's contents via JS so mobile
+           keeps its on-video overlay and desktop gets its own strip
+           between the video and the comments panel, matching the
+           reference mockup's "Action bar" gap. Hidden on mobile. -->
+      <div class="right-action-bar" id="desktop-action-bar" style="display:none;"></div>
 
       <!-- Comments: bottom sheet on mobile (unchanged), permanent right
            column on desktop — see the desktop media query. -->
@@ -2643,19 +2675,27 @@
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
-      <div class="nav-item active" onclick="switchTab('feed-screen', this)">
+      <div class="nav-item active" id="nav-feed-item" onclick="switchTab('feed-screen', this)">
         <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       </div>
-      <div class="nav-item" onclick="triggerUploadFlow()">
+      <div class="nav-item" id="nav-upload-item" onclick="triggerUploadFlow()">
         <div class="nav-upload-btn">
           <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
         </div>
       </div>
-      <div class="nav-item" onclick="openDmTab(this)">
+      <div class="nav-item" id="nav-dm-item" onclick="openDmTab(this)">
         <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
       </div>
       <div class="nav-item" id="nav-profile-btn" onclick="openMyProfile(this)">
         <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+      </div>
+      <!-- Desktop-only "..." account menu (Edit Profile / Switch Account /
+           Log Out) — reuses the profile screen's dropdown so there's one
+           source of truth for those actions, just triggerable from any
+           screen at desktop widths. Hidden on mobile (the profile screen's
+           own "..." already covers this there). -->
+      <div class="nav-item" id="nav-more-item" style="display:none;" onclick="toggleDesktopMoreMenu(event)">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
       </div>
     </nav>
 
@@ -2667,7 +2707,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import {
-      initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+      initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager,
       doc, setDoc, getDoc, deleteDoc, collection, getDocs,
       addDoc, query, orderBy, where, limit, updateDoc, arrayUnion, arrayRemove,
       increment, serverTimestamp, runTransaction, onSnapshot
@@ -2696,8 +2736,19 @@
         localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
       });
     } catch (e) {
-      console.warn('Persistent cache unavailable, falling back to in-memory:', e);
-      db = initializeFirestore(app, {});
+      // initializeFirestore() throws if called more than once for the same
+      // app — including calling it again here as a "fallback," which was a
+      // real bug: if the persistent-cache attempt above failed (e.g. no
+      // IndexedDB access, common in sandboxed/third-party-iframe contexts
+      // like some responsive-design-checker tools), retrying with
+      // initializeFirestore() would itself throw an uncaught error and
+      // silently kill the entire script — CSS/HTML would still render, but
+      // no JS would ever run (feed never loads, buttons do nothing). Using
+      // getFirestore() here instead is always safe no matter what happened
+      // above, since it just returns the default Firestore instance rather
+      // than trying to re-configure one.
+      console.warn('Persistent cache unavailable, falling back to default in-memory cache:', e);
+      db = getFirestore(app);
     }
     const provider = new GoogleAuthProvider();
     // Always show Google's account chooser instead of silently reusing the
@@ -3004,7 +3055,7 @@
       document.getElementById('logged-out-state').style.display = 'flex';
       document.getElementById('logged-in-state').style.display = 'none';
       showToast("Logged out");
-      switchTab('feed-screen', document.querySelector('.nav-item'));
+      switchTab('feed-screen', document.getElementById('nav-feed-item'));
     };
 
     window.toggleProfileMenu = function(forceClose) {
@@ -3024,10 +3075,40 @@
       showToast(label);
     };
 
+    // ---- Desktop-only "..." account menu ----
+    // Reuses the profile screen's own dropdown markup/actions (Edit
+    // Profile / Switch Account / Log Out) so there's one source of truth;
+    // this just repositions & toggles it when triggered from the top bar
+    // instead of the profile screen's menu-dots button.
+    window.toggleDesktopMoreMenu = function(event) {
+      if (event) event.stopPropagation();
+      if (!currentUser) {
+        showToast('Sign in first');
+        return;
+      }
+      const menu = document.getElementById('profile-menu-dropdown');
+      const btn = document.getElementById('nav-more-item');
+      const wasActive = menu.classList.contains('active');
+      // Reparent temporarily under the nav button so it anchors to the top
+      // bar instead of wherever it last sat on the profile screen.
+      if (!wasActive) {
+        btn.appendChild(menu);
+        menu.style.position = 'absolute';
+        menu.style.top = '52px';
+        menu.style.right = '0';
+        menu.classList.add('active');
+      } else {
+        menu.classList.remove('active');
+      }
+    };
+
     document.addEventListener('click', (e) => {
       const menu = document.getElementById('profile-menu-dropdown');
       const btn = document.querySelector('.menu-dots-btn');
-      if (menu && menu.classList.contains('active') && !menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+      const moreBtn = document.getElementById('nav-more-item');
+      if (menu && menu.classList.contains('active') && !menu.contains(e.target)
+          && e.target !== btn && !(btn && btn.contains(e.target))
+          && e.target !== moreBtn && !(moreBtn && moreBtn.contains(e.target))) {
         menu.classList.remove('active');
       }
 
@@ -3615,7 +3696,7 @@
       if (!profileVideosCache || !profileVideosCache[idx]) return;
       videoQueue = profileVideosCache.slice();
       currentVideoIndex = idx;
-      switchTab('feed-screen', document.querySelector('.nav-item'));
+      switchTab('feed-screen', document.getElementById('nav-feed-item'));
       renderCurrentVideo();
     };
 
@@ -3636,7 +3717,7 @@
         }
         videoQueue = [{ id: snap.id, ...data }];
         currentVideoIndex = 0;
-        switchTab('feed-screen', document.querySelector('.nav-item'));
+        switchTab('feed-screen', document.getElementById('nav-feed-item'));
         renderCurrentVideo();
       } catch (e) {
         console.warn('Open shared video error:', e);
@@ -3877,8 +3958,68 @@
     const videoContainer = document.getElementById('video-container');
     const uploadPrompt = document.getElementById('upload-prompt');
     const playIndicator = document.getElementById('custom-play-indicator');
-    const rightActionBar = document.getElementById('right-action-bar');
     const authorBar = document.getElementById('video-author-bar');
+
+    // The like/comment/share/privacy/delete action buttons live in ONE
+    // template (buildActionBarHtml) and get mirrored into whichever
+    // action-bar element is actually visible: the on-video overlay on
+    // mobile, or the standalone desktop-action-bar column at 1000px+. Both
+    // elements share the same ids for their icon/count children, which is
+    // safe because only one of the two is ever visible/rendered into at a
+    // time per the CSS in the desktop media query (mobile hides
+    // #desktop-action-bar via its default inline style; desktop hides
+    // .video-frame .right-action-bar). To avoid duplicate-id lookups we
+    // resolve elements through getActionBarRoot() below rather than
+    // getElementById() for anything inside the action bar.
+    function getActionBarRoot() {
+      const isDesktop = window.innerWidth >= 1000;
+      return isDesktop ? document.getElementById('desktop-action-bar') : document.getElementById('right-action-bar');
+    }
+
+    function buildActionBarHtml() {
+      return `
+        <div class="action-item" onclick="toggleLike()">
+          <svg class="icon-svg" id="like-icon" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          <span class="action-count" id="like-count">0</span>
+        </div>
+        <div class="action-item" id="comments-nav-item" onclick="openComments()">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+          <span class="action-count" id="comment-count">0</span>
+        </div>
+        <div class="action-item" onclick="openShareSheet()">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l6.96-4.11c.52.48 1.2.78 1.96.78 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.33 6.82 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.82 0 1.5-.33 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+          <span class="action-count">Share</span>
+        </div>
+        <div class="action-item" id="privacy-action-item" style="display:none;" onclick="toggleVideoPrivacy()">
+          <svg class="icon-svg" id="privacy-icon" viewBox="0 0 24 24"><path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 016 0v3H9z"/></svg>
+          <span class="action-count" id="privacy-label">Public</span>
+        </div>
+        <div class="action-item" id="delete-action-item" style="display:none;" onclick="confirmDeleteCurrentVideo()">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          <span class="action-count">Delete</span>
+        </div>
+        <div class="action-item audio-disc-item" id="audio-disc-item" style="display:none;">
+          <div class="audio-disc" id="audio-disc">
+            <img id="audio-disc-img" src="" alt="">
+          </div>
+        </div>
+      `;
+    }
+
+    // Renders the action bar template into BOTH containers (mobile overlay
+    // + desktop column). Only one is visible per the CSS, but keeping both
+    // populated means a resize between the two breakpoints doesn't need a
+    // re-render, and there's exactly one place (buildActionBarHtml) that
+    // defines the actual buttons.
+    function renderActionBarShell() {
+      const mobileBar = document.getElementById('right-action-bar');
+      const desktopBar = document.getElementById('desktop-action-bar');
+      const html = buildActionBarHtml();
+      if (mobileBar) mobileBar.innerHTML = html;
+      if (desktopBar) desktopBar.innerHTML = html;
+    }
+
+    renderActionBarShell();
 
     async function loadFeed() {
       try {
@@ -3901,20 +4042,23 @@
 
     function renderCurrentVideo(direction) {
       const feedAudio = document.getElementById('feed-audio-player');
-      const audioDiscItem = document.getElementById('audio-disc-item');
-      const audioDisc = document.getElementById('audio-disc');
+      renderActionBarShell();
+      const mobileBar = document.getElementById('right-action-bar');
+      const desktopBar = document.getElementById('desktop-action-bar');
+      const audioDiscItem = document.querySelectorAll('#audio-disc-item');
+      const audioDisc = document.querySelectorAll('#audio-disc');
 
       if (currentVideoIndex < 0 || videoQueue.length === 0) {
         videoPlayer.pause();
         videoPlayer.removeAttribute('src');
         videoPlayer.style.display = 'none';
-        rightActionBar.classList.remove('visible');
+        mobileBar.classList.remove('visible');
         authorBar.style.display = 'none';
 
         feedAudio.pause();
         feedAudio.removeAttribute('src');
-        audioDiscItem.style.display = 'none';
-        audioDisc.classList.remove('spinning');
+        audioDiscItem.forEach(el => el.style.display = 'none');
+        audioDisc.forEach(el => el.classList.remove('spinning'));
 
         // Always a plain gray placeholder now — there are already videos on
         // the platform, so this only ever shows briefly while loading (or,
@@ -3961,28 +4105,28 @@
       // own sound and play the attached audio in sync instead.
       if (v.audioUrl) {
         videoPlayer.muted = true;
-        audioDiscItem.style.display = 'flex';
-        document.getElementById('audio-disc-img').src = v.audioOwnerPfp || v.authorPfp || DEFAULT_AVATAR_SVG;
+        audioDiscItem.forEach(el => el.style.display = 'flex');
+        document.querySelectorAll('#audio-disc-img').forEach(el => { el.src = v.audioOwnerPfp || v.authorPfp || DEFAULT_AVATAR_SVG; });
         if (feedAudio.getAttribute('src') !== v.audioUrl) {
           feedAudio.src = v.audioUrl;
         }
         feedAudio.loop = true;
         feedAudio.currentTime = 0;
         feedAudio.play().catch(() => {});
-        audioDisc.classList.add('spinning');
+        audioDisc.forEach(el => el.classList.add('spinning'));
       } else {
         videoPlayer.muted = false;
         feedAudio.pause();
         feedAudio.removeAttribute('src');
-        audioDiscItem.style.display = 'none';
-        audioDisc.classList.remove('spinning');
+        audioDiscItem.forEach(el => el.style.display = 'none');
+        audioDisc.forEach(el => el.classList.remove('spinning'));
       }
 
       videoPlayer.play().catch(() => {});
       showPlayIndicator(false);
       preloadAdjacentVideos();
 
-      rightActionBar.classList.add('visible');
+      mobileBar.classList.add('visible');
       authorBar.style.display = 'flex';
       document.getElementById('video-author-handle').innerHTML = withVerifiedBadge('@' + (v.authorHandle || 'user'), v.authorHandle, 13);
       document.getElementById('video-author-date').innerText = formatUploadDate(v.createdAt);
@@ -3990,22 +4134,17 @@
 
       const likesBy = v.likesBy || [];
       isLiked = !!(currentUser && likesBy.includes(currentUser.uid));
-      document.getElementById('like-count').innerText = likesBy.length;
-      document.getElementById('like-icon').style.fill = isLiked ? '#ff2d55' : 'currentColor';
-      document.getElementById('comment-count').innerText = v.commentsCount || 0;
+      document.querySelectorAll('#like-count').forEach(el => { el.innerText = likesBy.length; });
+      document.querySelectorAll('#like-icon').forEach(el => { el.style.fill = isLiked ? '#ff2d55' : 'currentColor'; });
+      document.querySelectorAll('#comment-count').forEach(el => { el.innerText = v.commentsCount || 0; });
 
       // Owner-only privacy toggle + delete
-      const privacyItem = document.getElementById('privacy-action-item');
-      const deleteItem = document.getElementById('delete-action-item');
       const isOwner = currentUser && v.uid === currentUser.uid;
+      document.querySelectorAll('#privacy-action-item').forEach(el => { el.style.display = isOwner ? 'flex' : 'none'; });
+      document.querySelectorAll('#delete-action-item').forEach(el => { el.style.display = isOwner ? 'flex' : 'none'; });
       if (isOwner) {
-        privacyItem.style.display = 'flex';
-        deleteItem.style.display = 'flex';
-        document.getElementById('privacy-label').innerText = v.isPrivate ? 'Private' : 'Public';
-        document.getElementById('privacy-icon').style.fill = v.isPrivate ? '#ff2d55' : 'currentColor';
-      } else {
-        privacyItem.style.display = 'none';
-        deleteItem.style.display = 'none';
+        document.querySelectorAll('#privacy-label').forEach(el => { el.innerText = v.isPrivate ? 'Private' : 'Public'; });
+        document.querySelectorAll('#privacy-icon').forEach(el => { el.style.fill = v.isPrivate ? '#ff2d55' : 'currentColor'; });
       }
     }
 
@@ -4194,15 +4333,15 @@
       if (e.target.closest('.right-action-bar') || e.target.closest('#upload-prompt')) return;
       if (!videoPlayer.src) return;
       const feedAudio = document.getElementById('feed-audio-player');
-      const audioDisc = document.getElementById('audio-disc');
+      const audioDisc = document.querySelectorAll('#audio-disc');
       if (videoPlayer.paused) {
         videoPlayer.play();
-        if (feedAudio.getAttribute('src')) { feedAudio.play().catch(() => {}); audioDisc.classList.add('spinning'); }
+        if (feedAudio.getAttribute('src')) { feedAudio.play().catch(() => {}); audioDisc.forEach(el => el.classList.add('spinning')); }
         showPlayIndicator(false);
       }
       else {
         videoPlayer.pause();
-        if (feedAudio.getAttribute('src')) { feedAudio.pause(); audioDisc.classList.remove('spinning'); }
+        if (feedAudio.getAttribute('src')) { feedAudio.pause(); audioDisc.forEach(el => el.classList.remove('spinning')); }
         showPlayIndicator(true);
       }
     });
@@ -4417,10 +4556,11 @@
         showToast('Sign in to like videos');
         return;
       }
-      const likeIconEl = document.getElementById('like-icon');
-      likeIconEl.classList.remove('like-pop');
-      void likeIconEl.offsetWidth;
-      likeIconEl.classList.add('like-pop');
+      document.querySelectorAll('#like-icon').forEach(likeIconEl => {
+        likeIconEl.classList.remove('like-pop');
+        void likeIconEl.offsetWidth;
+        likeIconEl.classList.add('like-pop');
+      });
 
       const v = videoQueue[currentVideoIndex];
       const likesBy = v.likesBy || [];
@@ -4481,6 +4621,8 @@
       if (window.innerWidth >= 1000 && currentVideoIndex >= 0) {
         syncDesktopComments(videoQueue[currentVideoIndex]);
       }
+      renderActionBarShell();
+      if (currentVideoIndex >= 0) renderCurrentVideo();
     });
 
     function renderCommentsList() {
@@ -4639,8 +4781,7 @@
       const v = videoQueue.find(vq => vq.id === currentCommentsVideoId);
       if (v) {
         v.commentsCount = (v.commentsCount || 0) + 1;
-        const countEl = document.getElementById('comment-count');
-        if (countEl) countEl.innerText = v.commentsCount;
+        document.querySelectorAll('#comment-count').forEach(el => { el.innerText = v.commentsCount; });
       }
 
       try {
@@ -4705,7 +4846,7 @@
       if (imageInput) imageInput.value = '';
 
       v.commentsCount = (v.commentsCount || 0) + 1;
-      document.getElementById('comment-count').innerText = v.commentsCount;
+      document.querySelectorAll('#comment-count').forEach(el => { el.innerText = v.commentsCount; });
 
       try {
         const [newDocRef] = await Promise.all([
@@ -5611,6 +5752,23 @@
         videoPlayer.pause();
       }
     };
+
+    // "Riven" wordmark in the desktop top bar — clicking it returns to the
+    // feed, same as tapping the (now-hidden-on-desktop) feed nav icon did.
+    document.querySelector('.bottom-nav').addEventListener('click', function(e) {
+      if (window.innerWidth < 1000) return;
+      const rect = this.getBoundingClientRect();
+      // The ::before wordmark isn't a real element we can attach a
+      // listener to directly, so this checks for a click landing in its
+      // rendered region (left edge of the bar, before the first real
+      // nav-item) and treats that as "clicked the logo."
+      const firstRealItem = document.getElementById('nav-profile-btn');
+      if (!firstRealItem) return;
+      const itemRect = firstRealItem.getBoundingClientRect();
+      if (e.clientX < itemRect.left && e.clientX > rect.left) {
+        switchTab('feed-screen', document.getElementById('nav-feed-item'));
+      }
+    });
 
     // Set the initial screen stacking without an entrance animation
     positionScreens(currentScreenId, false);
