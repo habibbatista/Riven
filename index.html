@@ -2141,23 +2141,26 @@
         justify-content: center;
       }
 
+      /* True 9:16 portrait box: height drives the size (capped at 94% of
+         the column), width is derived from aspect-ratio and capped at
+         420px — instead of the previous fixed 420px width paired with a
+         94%-of-viewport height, which had no fixed relationship to each
+         other and so wasn't reliably 9:16 depending on window shape. */
       .video-frame {
-        width: 420px;
-        max-width: 100%;
         height: 94%;
-        margin: auto 0;
+        max-height: 94%;
+        aspect-ratio: 9 / 16;
+        width: auto;
+        max-width: 420px;
+        margin: auto;
         border-radius: 16px;
         overflow: hidden;
       }
 
-      .feed-header {
-        width: 420px;
-        max-width: 100%;
-        left: 50%;
-        right: auto;
-        transform: translateX(-50%);
-        border-radius: 16px 16px 0 0;
-      }
+      /* .feed-header now lives INSIDE .video-frame (moved in the HTML) so
+         it automatically inherits the exact same box — no separate width/
+         position math needed, and video-frame's overflow:hidden clips it
+         to the same rounded corners for free. */
 
       /* On mobile the like/comment/share/privacy/delete icons overlay the
          bottom-right corner of the video itself. The reference mockup
@@ -2290,16 +2293,21 @@
       </div>
 
       <div class="video-viewport" id="video-container">
-        <div class="feed-header">
-          <div class="feed-tabs">
-            <span class="feed-tab" id="tab-friends" onclick="setActiveFeedTab(this)">Friends</span>
-            <span class="feed-tab active" id="tab-foryou" onclick="setActiveFeedTab(this)">For you</span>
-          </div>
-          <div class="header-icon" onclick="openSearchOverlay()">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          </div>
-        </div>
         <div class="video-frame" id="video-frame">
+          <!-- Lives inside .video-frame (not as a viewport-wide sibling)
+               so it always matches the video's actual rendered box — full
+               width on mobile, the 9:16-constrained box on desktop —
+               without separate width/position math duplicating
+               .video-frame's own sizing. -->
+          <div class="feed-header">
+            <div class="feed-tabs">
+              <span class="feed-tab" id="tab-friends" onclick="setActiveFeedTab(this)">Friends</span>
+              <span class="feed-tab active" id="tab-foryou" onclick="setActiveFeedTab(this)">For you</span>
+            </div>
+            <div class="header-icon" onclick="openSearchOverlay()">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            </div>
+          </div>
           <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted preload="auto"></video>
 
           <div class="custom-play-overlay" id="custom-play-indicator">
