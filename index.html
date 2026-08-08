@@ -2981,19 +2981,43 @@
 
     // ---- Presence / activity status ----
     // Every signed-in user's own doc gets a `lastActive` server timestamp
-    // written every 5 seconds while the tab is actually visible (heartbeat).
-    // Anyone reading another user's `lastActive` field derives an "online"
-    // / "Active Xm ago" label from how recently that timestamp landed —
-    // there's no separate boolean to keep in sync, just this one field.
+    // written every 5 seconds while the tab is actually visible (heartbeat),
+    // using serverTimestamp() so the value is authoritative from Firestore's
+    // clock, not any one client's local clock.
+    //
+    // Display is push-based, not polled: whoever is looking at a given
+    // person's status holds a live onSnapshot listener on that person's
+    // user doc, so the instant a new heartbeat (or any other change) lands
+    // server-side, every open client re-renders immediately — there's no
+    // "wait up to 5s for the next poll" window where two clients could
+    // disagree about whether someone's online.
+    //
+    // The one thing a snapshot listener can't do on its own is age the
+    // *relative* text ("Active now" → "Active 30s ago") when nothing new
+    // is being written (e.g. the other person went idle) — a doc with no
+    // changes never re-fires onSnapshot. So a lightweight local ticker
+    // re-renders from a small in-memory cache of last-known timestamps
+    // every few seconds, purely client-side with no extra reads.
+    //
     // Shown on the DM tab (friend list rows + open chat header) and the
     // Profile tab; intentionally NOT rendered anywhere on the feed/FYP tab.
     const PRESENCE_HEARTBEAT_MS = 5000;
+    const PRESENCE_TEXT_TICK_MS = 3000;
     // A little over one heartbeat interval, so a person is still shown
     // "Active now" between their heartbeats landing, not flickering to
     // "Active 5s ago" for a moment every cycle.
     const PRESENCE_ONLINE_THRESHOLD_SEC = 12;
     let presenceHeartbeatInterval = null;
-    let activityDisplayInterval = null;
+    let presenceTextTickInterval = null;
+
+    // uid -> last-known lastActive value, kept fresh by the onSnapshot
+    // listeners below. Purely a display cache; Firestore is always the
+    // source of truth, this just avoids re-fetching on every tick.
+    const presenceCache = {};
+
+    let chatHeaderPresenceUnsub = null;
+    let profilePresenceUnsub = null;
+    const dmListPresenceUnsubs = {}; // uid -> unsubscribe fn
 
     function getActivityStatus(lastActiveTimestamp) {
       if (!lastActiveTimestamp) return { online: false, text: 'Offline' };
@@ -3010,11 +3034,11 @@
       return { online: false, text: `Active ${diffDay} day${diffDay === 1 ? '' : 's'} ago` };
     }
 
-    // Updates an already-rendered .activity-status element in place (dot +
-    // text + online class) without touching the rest of its container.
-    // `el` is the .activity-status text line; `dotEl`, if given, is the
-    // separate presence-dot badge overlaid on that person's avatar — both
-    // driven off the same lastActive timestamp so they never disagree.
+    // Updates an already-rendered .activity-status element in place (text +
+    // online class) without touching the rest of its container. `el` is the
+    // .activity-status text line; `dotEl`, if given, is the separate
+    // presence-dot badge overlaid on that person's avatar — both driven off
+    // the same lastActive timestamp so they never disagree with each other.
     function applyActivityStatus(el, lastActiveTimestamp, dotEl) {
       const status = getActivityStatus(lastActiveTimestamp);
       if (el) {
@@ -3024,6 +3048,15 @@
       if (dotEl) {
         dotEl.classList.toggle('online', status.online);
       }
+    }
+
+    // Caches the freshest known value for `uid` (so the local ticker can
+    // keep aging its text without a network call) and renders it right
+    // away — used both by onSnapshot callbacks (instant, on every change)
+    // and by initial renders that already have the data on hand.
+    function cacheAndApplyActivityStatus(uid, lastActiveTimestamp, el, dotEl) {
+      if (uid) presenceCache[uid] = lastActiveTimestamp;
+      applyActivityStatus(el, lastActiveTimestamp, dotEl);
     }
 
     async function writePresenceHeartbeat() {
@@ -3047,54 +3080,93 @@
     }
 
     // Immediately send a fresh heartbeat the moment the tab becomes visible
-    // again, rather than waiting up to 5s for the next scheduled one.
+    // again, rather than waiting up to 5s for the next scheduled one — so
+    // coming back to the tab reflects as "active" right away.
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') writePresenceHeartbeat();
     });
 
-    // Refreshes whichever activity-status labels are currently on screen —
-    // DM friend list rows, an open chat's header, or a viewed profile.
-    // Deliberately does nothing on the feed/FYP tab.
-    async function refreshActivityStatuses() {
-      if (!currentUser || currentScreenId === 'feed-screen') return;
+    // ---- Live subscriptions (instant cross-client sync) ----
 
-      if (currentScreenId === 'dm-screen') {
-        if (document.body.classList.contains('in-active-chat') && activeChatFriendUid) {
-          try {
-            const snap = await getDoc(doc(db, 'users', activeChatFriendUid));
-            applyActivityStatus(document.getElementById('chat-header-activity'), snap.exists() ? snap.data().lastActive : null, document.getElementById('chat-header-presence-dot'));
-          } catch (e) { /* keep showing the last known status */ }
-        } else {
-          const rows = document.querySelectorAll('#dm-friends-list .dm-friend-item[data-uid]');
-          if (rows.length) {
-            try {
-              const allUsers = await getAllUsersCached(true);
-              rows.forEach(row => {
-                const uid = row.getAttribute('data-uid');
-                const uData = allUsers.find(u => u.uid === uid);
-                applyActivityStatus(row.querySelector('.activity-status'), uData ? uData.lastActive : null, row.querySelector('.presence-dot'));
-              });
-            } catch (e) { /* keep showing last known statuses */ }
-          }
-        }
+    function subscribeChatHeaderPresence(uid) {
+      unsubscribeChatHeaderPresence();
+      if (!uid) return;
+      chatHeaderPresenceUnsub = onSnapshot(doc(db, 'users', uid), (snap) => {
+        cacheAndApplyActivityStatus(uid, snap.exists() ? snap.data().lastActive : null,
+          document.getElementById('chat-header-activity'), document.getElementById('chat-header-presence-dot'));
+      }, (e) => console.warn('Chat header presence listener error:', e));
+    }
+
+    function unsubscribeChatHeaderPresence() {
+      if (chatHeaderPresenceUnsub) { chatHeaderPresenceUnsub(); chatHeaderPresenceUnsub = null; }
+    }
+
+    function subscribeProfilePresence(uid) {
+      unsubscribeProfilePresence();
+      if (!uid) return;
+      profilePresenceUnsub = onSnapshot(doc(db, 'users', uid), (snap) => {
+        cacheAndApplyActivityStatus(uid, snap.exists() ? snap.data().lastActive : null,
+          document.getElementById('profile-activity-status'), document.getElementById('profile-presence-dot'));
+      }, (e) => console.warn('Profile presence listener error:', e));
+    }
+
+    function unsubscribeProfilePresence() {
+      if (profilePresenceUnsub) { profilePresenceUnsub(); profilePresenceUnsub = null; }
+    }
+
+    function unsubscribeAllDmListPresence() {
+      Object.values(dmListPresenceUnsubs).forEach(fn => { if (fn) fn(); });
+      Object.keys(dmListPresenceUnsubs).forEach(uid => delete dmListPresenceUnsubs[uid]);
+    }
+
+    // One live listener per visible friend row — each pushes its own
+    // update to just that row the instant it changes, independent of the
+    // others. Re-subscribes fresh every time the friend list re-renders.
+    function subscribeDmListPresence(friendUids) {
+      unsubscribeAllDmListPresence();
+      friendUids.forEach(uid => {
+        dmListPresenceUnsubs[uid] = onSnapshot(doc(db, 'users', uid), (snap) => {
+          const row = document.querySelector(`.dm-friend-item[data-uid="${uid}"]`);
+          if (!row) return;
+          cacheAndApplyActivityStatus(uid, snap.exists() ? snap.data().lastActive : null,
+            row.querySelector('.activity-status'), row.querySelector('.presence-dot'));
+        }, (e) => console.warn('DM list presence listener error:', e));
+      });
+    }
+
+    // Purely local re-render of whatever's currently visible, from the
+    // cache — ages "Active now" into "Active 30s ago" etc. over time
+    // without needing a new write from the other person. No network calls.
+    function tickActivityDisplays() {
+      if (currentScreenId === 'feed-screen') return;
+
+      if (activeChatFriendUid && document.body.classList.contains('in-active-chat') && activeChatFriendUid in presenceCache) {
+        applyActivityStatus(document.getElementById('chat-header-activity'), presenceCache[activeChatFriendUid], document.getElementById('chat-header-presence-dot'));
       }
 
-      if (currentScreenId === 'profile-screen' && viewedProfileUid) {
-        try {
-          const snap = await getDoc(doc(db, 'users', viewedProfileUid));
-          applyActivityStatus(document.getElementById('profile-activity-status'), snap.exists() ? snap.data().lastActive : null, document.getElementById('profile-presence-dot'));
-        } catch (e) { /* keep showing the last known status */ }
+      document.querySelectorAll('#dm-friends-list .dm-friend-item[data-uid]').forEach(row => {
+        const uid = row.getAttribute('data-uid');
+        if (uid in presenceCache) {
+          applyActivityStatus(row.querySelector('.activity-status'), presenceCache[uid], row.querySelector('.presence-dot'));
+        }
+      });
+
+      if (viewedProfileUid && viewedProfileUid in presenceCache) {
+        applyActivityStatus(document.getElementById('profile-activity-status'), presenceCache[viewedProfileUid], document.getElementById('profile-presence-dot'));
       }
     }
 
     function startActivityStatusDisplay() {
       stopActivityStatusDisplay();
-      refreshActivityStatuses();
-      activityDisplayInterval = setInterval(refreshActivityStatuses, PRESENCE_HEARTBEAT_MS);
+      presenceTextTickInterval = setInterval(tickActivityDisplays, PRESENCE_TEXT_TICK_MS);
     }
 
     function stopActivityStatusDisplay() {
-      if (activityDisplayInterval) { clearInterval(activityDisplayInterval); activityDisplayInterval = null; }
+      if (presenceTextTickInterval) { clearInterval(presenceTextTickInterval); presenceTextTickInterval = null; }
+      unsubscribeChatHeaderPresence();
+      unsubscribeProfilePresence();
+      unsubscribeAllDmListPresence();
+      Object.keys(presenceCache).forEach(uid => delete presenceCache[uid]);
     }
 
     // Explicit frame-at-1-second + crop for the thumbnail, rather than the
@@ -3703,6 +3775,11 @@
       }
 
       if (viewedProfileUid) {
+        // Live presence listener — instant on any client the moment this
+        // person's status changes, rather than waiting on the one-time
+        // counts fetch below (which still runs for followers/following).
+        subscribeProfilePresence(viewedProfileUid);
+
         // Following count, followers count, and the video grid are all
         // independent reads — fire them off together instead of awaiting
         // one after another.
@@ -3714,7 +3791,7 @@
               document.getElementById('following-count').innerText = (data.following || []).length;
               const followersCount = await getFollowersCountFast(viewedProfileUid, data);
               document.getElementById('followers-count').innerText = followersCount;
-              applyActivityStatus(document.getElementById('profile-activity-status'), data.lastActive, document.getElementById('profile-presence-dot'));
+              cacheAndApplyActivityStatus(viewedProfileUid, data.lastActive, document.getElementById('profile-activity-status'), document.getElementById('profile-presence-dot'));
             }
           } catch (e) {
             console.warn("Error getting counts:", e);
@@ -3723,6 +3800,8 @@
 
         loadProfileVideos(viewedProfileUid, isOwnProfile);
         await countsPromise;
+      } else {
+        unsubscribeProfilePresence();
       }
     }
 
@@ -5290,6 +5369,13 @@
           `;
         }).join('');
 
+        // Seed the cache with what was just fetched (so the local ticker
+        // has correct data immediately), then attach live listeners so
+        // every row updates the instant that person's status actually
+        // changes, on any client.
+        friends.forEach(f => { presenceCache[f.uid] = f.lastActive; });
+        subscribeDmListPresence(friends.map(f => f.uid));
+
       } catch (e) {
         console.error("Error loading friends & DMs:", e);
         friendsListEl.innerHTML = '<div class="dm-empty-state"><p>Error loading chats</p></div>';
@@ -5322,7 +5408,7 @@
       document.getElementById('chat-target-name').innerHTML = withVerifiedBadge(friendName, friendHandle, 14);
       document.getElementById('chat-header-avatar').src = friendPfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'38\' height=\'38\'><circle cx=\'19\' cy=\'19\' r=\'19\' fill=\'%23eee\'/></svg>';
       document.getElementById('chat-header-streak-count').innerText = '0';
-      refreshActivityStatuses();
+      subscribeChatHeaderPresence(friendUid);
       toggleChatMenu(true);
 
       const chatBody = document.getElementById('chat-body');
@@ -5369,6 +5455,7 @@
 
     window.closeActiveChat = function() {
       if (activeChatUnsubscribe) activeChatUnsubscribe();
+      unsubscribeChatHeaderPresence();
       activeChatFriendUid = null;
       document.body.classList.remove('in-active-chat');
       document.getElementById('dm-chat-container').classList.remove('active');
