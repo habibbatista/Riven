@@ -1220,6 +1220,34 @@
       overflow-y: auto;
     }
 
+    /* Presence status — a small "Active now" / "Active Xm ago" line shown
+       on the DM tab (friend list rows + open chat header) and the Profile
+       tab. Deliberately NOT shown on the feed/FYP tab. */
+    .activity-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #999;
+    }
+
+    .activity-status .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #bbb;
+      flex-shrink: 0;
+    }
+
+    .activity-status.online {
+      color: #34c759;
+    }
+
+    .activity-status.online .dot {
+      background: #34c759;
+    }
+
     .dm-friend-item {
       display: flex;
       align-items: center;
@@ -2413,6 +2441,7 @@
           <div class="chat-header-info">
             <span class="chat-header-name" id="chat-target-name">Chat</span>
             <span class="chat-header-streak" id="chat-header-streak">🔥 <span id="chat-header-streak-count">0</span></span>
+            <span class="activity-status" id="chat-header-activity"><span class="dot"></span>...</span>
           </div>
           <div class="chat-header-icons">
             <div class="chat-icon-btn" onclick="startCall('video')" title="Video call">
@@ -2477,6 +2506,7 @@
             <div class="profile-handle-row">
               <span class="profile-handle" id="user-display-handle">@---</span>
             </div>
+            <span class="activity-status" id="profile-activity-status" style="margin-top:4px;"><span class="dot"></span>...</span>
           </div>
           <img class="avatar-circle" id="profile-avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'><circle cx='45' cy='45' r='45' fill='%23eee'/></svg>">
         </div>
@@ -2926,6 +2956,117 @@
       const diffDay = Math.floor(diffHr / 24);
       if (diffDay < 7) return `${diffDay}d ago`;
       return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: diffDay > 365 ? 'numeric' : undefined });
+    }
+
+    // ---- Presence / activity status ----
+    // Every signed-in user's own doc gets a `lastActive` server timestamp
+    // written every 5 seconds while the tab is actually visible (heartbeat).
+    // Anyone reading another user's `lastActive` field derives an "online"
+    // / "Active Xm ago" label from how recently that timestamp landed —
+    // there's no separate boolean to keep in sync, just this one field.
+    // Shown on the DM tab (friend list rows + open chat header) and the
+    // Profile tab; intentionally NOT rendered anywhere on the feed/FYP tab.
+    const PRESENCE_HEARTBEAT_MS = 5000;
+    // A little over one heartbeat interval, so a person is still shown
+    // "Active now" between their heartbeats landing, not flickering to
+    // "Active 5s ago" for a moment every cycle.
+    const PRESENCE_ONLINE_THRESHOLD_SEC = 12;
+    let presenceHeartbeatInterval = null;
+    let activityDisplayInterval = null;
+
+    function getActivityStatus(lastActiveTimestamp) {
+      if (!lastActiveTimestamp) return { online: false, text: 'Offline' };
+      const date = lastActiveTimestamp.toDate ? lastActiveTimestamp.toDate() : new Date(lastActiveTimestamp);
+      const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+      if (diffSec < 0) return { online: true, text: 'Active now' };
+      if (diffSec < PRESENCE_ONLINE_THRESHOLD_SEC) return { online: true, text: 'Active now' };
+      if (diffSec < 60) return { online: false, text: `Active ${diffSec}s ago` };
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return { online: false, text: `Active ${diffMin} minute${diffMin === 1 ? '' : 's'} ago` };
+      const diffHr = Math.floor(diffMin / 60);
+      if (diffHr < 24) return { online: false, text: `Active ${diffHr} hour${diffHr === 1 ? '' : 's'} ago` };
+      const diffDay = Math.floor(diffHr / 24);
+      return { online: false, text: `Active ${diffDay} day${diffDay === 1 ? '' : 's'} ago` };
+    }
+
+    // Updates an already-rendered .activity-status element in place (dot +
+    // text + online class) without touching the rest of its container.
+    function applyActivityStatus(el, lastActiveTimestamp) {
+      if (!el) return;
+      const status = getActivityStatus(lastActiveTimestamp);
+      el.classList.toggle('online', status.online);
+      el.innerHTML = `<span class="dot"></span>${status.text}`;
+    }
+
+    async function writePresenceHeartbeat() {
+      if (!currentUser) return;
+      if (document.visibilityState !== 'visible') return; // don't burn writes while backgrounded
+      try {
+        await setDoc(doc(db, 'users', currentUser.uid), { lastActive: serverTimestamp() }, { merge: true });
+      } catch (e) {
+        console.warn('Presence heartbeat error:', e);
+      }
+    }
+
+    function startPresenceHeartbeat() {
+      stopPresenceHeartbeat();
+      writePresenceHeartbeat();
+      presenceHeartbeatInterval = setInterval(writePresenceHeartbeat, PRESENCE_HEARTBEAT_MS);
+    }
+
+    function stopPresenceHeartbeat() {
+      if (presenceHeartbeatInterval) { clearInterval(presenceHeartbeatInterval); presenceHeartbeatInterval = null; }
+    }
+
+    // Immediately send a fresh heartbeat the moment the tab becomes visible
+    // again, rather than waiting up to 5s for the next scheduled one.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') writePresenceHeartbeat();
+    });
+
+    // Refreshes whichever activity-status labels are currently on screen —
+    // DM friend list rows, an open chat's header, or a viewed profile.
+    // Deliberately does nothing on the feed/FYP tab.
+    async function refreshActivityStatuses() {
+      if (!currentUser || currentScreenId === 'feed-screen') return;
+
+      if (currentScreenId === 'dm-screen') {
+        if (document.body.classList.contains('in-active-chat') && activeChatFriendUid) {
+          try {
+            const snap = await getDoc(doc(db, 'users', activeChatFriendUid));
+            applyActivityStatus(document.getElementById('chat-header-activity'), snap.exists() ? snap.data().lastActive : null);
+          } catch (e) { /* keep showing the last known status */ }
+        } else {
+          const rows = document.querySelectorAll('#dm-friends-list .dm-friend-item[data-uid]');
+          if (rows.length) {
+            try {
+              const allUsers = await getAllUsersCached(true);
+              rows.forEach(row => {
+                const uid = row.getAttribute('data-uid');
+                const uData = allUsers.find(u => u.uid === uid);
+                applyActivityStatus(row.querySelector('.activity-status'), uData ? uData.lastActive : null);
+              });
+            } catch (e) { /* keep showing last known statuses */ }
+          }
+        }
+      }
+
+      if (currentScreenId === 'profile-screen' && viewedProfileUid) {
+        try {
+          const snap = await getDoc(doc(db, 'users', viewedProfileUid));
+          applyActivityStatus(document.getElementById('profile-activity-status'), snap.exists() ? snap.data().lastActive : null);
+        } catch (e) { /* keep showing the last known status */ }
+      }
+    }
+
+    function startActivityStatusDisplay() {
+      stopActivityStatusDisplay();
+      refreshActivityStatuses();
+      activityDisplayInterval = setInterval(refreshActivityStatuses, PRESENCE_HEARTBEAT_MS);
+    }
+
+    function stopActivityStatusDisplay() {
+      if (activityDisplayInterval) { clearInterval(activityDisplayInterval); activityDisplayInterval = null; }
     }
 
     // Explicit frame-at-1-second + crop for the thumbnail, rather than the
@@ -3431,6 +3572,8 @@
         // instead of waiting for that to resolve first.
         loadFeed();
         startIncomingCallListener();
+        startPresenceHeartbeat();
+        startActivityStatusDisplay();
 
         const cachedStr = localStorage.getItem(`riven_user_${user.uid}`);
         if (cachedStr) {
@@ -3477,6 +3620,8 @@
         loggedInBox.style.display = 'none';
         loadFeed();
         if (incomingCallsUnsubscribe) { incomingCallsUnsubscribe(); incomingCallsUnsubscribe = null; }
+        stopPresenceHeartbeat();
+        stopActivityStatusDisplay();
       }
     });
 
@@ -3541,6 +3686,7 @@
               document.getElementById('following-count').innerText = (data.following || []).length;
               const followersCount = await getFollowersCountFast(viewedProfileUid, data);
               document.getElementById('followers-count').innerText = followersCount;
+              applyActivityStatus(document.getElementById('profile-activity-status'), data.lastActive);
             }
           } catch (e) {
             console.warn("Error getting counts:", e);
@@ -5078,7 +5224,8 @@
             handle: uData.handle || 'user',
             pfp: uData.pfp || '',
             lastMessage,
-            streak
+            streak,
+            lastActive: uData.lastActive || null
           };
         }));
 
@@ -5093,17 +5240,19 @@
         }
 
         friendsListEl.innerHTML = friends.map(f => {
-          const previewText = f.lastMessage 
-            ? f.lastMessage 
-            : `<span class="dm-active-prompt">${f.name} is active now, say hi!</span>`;
+          const previewText = f.lastMessage
+            ? f.lastMessage
+            : `<span class="dm-active-prompt">Say hi to ${f.name}!</span>`;
           const streakBadge = f.streak > 0 ? `<span class="dm-friend-streak">🔥 ${f.streak}</span>` : '';
+          const status = getActivityStatus(f.lastActive);
 
           return `
-            <div class="dm-friend-item" onclick="openActiveChat('${f.uid}', '${(f.name).replace(/'/g, "\\'")}', '${(f.pfp || '').replace(/'/g, "\\'")}', '${(f.handle || '').replace(/'/g, "\\'")}')">
+            <div class="dm-friend-item" data-uid="${f.uid}" onclick="openActiveChat('${f.uid}', '${(f.name).replace(/'/g, "\\'")}', '${(f.pfp || '').replace(/'/g, "\\'")}', '${(f.handle || '').replace(/'/g, "\\'")}')">
               <img class="dm-friend-avatar" src="${f.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><circle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%23eee\'/></svg>'}" />
               <div class="dm-friend-info">
                 <span class="dm-friend-name">${withVerifiedBadge(f.name, f.handle, 13)}</span>
                 <span class="dm-friend-preview">${previewText}</span>
+                <span class="activity-status ${status.online ? 'online' : ''}" style="margin-top:2px;"><span class="dot"></span>${status.text}</span>
               </div>
               ${streakBadge}
             </div>
@@ -5142,6 +5291,7 @@
       document.getElementById('chat-target-name').innerHTML = withVerifiedBadge(friendName, friendHandle, 14);
       document.getElementById('chat-header-avatar').src = friendPfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'38\' height=\'38\'><circle cx=\'19\' cy=\'19\' r=\'19\' fill=\'%23eee\'/></svg>';
       document.getElementById('chat-header-streak-count').innerText = '0';
+      refreshActivityStatuses();
       toggleChatMenu(true);
 
       const chatBody = document.getElementById('chat-body');
