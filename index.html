@@ -3560,7 +3560,7 @@
     // PUSH_SETUP.md. Until it's a real URL, push sends below just fail
     // silently (caught and ignored) — everything else in the app is
     // completely unaffected either way.
-    const PUSH_API_URL = 'https://riven-eta.vercel.app/api/send-push';
+    const PUSH_API_URL = 'https://YOUR-PROJECT.vercel.app/api/send-push';
 
     // Fire-and-forget: tells the Vercel function to push a notification to
     // `recipientUid`. Never awaited by callers and never throws outward —
@@ -3608,27 +3608,56 @@
     // Each device/install gets its own subscription doc, keyed by a hash
     // of its endpoint, so someone signed in on two devices gets pushes on
     // both rather than one overwriting the other.
+    // TEMPORARY DIAGNOSTIC MODE: without a computer, there's no way to see
+    // console errors on iOS, so this shows each step as an on-screen toast
+    // instead. Once push is confirmed working, these showToast(...) calls
+    // can be deleted (they're all clearly marked below) — they're not
+    // harmful to leave, just noisy on every sign-in.
     async function setupPushNotifications() {
       if (!currentUser) return;
-      if (!isStandalonePWA()) return; // see isStandalonePWA's comment above
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      showToast('[Push] Starting setup...', 2500); // DIAGNOSTIC
+
+      if (!isStandalonePWA()) {
+        showToast('[Push] Not installed as home screen app — stopping here', 4000); // DIAGNOSTIC
+        return;
+      }
+      showToast('[Push] Running as installed app ✓', 2000); // DIAGNOSTIC
+
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        showToast('[Push] This iOS version doesn\'t support Push — need 16.4+', 4000); // DIAGNOSTIC
+        return;
+      }
+      showToast('[Push] Push API supported ✓', 2000); // DIAGNOSTIC
+
       if (!swRegistration) swRegistration = await registerServiceWorker();
-      if (!swRegistration) return;
+      if (!swRegistration) {
+        showToast('[Push] Service worker registration FAILED — check sw.js is uploaded', 5000); // DIAGNOSTIC
+        return;
+      }
+      showToast('[Push] Service worker registered ✓', 2000); // DIAGNOSTIC
 
       try {
         let permission = Notification.permission;
+        showToast('[Push] Current permission: ' + permission, 3000); // DIAGNOSTIC
         if (permission === 'default') {
+          showToast('[Push] Requesting permission now...', 2500); // DIAGNOSTIC
           permission = await Notification.requestPermission();
+          showToast('[Push] Permission result: ' + permission, 3000); // DIAGNOSTIC
         }
-        if (permission !== 'granted') return;
+        if (permission !== 'granted') {
+          showToast('[Push] Not granted — stopping here', 4000); // DIAGNOSTIC
+          return;
+        }
 
         let subscription = await swRegistration.pushManager.getSubscription();
         if (!subscription) {
+          showToast('[Push] Subscribing to push service...', 2500); // DIAGNOSTIC
           subscription = await swRegistration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           });
         }
+        showToast('[Push] Subscribed ✓ saving to Firestore...', 2500); // DIAGNOSTIC
 
         const subJson = subscription.toJSON();
         const subId = btoa(subJson.endpoint).replace(/[^a-zA-Z0-9]/g, '').slice(0, 120);
@@ -3637,7 +3666,9 @@
           keys: subJson.keys,
           updatedAt: serverTimestamp()
         });
+        showToast('[Push] All done! Notifications should work now ✓', 4000); // DIAGNOSTIC
       } catch (e) {
+        showToast('[Push] ERROR: ' + (e.message || e), 6000); // DIAGNOSTIC
         console.warn('Push subscription setup error:', e);
       }
     }
