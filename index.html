@@ -111,6 +111,24 @@
       vertical-align: middle;
     }
 
+    /* Scoped opt-in variant for the redesigned line-style icons (nav,
+       search, comment, share, delete) — deliberately NOT a change to the
+       base .icon-svg default, so every icon this pass didn't touch (calls,
+       comments reactions, modals, badges, etc.) keeps its exact existing
+       fill-based appearance with zero risk of regressing. */
+    .icon-line {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .icon-line.filled {
+      fill: currentColor;
+      stroke: none;
+    }
+
     /* FEED SCREEN */
     #feed-screen {
       background-color: var(--bg-dark);
@@ -880,6 +898,122 @@
     }
 
     /* PROFILE VIDEOS GRID */
+    /* RIVEN+ — coming-soon promo banner + tier modal */
+    .plus-promo-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0 20px 20px 20px;
+      padding: 14px 16px;
+      border-radius: var(--radius-squircle);
+      background: linear-gradient(135deg, #111 0%, #3a1620 100%);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .plus-promo-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .plus-promo-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .plus-promo-subtitle {
+      font-size: 12px;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .plus-promo-arrow {
+      font-size: 22px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .plus-modal-content {
+      width: 92%;
+      max-width: 380px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .plus-modal-badge {
+      display: inline-flex;
+      align-self: flex-start;
+      background: #f2f2f7;
+      color: #666;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .plus-tier-card {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 16px;
+      border-radius: var(--radius-squircle);
+      border: 1.5px solid var(--border-gray);
+    }
+
+    .plus-tier-card.featured {
+      border-color: var(--accent-pink);
+      background: linear-gradient(135deg, rgba(255,45,85,0.06) 0%, rgba(255,45,85,0.02) 100%);
+    }
+
+    .plus-tier-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    .plus-tier-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .plus-tier-price {
+      font-size: 15px;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .plus-tier-price span {
+      font-size: 12px;
+      font-weight: 500;
+      color: #888;
+    }
+
+    .plus-tier-tagline {
+      font-size: 13px;
+      color: #777;
+    }
+
+    .btn-notify-plus {
+      width: 100%;
+      padding: 13px;
+      background-color: #111;
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-squircle);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 6px;
+    }
+
+    .btn-notify-plus.notified {
+      background-color: #e5e5ea;
+      color: #000;
+    }
+
     .profile-videos-section {
       border-top: 1px solid #f0f0f0;
       padding-top: 2px;
@@ -2348,7 +2482,7 @@
               <span class="feed-tab active" id="tab-foryou" onclick="setActiveFeedTab(this)">For you</span>
             </div>
             <div class="header-icon" onclick="openSearchOverlay()">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              <svg class="icon-svg icon-line" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </div>
           </div>
           <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted preload="auto"></video>
@@ -2514,6 +2648,7 @@
           <div class="profile-menu-dropdown" id="profile-menu-dropdown">
             <div class="profile-menu-item" onclick="toggleProfileMenu(); openEditModal();">Edit Profile</div>
             <div class="profile-menu-item" id="switch-account-menu-item" onclick="openSwitchAccountModal();">Switch Account</div>
+            <div class="profile-menu-item" onclick="toggleProfileMenu(true); openRivenPlusModal();">✨ Riven+</div>
             <div class="profile-menu-item danger" onclick="logoutUser()">Log Out</div>
           </div>
         </div>
@@ -2552,6 +2687,15 @@
         <div class="profile-actions-wrapper">
           <button class="btn-follow" id="btn-follow-action" style="display:none;" onclick="toggleFollowUser()">Follow</button>
           <button class="btn-edit-profile" id="btn-edit-action" onclick="openEditModal()">Edit Profile</button>
+        </div>
+
+        <!-- Riven+ teaser — own profile only. Opens the tier modal. -->
+        <div class="plus-promo-banner" id="riven-plus-banner" onclick="openRivenPlusModal()" style="display:none;">
+          <div class="plus-promo-text">
+            <span class="plus-promo-title">✨ Riven+</span>
+            <span class="plus-promo-subtitle">Coming soon — get early access</span>
+          </div>
+          <span class="plus-promo-arrow">›</span>
         </div>
 
         <div class="profile-videos-section">
@@ -2646,6 +2790,44 @@
       </div>
     </div>
 
+        <!-- RIVEN+ TIER MODAL — coming soon, no purchase flow yet. -->
+    <div class="modal-overlay" id="riven-plus-modal">
+      <div class="modal-content plus-modal-content">
+        <span class="plus-modal-badge">Coming soon</span>
+        <h3 style="margin-top:4px;">Riven+</h3>
+        <p style="font-size:13px; color:#666; line-height:1.4;">A few extra perks for people who live on Riven. Pricing below is what's planned at launch — nothing to pay yet.</p>
+
+        <div class="plus-tier-card">
+          <div class="plus-tier-top">
+            <span class="plus-tier-name">Plus</span>
+            <span class="plus-tier-price">$15<span>/mo</span></span>
+          </div>
+          <span class="plus-tier-tagline">For casual creators</span>
+        </div>
+
+        <div class="plus-tier-card featured">
+          <div class="plus-tier-top">
+            <span class="plus-tier-name">Prime</span>
+            <span class="plus-tier-price">$22.50<span>/mo</span></span>
+          </div>
+          <span class="plus-tier-tagline">For regulars — our most popular tier</span>
+        </div>
+
+        <div class="plus-tier-card">
+          <div class="plus-tier-top">
+            <span class="plus-tier-name">Apex</span>
+            <span class="plus-tier-price">$30<span>/mo</span></span>
+          </div>
+          <span class="plus-tier-tagline">For power users and creators</span>
+        </div>
+
+        <button class="btn-notify-plus" id="notify-plus-btn" onclick="notifyMeForRivenPlus()">Notify me when it launches</button>
+        <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
+          <button class="modal-btn modal-btn-cancel" onclick="closeRivenPlusModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
     <!-- SWITCH ACCOUNT MODAL -->
     <div class="modal-overlay" id="switch-account-modal">
       <div class="modal-content">
@@ -2735,18 +2917,18 @@
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
       <div class="nav-item active" id="nav-feed-item" onclick="switchTab('feed-screen', this)">
-        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <svg class="icon-svg icon-line" viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg>
       </div>
       <div class="nav-item" id="nav-upload-item" onclick="triggerUploadFlow()">
         <div class="nav-upload-btn">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          <svg class="icon-svg icon-line" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </div>
       </div>
       <div class="nav-item" id="nav-dm-item" onclick="openDmTab(this)">
-        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+        <svg class="icon-svg icon-line" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
       </div>
       <div class="nav-item" id="nav-profile-btn" onclick="openMyProfile(this)">
-        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        <svg class="icon-svg icon-line" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </div>
       <!-- Desktop-only "..." account menu (Edit Profile / Switch Account /
            Log Out) — reuses the profile screen's dropdown so there's one
@@ -3619,6 +3801,45 @@
       document.getElementById('switch-account-modal').classList.add('active');
     };
 
+    // ---- Riven+ (coming soon) ----
+    window.openRivenPlusModal = function() {
+      const notifyBtn = document.getElementById('notify-plus-btn');
+      const alreadyNotified = currentUser && myProfileData?.plusInterestRequested;
+      if (notifyBtn) {
+        notifyBtn.classList.toggle('notified', !!alreadyNotified);
+        notifyBtn.innerText = alreadyNotified ? "You're on the list ✓" : 'Notify me when it launches';
+      }
+      document.getElementById('riven-plus-modal').classList.add('active');
+    };
+
+    window.closeRivenPlusModal = function() {
+      document.getElementById('riven-plus-modal').classList.remove('active');
+    };
+
+    window.notifyMeForRivenPlus = async function() {
+      if (!currentUser) {
+        showToast('Sign in first, then we can notify you');
+        return;
+      }
+      const notifyBtn = document.getElementById('notify-plus-btn');
+      if (myProfileData?.plusInterestRequested) {
+        showToast("You're already on the list!");
+        return;
+      }
+      if (notifyBtn) {
+        notifyBtn.classList.add('notified');
+        notifyBtn.innerText = "You're on the list ✓";
+      }
+      myProfileData.plusInterestRequested = true;
+      localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
+      showToast("You'll be the first to know when Riven+ launches!");
+      try {
+        await setDoc(doc(db, 'users', currentUser.uid), { plusInterestRequested: true, plusInterestRequestedAt: serverTimestamp() }, { merge: true });
+      } catch (e) {
+        console.warn('Riven+ interest save error:', e);
+      }
+    };
+
     window.closeSwitchAccountModal = function() {
       document.getElementById('switch-account-modal').classList.remove('active');
     };
@@ -3760,9 +3981,13 @@
       if (isOwnProfile) {
         followBtn.style.display = 'none';
         editBtn.style.display = 'block';
+        const plusBanner = document.getElementById('riven-plus-banner');
+        if (plusBanner) plusBanner.style.display = 'flex';
       } else {
         followBtn.style.display = 'block';
         editBtn.style.display = 'none';
+        const plusBanner = document.getElementById('riven-plus-banner');
+        if (plusBanner) plusBanner.style.display = 'none';
 
         const myFollowing = myProfileData?.following || [];
         if (myFollowing.includes(viewedProfileUid)) {
@@ -4244,11 +4469,11 @@
           <span class="action-count" id="like-count">0</span>
         </div>
         <div class="action-item" id="comments-nav-item" onclick="openComments()">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+          <svg class="icon-svg icon-line" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
           <span class="action-count" id="comment-count">0</span>
         </div>
         <div class="action-item" onclick="openShareSheet()">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l6.96-4.11c.52.48 1.2.78 1.96.78 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.33 6.82 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.82 0 1.5-.33 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+          <svg class="icon-svg icon-line" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           <span class="action-count">Share</span>
         </div>
         <div class="action-item" id="privacy-action-item" style="display:none;" onclick="toggleVideoPrivacy()">
@@ -4256,7 +4481,7 @@
           <span class="action-count" id="privacy-label">Public</span>
         </div>
         <div class="action-item" id="delete-action-item" style="display:none;" onclick="confirmDeleteCurrentVideo()">
-          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          <svg class="icon-svg icon-line" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           <span class="action-count">Delete</span>
         </div>
         <div class="action-item audio-disc-item" id="audio-disc-item" style="display:none;">
@@ -6098,4 +6323,3 @@
 
 </body>
 </html>
-
