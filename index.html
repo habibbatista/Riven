@@ -13,6 +13,15 @@
        ignores them for the actual system status bar. -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="apple-status-bar-meta" />
+  <meta name="apple-mobile-web-app-title" content="Riven" />
+  <!-- PWA manifest + icons — required for "Add to Home Screen" on iOS to
+       launch as a standalone app (no Safari chrome), which is itself a
+       prerequisite for push notifications to work at all on iOS (Safari
+       tabs cannot receive Web Push; only installed home-screen apps can,
+       and only on iOS 16.4+). -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" href="icons/icon-192.png" />
   <title>Riven</title>
 
   <!-- Preconnect to primary asset origins to speed up fetch/upload loading times -->
@@ -1717,6 +1726,52 @@
     }
 
     /* TOAST */
+    #ios-install-banner {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: calc(70px + var(--safe-bottom));
+      z-index: 999998;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #111;
+      color: #fff;
+      border-radius: var(--radius-squircle);
+      padding: 12px 14px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+    }
+
+    #ios-install-banner.visible {
+      display: flex;
+    }
+
+    .ios-install-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 12.5px;
+      line-height: 1.4;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .ios-install-text strong:first-child {
+      font-size: 13.5px;
+      color: #fff;
+    }
+
+    .ios-share-icon {
+      display: inline-block;
+    }
+
+    .ios-install-close {
+      color: rgba(255,255,255,0.5);
+      cursor: pointer;
+      padding: 4px;
+      flex-shrink: 0;
+    }
+
     #toast {
       position: absolute;
       left: 50%;
@@ -2940,6 +2995,21 @@
       </div>
     </nav>
 
+    <!-- iOS-only install banner. iOS gives no programmatic "install this
+         app" prompt (unlike Android/Chrome's beforeinstallprompt) — the
+         only way to install is the manual Share > Add to Home Screen flow,
+         so this just walks the person through doing that. Shown only when
+         running in Safari (not yet installed) on an iOS device, since
+         that's the ONLY case where it's actually needed: notifications
+         and calls literally cannot work until this step is done. -->
+    <div id="ios-install-banner" style="display:none;">
+      <div class="ios-install-text">
+        <strong>Get calls &amp; notifications</strong>
+        <span>Add Riven to your Home Screen: tap <strong>Share</strong> <span class="ios-share-icon">⬆</span>, then <strong>Add to Home Screen</strong>.</span>
+      </div>
+      <span class="ios-install-close" onclick="dismissIosInstallBanner()">✕</span>
+    </div>
+
     <div id="toast"></div>
 
   </div>
@@ -3462,6 +3532,140 @@
       return isIOS || isIPadOS || isMac || isAppleTV || isWatchOS || isVisionOS;
     }
 
+    // ---- PWA install + push notifications ----
+    // iOS specifically: Safari tabs can NEVER receive push or request
+    // notification permission — only an app actually added to the Home
+    // Screen (running "standalone") can, and only on iOS 16.4+. So the
+    // whole push pipeline below is gated behind actually being installed.
+    function isIOSDevice() {
+      const ua = navigator.userAgent || '';
+      const platform = navigator.platform || '';
+      const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+      const isIPadOS = platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+      return isIOS || isIPadOS;
+    }
+
+    function isStandalonePWA() {
+      return window.navigator.standalone === true // iOS's own flag
+        || window.matchMedia('(display-mode: standalone)').matches;
+    }
+
+    // Replace with the value printed by the key-generation step at deploy
+    // time (see functions/README.md) — this exact key must match the
+    // private key the Cloud Function signs pushes with, or subscriptions
+    // silently fail.
+    const VAPID_PUBLIC_KEY = 'BEKuVdtDhAjlr5xOMxDdO6wiztYBQfI80FIAQH7Sn211CP_7ullSpjj3968ZRS47nWpk1yJnPI2UK4VW8ZYfTRk';
+
+    // Set this once the vercel-push-api/ function is deployed — see
+    // PUSH_SETUP.md. Until it's a real URL, push sends below just fail
+    // silently (caught and ignored) — everything else in the app is
+    // completely unaffected either way.
+    const PUSH_API_URL = 'https://YOUR-PROJECT.vercel.app/api/send-push';
+
+    // Fire-and-forget: tells the Vercel function to push a notification to
+    // `recipientUid`. Never awaited by callers and never throws outward —
+    // a slow or failed push send should never block or break sending an
+    // actual in-app message/call, which is the thing that actually matters.
+    async function triggerPushNotification(recipientUid, { title, body, type, tag, url }) {
+      if (!currentUser || !recipientUid) return;
+      if (!PUSH_API_URL || PUSH_API_URL.includes('YOUR-PROJECT')) return; // not deployed yet
+      try {
+        const idToken = await currentUser.getIdToken();
+        await fetch(PUSH_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+          body: JSON.stringify({ recipientUid, title, body, type, tag, url })
+        });
+      } catch (e) {
+        console.warn('Push trigger failed (non-fatal):', e);
+      }
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+      return outputArray;
+    }
+
+    let swRegistration = null;
+
+    async function registerServiceWorker() {
+      if (!('serviceWorker' in navigator)) return null;
+      try {
+        swRegistration = await navigator.serviceWorker.register('sw.js');
+        return swRegistration;
+      } catch (e) {
+        console.warn('Service worker registration failed:', e);
+        return null;
+      }
+    }
+
+    // Subscribes this installed app for push and saves the subscription so
+    // the Cloud Function knows where to send this person's notifications.
+    // Each device/install gets its own subscription doc, keyed by a hash
+    // of its endpoint, so someone signed in on two devices gets pushes on
+    // both rather than one overwriting the other.
+    async function setupPushNotifications() {
+      if (!currentUser) return;
+      if (!isStandalonePWA()) return; // see isStandalonePWA's comment above
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      if (!swRegistration) swRegistration = await registerServiceWorker();
+      if (!swRegistration) return;
+
+      try {
+        let permission = Notification.permission;
+        if (permission === 'default') {
+          permission = await Notification.requestPermission();
+        }
+        if (permission !== 'granted') return;
+
+        let subscription = await swRegistration.pushManager.getSubscription();
+        if (!subscription) {
+          subscription = await swRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          });
+        }
+
+        const subJson = subscription.toJSON();
+        const subId = btoa(subJson.endpoint).replace(/[^a-zA-Z0-9]/g, '').slice(0, 120);
+        await setDoc(doc(db, 'users', currentUser.uid, 'pushSubscriptions', subId), {
+          endpoint: subJson.endpoint,
+          keys: subJson.keys,
+          updatedAt: serverTimestamp()
+        });
+      } catch (e) {
+        console.warn('Push subscription setup error:', e);
+      }
+    }
+
+    window.dismissIosInstallBanner = function() {
+      document.getElementById('ios-install-banner').classList.remove('visible');
+      localStorage.setItem('riven_ios_install_banner_dismissed', '1');
+    };
+
+    function maybeShowIosInstallBanner() {
+      if (!isIOSDevice() || isStandalonePWA()) return;
+      if (localStorage.getItem('riven_ios_install_banner_dismissed') === '1') return;
+      const banner = document.getElementById('ios-install-banner');
+      if (banner) banner.classList.add('visible');
+    }
+
+    // If a push notification's "Open" action linked here with #/dm, land
+    // straight on the DM tab instead of the feed.
+    function handleLaunchHash() {
+      if (window.location.hash === '#/dm') {
+        switchTab('dm-screen', document.getElementById('nav-dm-item'));
+      }
+    }
+
+    registerServiceWorker();
+    maybeShowIosInstallBanner();
+    handleLaunchHash();
+
     if (isApplePlatform()) {
       const appleBtn = document.getElementById('apple-signin-btn');
       if (appleBtn) appleBtn.style.display = 'flex';
@@ -3895,6 +4099,7 @@
         startIncomingCallListener();
         startPresenceHeartbeat();
         startActivityStatusDisplay();
+        setupPushNotifications();
 
         const cachedStr = localStorage.getItem(`riven_user_${user.uid}`);
         if (cachedStr) {
@@ -5455,6 +5660,13 @@
         ]);
 
         showToast(`Sent to ${friendName}`);
+        triggerPushNotification(friendUid, {
+          title: myProfileData?.name || 'Someone',
+          body: 'Sent you a video',
+          type: 'message',
+          tag: `chat-${chatId}`,
+          url: './#/dm'
+        });
       } catch (e) {
         console.error('Send video to DM error:', e);
         showToast('Could not send video');
@@ -5724,6 +5936,13 @@
         });
 
         refreshChatHeaderStreak(chatId);
+        triggerPushNotification(activeChatFriendUid, {
+          title: myProfileData?.name || 'Someone',
+          body: text,
+          type: 'message',
+          tag: `chat-${chatId}`,
+          url: './#/dm'
+        });
 
       } catch (e) {
         console.error("Error sending DM:", e);
@@ -6020,6 +6239,14 @@
           status: 'ringing',
           offer: { type: offer.type, sdp: offer.sdp },
           createdAt: serverTimestamp()
+        });
+
+        triggerPushNotification(calleeUid, {
+          title: `Incoming ${type === 'voice' ? 'voice' : 'video'} call`,
+          body: `${myProfileData?.name || 'Someone'} is calling you`,
+          type: 'call',
+          tag: `call-${callRef.id}`,
+          url: './#/dm'
         });
       } catch (e) {
         console.error('Call setup error:', e);
