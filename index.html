@@ -104,13 +104,18 @@
       width: 100%;
       height: 100%;
       overflow-y: auto;
-      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-      will-change: transform;
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform, opacity;
     }
 
-    .screen-view[data-pos="center"] { transform: translateX(0); }
-    .screen-view[data-pos="left"] { transform: translateX(-100%); }
-    .screen-view[data-pos="right"] { transform: translateX(100%); }
+    /* A slight scale + dim on the off-screen positions (rather than a flat
+       1:1 slide) gives the transition real depth — the outgoing screen
+       visibly recedes and dims as it slides away, the incoming one grows
+       and brightens into place, closer to how native iOS transitions
+       actually feel than a pure horizontal translate. */
+    .screen-view[data-pos="center"] { transform: translateX(0) scale(1); opacity: 1; }
+    .screen-view[data-pos="left"] { transform: translateX(-100%) scale(0.96); opacity: 0.85; }
+    .screen-view[data-pos="right"] { transform: translateX(100%) scale(0.96); opacity: 0.85; }
 
     .icon-svg {
       width: 24px;
@@ -198,10 +203,26 @@
       overflow: hidden;
     }
 
-    /* Plain gray placeholder shown only while the feed is still fetching,
-       so there's no flash of the "No videos yet" empty state beforehand. */
+    /* Animated shimmer placeholder shown only while the feed is still
+       fetching, so there's no flash of the "No videos yet" empty state
+       beforehand — and now reads as "actively loading" rather than a flat
+       gray box that could as easily mean something broke. */
     .video-viewport.feed-loading {
-      background: #2c2c2e;
+      background: linear-gradient(100deg, #232325 30%, #313133 50%, #232325 70%);
+      background-size: 250% 100%;
+      animation: shimmerSweep 1.6s ease-in-out infinite;
+    }
+
+    @keyframes shimmerSweep {
+      0% { background-position: 100% 0; }
+      100% { background-position: -50% 0; }
+    }
+
+    .skeleton-row {
+      background: linear-gradient(100deg, #f0f0f0 30%, #f8f8f8 50%, #f0f0f0 70%);
+      background-size: 250% 100%;
+      animation: shimmerSweep 1.6s ease-in-out infinite;
+      border-radius: 10px;
     }
 
     #feed-video-player {
@@ -259,6 +280,42 @@
       align-items: center;
       justify-content: center;
       backdrop-filter: blur(4px);
+    }
+
+    /* Buffering spinner — shown only while the CURRENT video is actively
+       stalled waiting for more data (the 'waiting' event), hidden the
+       instant playback resumes ('playing'). Before this, a mid-scrub
+       rebuffer looked identical to the app being frozen — no feedback at
+       all that anything was happening. Deliberately small and quiet
+       rather than a full-screen loading state, since it's usually a
+       brief network hiccup, not a real loading screen moment. */
+    .buffering-spinner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .buffering-spinner.visible {
+      opacity: 1;
+    }
+
+    .buffering-spinner-ring {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 3px solid rgba(255,255,255,0.25);
+      border-top-color: rgba(255,255,255,0.9);
+      animation: spinnerRotate 0.8s linear infinite;
+    }
+
+    @keyframes spinnerRotate {
+      to { transform: rotate(360deg); }
     }
 
     .upload-empty-state {
@@ -374,6 +431,7 @@
       cursor: pointer;
       color: #fff;
       width: 44px;
+      position: relative;
     }
 
     .action-item .icon-svg {
@@ -1133,6 +1191,7 @@
       font-weight: 600;
       cursor: pointer;
       text-align: center;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     .btn-follow.following {
@@ -1807,6 +1866,28 @@
 
     .like-pop {
       animation: heartPop 0.35s ease;
+    }
+
+    /* Radiating ring burst behind the heart on like — purely decorative,
+       absolutely positioned so it never affects the action-item's layout,
+       and removed from the DOM entirely after it plays (see toggleLike)
+       rather than just left invisible, so it never accumulates. */
+    @keyframes likeBurstRing {
+      0%   { transform: scale(0.3); opacity: 0.6; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+
+    .like-burst-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 30px;
+      height: 30px;
+      margin: -15px 0 0 -15px;
+      border-radius: 50%;
+      border: 2px solid #ff2d55;
+      pointer-events: none;
+      animation: likeBurstRing 0.5s ease-out forwards;
     }
 
     @keyframes videoFadeIn {
@@ -2546,6 +2627,10 @@
             <div class="play-icon-circle">
               <svg class="icon-svg" style="width:36px; height:36px; fill:#fff;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
+          </div>
+
+          <div class="buffering-spinner" id="buffering-spinner">
+            <div class="buffering-spinner-ring"></div>
           </div>
 
           <div class="video-author-bar" id="video-author-bar" style="display:none;">
@@ -3444,11 +3529,42 @@
     // it applies to every video already on the platform too, not just new
     // uploads, with no re-upload or storage migration needed. c_limit means
     // it only ever shrinks, never upscales a smaller source.
+    // Picks a Cloudinary transform based on both viewport size and the
+    // network itself. Mobile playback almost never actually needs a full
+    // 1280x720 file — the video renders into a portrait box far smaller
+    // than that on a phone screen — and forcing a smaller cap saves real
+    // bandwidth (and buffering time) with no visible quality loss at the
+    // size it's actually displayed. On top of that, the Network
+    // Information API (where supported — mainly Android Chrome, not
+    // Safari/iOS, so this is a bonus tier rather than something iOS
+    // benefits from) lets a further-reduced cap kick in for people on a
+    // genuinely slow connection or with iOS's "Low Data Mode" /
+    // Android's "Data Saver" enabled, rather than forcing everyone onto
+    // the lowest common denominator all the time.
+    function getVideoQualityTransform() {
+      const conn = navigator.connection || navigator.webkitConnection || navigator.mozConnection;
+      const saveData = !!(conn && conn.saveData);
+      const slowConnection = !!(conn && ['slow-2g', '2g', '3g'].includes(conn.effectiveType));
+
+      if (saveData || slowConnection) {
+        return 'w_480,h_854,c_limit,q_auto:eco,f_auto';
+      }
+      if (window.innerWidth < 600) {
+        return 'w_720,h_1280,c_limit,q_auto,f_auto';
+      }
+      return 'w_1280,h_720,c_limit,q_auto,f_auto';
+    }
+
     function getOptimizedVideoUrl(videoUrl) {
       if (!videoUrl) return videoUrl;
-      const transform = 'w_1280,h_720,c_limit,q_auto,f_auto';
-      if (videoUrl.includes('/upload/' + transform)) return videoUrl; // already applied
-      return videoUrl.replace('/upload/', `/upload/${transform}/`);
+      const transform = getVideoQualityTransform();
+      // Strip any previously-applied transform of this same family before
+      // reapplying — otherwise switching quality tiers (e.g. connection
+      // type changing mid-session) would stack transforms instead of
+      // replacing one, which Cloudinary would still handle correctly but
+      // wastefully re-encodes through an extra step.
+      const stripped = videoUrl.replace(/\/upload\/w_\d+,h_\d+,c_limit,q_auto[^/]*\//, '/upload/');
+      return stripped.replace('/upload/', `/upload/${transform}/`);
     }
 
     // ---- Generic confirm modal (used for destructive actions like delete) ----
@@ -4017,7 +4133,7 @@
 
       container.innerHTML = known.map(a => `
         <div class="switch-account-row" onclick="switchToAccount('${a.uid}')">
-          <img class="switch-account-avatar" src="${a.pfp || DEFAULT_AVATAR_SVG}">
+          <img class="switch-account-avatar" src="${a.pfp || DEFAULT_AVATAR_SVG}" loading="lazy">
           <div class="switch-account-info">
             <span class="switch-account-name">${a.name || 'User'}</span>
             <span class="switch-account-handle">@${a.handle || 'user'}</span>
@@ -4374,7 +4490,7 @@
       profileVideosIsOwn = isOwn;
       const grid = document.getElementById('profile-videos-grid');
       if (!targetUid) { grid.innerHTML = ''; profileVideosCache = []; return; }
-      grid.innerHTML = `<div class="profile-videos-empty">Loading...</div>`;
+      grid.innerHTML = Array(6).fill('<div class="profile-video-cell skeleton-row" style="border-radius:0;"></div>').join('');
 
       try {
         const q = query(collection(db, 'videos'), where('uid', '==', targetUid));
@@ -4587,7 +4703,7 @@
 
       resultsContainer.innerHTML = matches.map(m => `
         <div class="search-result-card" onclick="selectSearchResult('${m.handle}', '${(m.name || 'User').replace(/'/g, "\\'")}', '${m.pfp || ''}', '${m.uid || ''}')">
-          <img class="search-avatar" src="${m.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 44 44\'><circle cx=\'22\' cy=\'22\' r=\'22\' fill=\'%23333\'/></svg>'}" />
+          <img class="search-avatar" loading="lazy" src="${m.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 44 44\'><circle cx=\'22\' cy=\'22\' r=\'22\' fill=\'%23333\'/></svg>'}" />
           <div class="search-info">
             <span class="title">${withVerifiedBadge(m.name || 'User', m.handle, 13)}</span>
             <span class="subtitle">${withVerifiedBadge('@' + m.handle, m.handle, 12)}</span>
@@ -4681,6 +4797,26 @@
     const uploadPrompt = document.getElementById('upload-prompt');
     const playIndicator = document.getElementById('custom-play-indicator');
     const authorBar = document.getElementById('video-author-bar');
+    const bufferingSpinner = document.getElementById('buffering-spinner');
+
+    // 'waiting' fires the instant playback stalls for more data (a real
+    // rebuffer, not just a paused state); 'playing' fires the instant it
+    // resumes. A short delay before SHOWING the spinner avoids a flash for
+    // sub-100ms stalls that resolve before a person would ever perceive
+    // them as loading — but hiding it is always immediate.
+    let bufferingSpinnerTimeout = null;
+    videoPlayer.addEventListener('waiting', () => {
+      clearTimeout(bufferingSpinnerTimeout);
+      bufferingSpinnerTimeout = setTimeout(() => {
+        bufferingSpinner.classList.add('visible');
+      }, 150);
+    });
+    ['playing', 'pause', 'ended'].forEach(evt => {
+      videoPlayer.addEventListener(evt, () => {
+        clearTimeout(bufferingSpinnerTimeout);
+        bufferingSpinner.classList.remove('visible');
+      });
+    });
 
     // The like/comment/share/privacy/delete action buttons live in ONE
     // template (buildActionBarHtml) and get mirrored into whichever
@@ -4762,11 +4898,21 @@
       renderCurrentVideo();
     }
 
+    // Tracks which video's actual media (src/poster/playback) is currently
+    // loaded into the player, separate from currentVideoIndex — so a
+    // re-render triggered by a like, comment, or privacy toggle (all of
+    // which call renderCurrentVideo() again to refresh counts/labels) can
+    // tell "same video, just updating a number" apart from "actually
+    // navigated to a different video." Without this distinction, every
+    // single like tap was resetting videoPlayer.src and currentTime = 0,
+    // forcing a full rebuffer from scratch for a UI change that touched
+    // nothing about playback — the single biggest avoidable cause of
+    // perceived video "reloading" in the feed.
+    let currentlyLoadedVideoId = null;
+
     function renderCurrentVideo(direction) {
       const feedAudio = document.getElementById('feed-audio-player');
-      renderActionBarShell();
       const mobileBar = document.getElementById('right-action-bar');
-      const desktopBar = document.getElementById('desktop-action-bar');
       const audioDiscItem = document.querySelectorAll('#audio-disc-item');
       const audioDisc = document.querySelectorAll('#audio-disc');
 
@@ -4776,6 +4922,7 @@
         videoPlayer.style.display = 'none';
         mobileBar.classList.remove('visible');
         authorBar.style.display = 'none';
+        currentlyLoadedVideoId = null;
 
         feedAudio.pause();
         feedAudio.removeAttribute('src');
@@ -4797,6 +4944,27 @@
       syncDesktopComments(v);
       uploadPrompt.style.display = 'none';
       videoContainer.classList.remove('feed-loading');
+      mobileBar.classList.add('visible');
+
+      if (v.id !== currentlyLoadedVideoId) {
+        loadVideoMedia(v, direction, feedAudio, audioDiscItem, audioDisc);
+        currentlyLoadedVideoId = v.id;
+      }
+
+      updateVideoStatsUI(v);
+    }
+
+    // Actually swaps the player to a new video: src, poster, the fade/
+    // settle transition, audio track, autoplay, and preloading neighbors.
+    // Only ever called when the video genuinely changed (see the id check
+    // above) — never as a side effect of a like/comment/privacy update.
+    function loadVideoMedia(v, direction, feedAudio, audioDiscItem, audioDisc) {
+      // Don't let a spinner left over from the PREVIOUS video bleed into
+      // this one before its own waiting/playing events have a chance to
+      // fire — the new poster is already covering the frame regardless.
+      clearTimeout(bufferingSpinnerTimeout);
+      bufferingSpinner.classList.remove('visible');
+
       videoPlayer.style.display = 'block';
       // Shows the (already-cached) thumbnail immediately, so the swap to a
       // new video never shows a blank black rectangle while it buffers.
@@ -4808,8 +4976,8 @@
       // provides the visual transition when swiping between videos — by
       // the time this runs after a committed swipe, the frame has already
       // been animated into place. This just resets it to a clean slate and
-      // gives non-drag triggers (initial load, likes, privacy toggle,
-      // opening from a profile grid or a shared DM link) a quick fade-in.
+      // gives non-drag triggers (initial load, opening from a profile grid
+      // or a shared DM link) a quick fade-in.
       // Animating the wrapper div instead of the <video> element itself
       // avoids a Safari/iOS quirk where transforms applied directly to
       // <video> don't reliably animate. The caption bar and action bar
@@ -4848,12 +5016,17 @@
       showPlayIndicator(false);
       preloadAdjacentVideos();
 
-      mobileBar.classList.add('visible');
       authorBar.style.display = 'flex';
       document.getElementById('video-author-handle').innerHTML = withVerifiedBadge('@' + (v.authorHandle || 'user'), v.authorHandle, 13);
       document.getElementById('video-author-date').innerText = formatUploadDate(v.createdAt);
       document.getElementById('video-author-avatar').src = v.authorPfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23333\'/></svg>';
+    }
 
+    // Refreshes just the reactive bits — like/comment counts, privacy
+    // label, owner-only controls — as cheap attribute/text writes with no
+    // effect on playback. Runs on EVERY renderCurrentVideo() call,
+    // including the ones that don't touch the video itself.
+    function updateVideoStatsUI(v) {
       const likesBy = v.likesBy || [];
       isLiked = !!(currentUser && likesBy.includes(currentUser.uid));
       document.querySelectorAll('#like-count').forEach(el => { el.innerText = likesBy.length; });
@@ -5288,6 +5461,18 @@
       const likesBy = v.likesBy || [];
       const alreadyLiked = likesBy.includes(currentUser.uid);
 
+      // Only the act of liking (not unliking) gets the burst — visually
+      // ties the celebratory effect specifically to a positive action.
+      if (!alreadyLiked) {
+        document.querySelectorAll('.action-item').forEach(item => {
+          if (!item.querySelector('#like-icon')) return;
+          const ring = document.createElement('div');
+          ring.className = 'like-burst-ring';
+          item.appendChild(ring);
+          ring.addEventListener('animationend', () => ring.remove());
+        });
+      }
+
       if (alreadyLiked) {
         v.likesBy = likesBy.filter(id => id !== currentUser.uid);
       } else {
@@ -5315,7 +5500,11 @@
       currentCommentsVideoId = v.id;
       document.getElementById('comments-overlay').classList.add('active');
       const list = document.getElementById('comments-list');
-      list.innerHTML = `<div class="comments-empty">Loading comments...</div>`;
+      list.innerHTML = `
+        <div class="skeleton-row" style="height:60px;"></div>
+        <div class="skeleton-row" style="height:60px;"></div>
+        <div class="skeleton-row" style="height:40px; width:70%;"></div>
+      `;
 
       try {
         const q = query(collection(db, 'videos', v.id, 'comments'), orderBy('createdAt', 'asc'));
@@ -5359,7 +5548,7 @@
     function renderReplyRow(r) {
       const avatar = r.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\'><circle cx=\'12\' cy=\'12\' r=\'12\' fill=\'%23eee\'/></svg>';
       return `<div class="comment-reply-row">
-        <img class="comment-avatar" src="${avatar}">
+        <img class="comment-avatar" loading="lazy" src="${avatar}">
         <div class="comment-body">
           <div class="handle">${withVerifiedBadge('@' + (r.handle || 'user'), r.handle, 11)}</div>
           <div class="text">${filterTextForViewer(escapeHtml(r.text || ''))}</div>
@@ -5381,7 +5570,7 @@
       const imageHtml = c.imageUrl ? `<img class="comment-image" src="${c.imageUrl}" loading="lazy">` : '';
 
       return `<div class="comment-row">
-        <img class="comment-avatar" src="${avatar}">
+        <img class="comment-avatar" loading="lazy" src="${avatar}">
         <div class="comment-body">
           <div class="handle">${withVerifiedBadge('@' + (c.handle || 'user'), c.handle, 12)}</div>
           <div class="text">${safeText}</div>
@@ -5612,7 +5801,12 @@
         return;
       }
 
-      listEl.innerHTML = `<div class="comments-empty">Loading friends...</div>`;
+      listEl.innerHTML = `
+        <div style="padding:8px; display:flex; gap:10px; align-items:center;">
+          <div class="skeleton-row" style="width:38px; height:38px; border-radius:50%; flex-shrink:0;"></div>
+          <div class="skeleton-row" style="flex:1; height:14px;"></div>
+        </div>
+      `;
       try {
         const friends = await getMutualFriendsBasic();
         if (friends.length === 0) {
@@ -5621,7 +5815,7 @@
         }
         listEl.innerHTML = friends.map(f => `
           <div class="switch-account-row" onclick="sendVideoToFriend('${f.uid}', '${(f.name || 'User').replace(/'/g, "\\'")}')">
-            <img class="switch-account-avatar" src="${f.pfp || DEFAULT_AVATAR_SVG}">
+            <img class="switch-account-avatar" src="${f.pfp || DEFAULT_AVATAR_SVG}" loading="lazy">
             <div class="switch-account-info">
               <span class="switch-account-name">${withVerifiedBadge(f.name, f.handle, 12)}</span>
               <span class="switch-account-handle">@${escapeHtml(f.handle)}</span>
@@ -5761,7 +5955,22 @@
       if (!currentUser) return;
 
       const friendsListEl = document.getElementById('dm-friends-list');
-      friendsListEl.innerHTML = '<div class="dm-empty-state"><p>Loading friends...</p></div>';
+      friendsListEl.innerHTML = `
+        <div style="padding:14px 20px; display:flex; gap:12px; align-items:center;">
+          <div class="skeleton-row" style="width:48px; height:48px; border-radius:50%; flex-shrink:0;"></div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+            <div class="skeleton-row" style="height:14px; width:40%;"></div>
+            <div class="skeleton-row" style="height:12px; width:65%;"></div>
+          </div>
+        </div>
+        <div style="padding:14px 20px; display:flex; gap:12px; align-items:center;">
+          <div class="skeleton-row" style="width:48px; height:48px; border-radius:50%; flex-shrink:0;"></div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+            <div class="skeleton-row" style="height:14px; width:55%;"></div>
+            <div class="skeleton-row" style="height:12px; width:35%;"></div>
+          </div>
+        </div>
+      `;
 
       try {
         const myDoc = await getDoc(doc(db, "users", currentUser.uid));
@@ -5824,7 +6033,7 @@
           return `
             <div class="dm-friend-item" data-uid="${f.uid}" onclick="openActiveChat('${f.uid}', '${(f.name).replace(/'/g, "\\'")}', '${(f.pfp || '').replace(/'/g, "\\'")}', '${(f.handle || '').replace(/'/g, "\\'")}')">
               <div class="avatar-with-status">
-                <img class="dm-friend-avatar" src="${f.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><circle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%23eee\'/></svg>'}" />
+                <img class="dm-friend-avatar" loading="lazy" src="${f.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><circle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%23eee\'/></svg>'}" />
                 <span class="presence-dot ${status.online ? 'online' : ''}"></span>
               </div>
               <div class="dm-friend-info">
