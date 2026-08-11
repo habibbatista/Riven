@@ -68,21 +68,86 @@
       overflow: hidden;
     }
 
+    #app-container {
+      width: 100%;
+      max-width: 430px;
+      height: 100dvh;
+      /* iOS's installed-PWA (standalone) viewport can report 100dvh
+         inconsistently — sometimes shorter than the actual visible
+         screen — which, combined with the centered body below, showed up
+         as a black gap above and below the app instead of true full-bleed
+         edge-to-edge content, most visible as extra space under the
+         bottom nav. -webkit-fill-available is WebKit-specific and always
+         resolves to the real visible viewport in standalone mode; browsers
+         that don't understand it simply ignore the line and keep 100dvh. */
+      height: -webkit-fill-available;
+      background: var(--bg-light);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* When actually installed and launched from the Home Screen, there's
+       no browser chrome to ever "fit inside" — the app should be true
+       full-bleed, not a centered phone-shaped card floating in a black
+       backdrop (that centered-card look is only meaningful in a desktop
+       browser tab, where #app-container's own media query further down
+       already handles the wider desktop layout). */
+    @media (display-mode: standalone) {
+      body {
+        align-items: stretch;
+        justify-content: stretch;
+      }
+      #app-container {
+        max-width: 100%;
+        height: 100%;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+
     body {
       display: flex;
       justify-content: center;
       align-items: center;
     }
 
-    #app-container {
-      width: 100%;
-      max-width: 430px;
-      height: 100dvh; 
-      background: var(--bg-light);
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+    /* Hidden by default — a splash screen only makes sense for the
+       installed app (nothing to "launch into" from a regular browser tab,
+       which already has its own loading affordances like the URL bar). */
+    #splash-screen {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 999999999;
+      align-items: center;
+      justify-content: center;
+      background: #000000;
+      opacity: 1;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+
+    @media (display-mode: standalone) {
+      #splash-screen {
+        display: flex;
+      }
+    }
+
+    #splash-screen.fade-out {
+      opacity: 0;
+    }
+
+    .splash-icon {
+      width: 96px;
+      height: 96px;
+      animation: splashPulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes splashPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.08); opacity: 0.8; }
     }
 
     /* Screens wrapper: hosts the three tab screens as absolutely stacked
@@ -233,14 +298,26 @@
       -webkit-appearance: none;
     }
 
-    /* video-frame now carries the video AND its caption/action-bar overlays
-       together, so a swipe-driven slide moves everything as one unit. A
-       CSS transform here creates a new containing block for the absolutely
-       positioned children, so their on-screen position is unchanged. */
-    .video-frame {
+    /* video-stage owns the box sizing (full-bleed on mobile, the 9:16
+       aspect-ratio-constrained card on desktop — see the desktop media
+       query) and hosts the header as a direct child so it's positioned
+       independently of .video-frame's drag transform below — the header
+       must stay visually fixed in place while the video swipes underneath
+       it, not slide along with the gesture. */
+    .video-stage {
       width: 100%;
       height: 100%;
       position: relative;
+    }
+
+    /* video-frame now carries the video AND its caption/action-bar overlays
+       together, so a swipe-driven slide moves everything as one unit. A
+       CSS transform here creates a new containing block for the absolutely
+       positioned children, so their on-screen position is unchanged. It
+       fills its parent .video-stage exactly, on both mobile and desktop. */
+    .video-frame {
+      position: absolute;
+      inset: 0;
     }
 
     video::-webkit-media-controls,
@@ -289,6 +366,28 @@
        all that anything was happening. Deliberately small and quiet
        rather than a full-screen loading state, since it's usually a
        brief network hiccup, not a real loading screen moment. */
+    /* Always-visible thumbnail sitting directly on top of the <video>
+       element, independent of the browser's own poster-hiding logic — see
+       the HTML comment where it's placed for why this exists (eliminating
+       any black-frame flash between videos). Faded out via JS once the
+       video's 'playing' event confirms real frames are actually painting. */
+    .video-poster-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+      z-index: 3;
+      opacity: 1;
+      transition: opacity 0.25s ease;
+      pointer-events: none;
+    }
+
+    .video-poster-overlay.hidden {
+      opacity: 0;
+    }
+
     .buffering-spinner {
       position: absolute;
       inset: 0;
@@ -1017,6 +1116,13 @@
       letter-spacing: 0.04em;
       padding: 4px 10px;
       border-radius: 20px;
+    }
+
+    .admin-report-card {
+      padding: 12px;
+      border-radius: var(--radius-squircle);
+      border: 1.5px solid var(--border-gray);
+      background: #fafafa;
     }
 
     .plus-tier-card {
@@ -2458,8 +2564,12 @@
          the column), width is derived from aspect-ratio and capped at
          420px — instead of the previous fixed 420px width paired with a
          94%-of-viewport height, which had no fixed relationship to each
-         other and so wasn't reliably 9:16 depending on window shape. */
-      .video-frame {
+         other and so wasn't reliably 9:16 depending on window shape. This
+         now lives on .video-stage (not .video-frame) so the header inside
+         the stage — but outside video-frame's drag transform — still
+         inherits the exact same box and gets clipped to the same rounded
+         corners, without being coupled to the swipe animation. */
+      .video-stage {
         height: 94%;
         max-height: 94%;
         aspect-ratio: 9 / 16;
@@ -2469,11 +2579,6 @@
         border-radius: 16px;
         overflow: hidden;
       }
-
-      /* .feed-header now lives INSIDE .video-frame (moved in the HTML) so
-         it automatically inherits the exact same box — no separate width/
-         position math needed, and video-frame's overflow:hidden clips it
-         to the same rounded corners for free. */
 
       /* On mobile the like/comment/share/privacy/delete icons overlay the
          bottom-right corner of the video itself. The reference mockup
@@ -2582,6 +2687,15 @@
 
   <div id="app-container">
 
+    <!-- PWA launch splash — only ever shown when actually installed and
+         opened from the Home Screen (gated by @media (display-mode:
+         standalone) in the CSS below), never in a regular browser tab
+         where a splash would just be unnecessary ceremony. Fades into the
+         real UI once the app shell has finished loading. -->
+    <div id="splash-screen">
+      <img src="icons/icon-transparent.png" class="splash-icon" alt="Riven">
+    </div>
+
     <div id="screens-wrapper">
 
     <!-- 1. FEED SCREEN -->
@@ -2606,12 +2720,11 @@
       </div>
 
       <div class="video-viewport" id="video-container">
-        <div class="video-frame" id="video-frame">
-          <!-- Lives inside .video-frame (not as a viewport-wide sibling)
-               so it always matches the video's actual rendered box — full
-               width on mobile, the 9:16-constrained box on desktop —
-               without separate width/position math duplicating
-               .video-frame's own sizing. -->
+        <div class="video-stage" id="video-stage">
+          <!-- Sits alongside .video-frame (not inside it) specifically so
+               it's unaffected by video-frame's drag transform during a
+               swipe — the header must stay put while the video underneath
+               it slides, not scroll/slide along with the gesture. -->
           <div class="feed-header">
             <div class="feed-tabs">
               <span class="feed-tab" id="tab-friends" onclick="setActiveFeedTab(this)">Friends</span>
@@ -2621,35 +2734,48 @@
               <svg class="icon-svg icon-line" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </div>
           </div>
-          <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted preload="auto"></video>
+          <div class="video-frame" id="video-frame">
+            <video id="feed-video-player" playsinline webkit-playsinline disablePictureInPicture loop muted preload="auto"></video>
 
-          <div class="custom-play-overlay" id="custom-play-indicator">
-            <div class="play-icon-circle">
-              <svg class="icon-svg" style="width:36px; height:36px; fill:#fff;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <!-- Sits directly on top of the <video>, showing the same
+                 frame-at-1-second thumbnail the poster attribute uses.
+                 Stays fully opaque until the video actually starts
+                 painting real frames (the 'playing' event), then fades
+                 out — so there is never a moment of plain black between
+                 one video's last frame and the next one's first, even
+                 during a slow rebuffer. -->
+            <img class="video-poster-overlay" id="video-poster-overlay" alt="">
+
+            <div class="custom-play-overlay" id="custom-play-indicator">
+              <div class="play-icon-circle">
+                <svg class="icon-svg" style="width:36px; height:36px; fill:#fff;" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            </div>
+
+            <div class="buffering-spinner" id="buffering-spinner">
+              <div class="buffering-spinner-ring"></div>
+            </div>
+
+            <div class="video-author-bar" id="video-author-bar" style="display:none;">
+              <img class="video-author-avatar" id="video-author-avatar" src="">
+              <div class="video-author-text">
+                <span class="video-author-handle" id="video-author-handle">@user</span>
+                <span class="video-author-date" id="video-author-date"></span>
+              </div>
+            </div>
+
+            <div class="right-action-bar" id="right-action-bar">
             </div>
           </div>
-
-          <div class="buffering-spinner" id="buffering-spinner">
-            <div class="buffering-spinner-ring"></div>
-          </div>
-
-          <div class="video-author-bar" id="video-author-bar" style="display:none;">
-            <img class="video-author-avatar" id="video-author-avatar" src="">
-            <div class="video-author-text">
-              <span class="video-author-handle" id="video-author-handle">@user</span>
-              <span class="video-author-date" id="video-author-date"></span>
-            </div>
-          </div>
-
-          <div class="right-action-bar" id="right-action-bar">
-          </div>
+          <!-- Thumbnail previews shown only during an active drag — as the
+               current video-frame is dragged off-screen by the finger, the
+               incoming one's thumbnail is revealed underneath in real time.
+               Swaps to the actual playing video only once the drag settles.
+               Living inside .video-stage (not video-viewport) means these
+               also correctly clip to the smaller 9:16 card on desktop. -->
+          <img class="video-drag-preview" id="video-drag-preview-next" alt="">
+          <img class="video-drag-preview" id="video-drag-preview-prev" alt="">
         </div>
-        <!-- Thumbnail previews shown only during an active drag — as the
-             current video-frame is dragged off-screen by the finger, the
-             incoming one's thumbnail is revealed underneath in real time.
-             Swaps to the actual playing video only once the drag settles. -->
-        <img class="video-drag-preview" id="video-drag-preview-next" alt="">
-        <img class="video-drag-preview" id="video-drag-preview-prev" alt="">
         <audio id="feed-audio-player" style="display:none;"></audio>
 
         <!-- Hidden buffers that silently start fetching the next/previous
@@ -2657,6 +2783,7 @@
              the person actually swipes, the browser already has it cached
              and playback starts instantly instead of stalling to buffer. -->
         <video id="preload-video-next" style="display:none;" preload="auto" muted playsinline webkit-playsinline></video>
+        <video id="preload-video-next2" style="display:none;" preload="auto" muted playsinline webkit-playsinline></video>
         <video id="preload-video-prev" style="display:none;" preload="auto" muted playsinline webkit-playsinline></video>
 
         <div class="upload-empty-state" id="upload-prompt">
@@ -2742,7 +2869,7 @@
             <div class="chat-icon-btn" onclick="startCall('voice')" title="Voice call">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
             </div>
-            <div class="chat-icon-btn" onclick="stubChatAction('Report submitted')" title="Report">
+            <div class="chat-icon-btn" onclick="reportChatUser()" title="Report">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
             </div>
             <div class="chat-icon-btn" onclick="toggleChatMenu()" title="More">
@@ -2751,7 +2878,7 @@
           </div>
           <div class="chat-menu-dropdown" id="chat-menu-dropdown">
             <div class="profile-menu-item" onclick="toggleChatMenu(true); stubChatAction('User blocked');">Block User</div>
-            <div class="profile-menu-item danger" onclick="toggleChatMenu(true); stubChatAction('Chat reported');">Report</div>
+            <div class="profile-menu-item danger" onclick="reportChatUser()">Report</div>
           </div>
         </header>
 
@@ -2789,6 +2916,7 @@
             <div class="profile-menu-item" onclick="toggleProfileMenu(); openEditModal();">Edit Profile</div>
             <div class="profile-menu-item" id="switch-account-menu-item" onclick="openSwitchAccountModal();">Switch Account</div>
             <div class="profile-menu-item" onclick="toggleProfileMenu(true); openRivenPlusModal();">✨ Riven+</div>
+            <div class="profile-menu-item" id="admin-menu-item" style="display:none;" onclick="toggleProfileMenu(true); openAdminReportsModal();">🛡️ Admin</div>
             <div class="profile-menu-item danger" onclick="logoutUser()">Log Out</div>
           </div>
         </div>
@@ -2964,6 +3092,19 @@
         <button class="btn-notify-plus" id="notify-plus-btn" onclick="notifyMeForRivenPlus()">Notify me when it launches</button>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
           <button class="modal-btn modal-btn-cancel" onclick="closeRivenPlusModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+        <!-- ADMIN REPORTS MODAL -->
+    <div class="modal-overlay" id="admin-reports-modal">
+      <div class="modal-content" style="width:92%; max-width:420px; max-height:82vh; overflow-y:auto;">
+        <h3>Reports</h3>
+        <div id="admin-reports-list" style="display:flex; flex-direction:column; gap:12px;">
+          <div class="comments-empty">Loading reports...</div>
+        </div>
+        <div class="modal-buttons" style="justify-content:center; margin-top:4px;">
+          <button class="modal-btn modal-btn-cancel" onclick="closeAdminReportsModal()">Close</button>
         </div>
       </div>
     </div>
@@ -3262,6 +3403,20 @@
 
     function generateRandomUserHandle() {
       return `user${Math.floor(100000 + Math.random() * 900000)}`;
+    }
+
+    // ---- Admin / moderation ----
+    // UNLIKE verified badges below, this IS a real security boundary —
+    // moderation actions (deleting someone else's video, banning a user)
+    // must be enforced in Firestore rules using this same UID, not just
+    // hidden from the menu here. Hiding the "Admin" entry keeps the UI
+    // clean for everyone else; it's the rules that actually stop a
+    // non-admin from calling these functions directly. See the rules
+    // snippet given alongside this feature for the exact rule text needed.
+    const ADMIN_UIDS = new Set(['3v6NuGnGyeRQcTxa4nS6MoTWeCk2']);
+
+    function isAdmin() {
+      return !!(currentUser && ADMIN_UIDS.has(currentUser.uid));
     }
 
     // ---- Verified badges ----
@@ -3813,6 +3968,28 @@
     maybeShowIosInstallBanner();
     handleLaunchHash();
 
+    // Fades the launch splash into the real UI once the app shell has
+    // actually finished loading — gated to a minimum display time as well
+    // (not just "as soon as load fires") so a fast cached load doesn't
+    // flash the splash for a barely-perceptible instant; it reads as a
+    // deliberate brief launch moment either way. A no-op outside standalone
+    // mode, since #splash-screen is display:none there to begin with.
+    (function initSplashScreen() {
+      const splash = document.getElementById('splash-screen');
+      if (!splash) return;
+
+      const minDisplayTime = new Promise(resolve => setTimeout(resolve, 500));
+      const appReady = new Promise(resolve => {
+        if (document.readyState === 'complete') resolve();
+        else window.addEventListener('load', resolve, { once: true });
+      });
+
+      Promise.all([minDisplayTime, appReady]).then(() => {
+        splash.classList.add('fade-out');
+        setTimeout(() => splash.remove(), 450); // matches the CSS transition duration
+      });
+    })();
+
     if (isApplePlatform()) {
       const appleBtn = document.getElementById('apple-signin-btn');
       if (appleBtn) appleBtn.style.display = 'flex';
@@ -3855,6 +4032,145 @@
     window.stubChatAction = function(label) {
       toggleChatMenu(true);
       showToast(label);
+    };
+
+    window.reportChatUser = async function() {
+      toggleChatMenu(true);
+      if (!activeChatFriendUid) return;
+      const ok = await submitReport('user', activeChatFriendUid, { context: 'dm' });
+      showToast(ok ? 'Reported — thanks, we\'ll take a look' : 'Could not submit report');
+    };
+
+    // ---- Admin: reports review queue ----
+    window.openAdminReportsModal = async function() {
+      document.getElementById('admin-reports-modal').classList.add('active');
+      const list = document.getElementById('admin-reports-list');
+      list.innerHTML = `<div class="comments-empty">Loading reports...</div>`;
+
+      if (!isAdmin()) {
+        list.innerHTML = `<div class="comments-empty">Not authorized</div>`;
+        return;
+      }
+
+      try {
+        // Fetching everything and filtering client-side (rather than a
+        // where('status','==','pending') query) avoids needing a composite
+        // Firestore index for a collection this size — fine at hobby-app
+        // scale, and one less one-time setup step.
+        const snap = await getDocs(collection(db, 'reports'));
+        const pending = [];
+        snap.forEach(d => {
+          const data = d.data();
+          if (data.status === 'pending') pending.push({ id: d.id, ...data });
+        });
+        pending.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+
+        if (pending.length === 0) {
+          list.innerHTML = `<div class="comments-empty">No pending reports 🎉</div>`;
+          return;
+        }
+
+        // Each report only stores a targetId — hydrate with the actual
+        // video/user info needed to show something meaningful to review.
+        const hydrated = await Promise.all(pending.map(async (r) => {
+          try {
+            if (r.targetType === 'video') {
+              const vSnap = await getDoc(doc(db, 'videos', r.targetId));
+              if (!vSnap.exists()) return { ...r, missing: true };
+              const v = vSnap.data();
+              return { ...r, thumb: getVideoThumbnail(v.videoUrl), label: 'Video by @' + (v.authorHandle || 'user'), videoUid: v.uid };
+            } else {
+              const uSnap = await getDoc(doc(db, 'users', r.targetId));
+              if (!uSnap.exists()) return { ...r, missing: true };
+              const u = uSnap.data();
+              return { ...r, thumb: u.pfp || DEFAULT_AVATAR_SVG, label: 'User @' + (u.handle || 'user'), videoUid: null };
+            }
+          } catch (e) {
+            return { ...r, missing: true };
+          }
+        }));
+
+        list.innerHTML = hydrated.map(r => renderAdminReportCard(r)).join('');
+      } catch (e) {
+        console.warn('Admin reports load error:', e);
+        list.innerHTML = `<div class="comments-empty">Could not load reports</div>`;
+      }
+    };
+
+    function renderAdminReportCard(r) {
+      if (r.missing) {
+        return `<div class="admin-report-card" id="admin-report-${r.id}">
+          <div style="font-size:13px; color:#999;">Reported content no longer exists.</div>
+          <div class="modal-buttons" style="justify-content:flex-start; margin-top:8px;">
+            <button class="modal-btn modal-btn-cancel" onclick="adminDismissReport('${r.id}')">Dismiss</button>
+          </div>
+        </div>`;
+      }
+      const banTargetUid = r.targetType === 'video' ? r.videoUid : r.targetId;
+      return `<div class="admin-report-card" id="admin-report-${r.id}">
+        <div style="display:flex; gap:10px; align-items:center;">
+          <img src="${r.thumb}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;background:#eee;" onerror="this.style.background='#2c2c2e'; this.removeAttribute('src');">
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:13px; font-weight:600;">${escapeHtml(r.label)}</div>
+            <div style="font-size:12px; color:#888; text-transform:capitalize;">${escapeHtml(r.targetType)} report</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+          ${r.targetType === 'video' ? `<button class="modal-btn" style="background:var(--accent-pink); color:#fff;" onclick="adminDeleteReportedVideo('${r.id}', '${r.targetId}')">Delete Video</button>` : ''}
+          <button class="modal-btn" style="background:#111; color:#fff;" onclick="adminBanUser('${r.id}', '${banTargetUid}')">Ban User</button>
+          <button class="modal-btn modal-btn-cancel" onclick="adminDismissReport('${r.id}')">Dismiss</button>
+        </div>
+      </div>`;
+    }
+
+    window.closeAdminReportsModal = function() {
+      document.getElementById('admin-reports-modal').classList.remove('active');
+    };
+
+    async function markReportReviewed(reportId, status) {
+      try {
+        await updateDoc(doc(db, 'reports', reportId), {
+          status,
+          reviewedAt: serverTimestamp(),
+          reviewedBy: currentUser.uid
+        });
+      } catch (e) {
+        console.warn('Report status update error:', e);
+      }
+      const card = document.getElementById(`admin-report-${reportId}`);
+      if (card) card.remove();
+    }
+
+    window.adminDeleteReportedVideo = async function(reportId, videoId) {
+      if (!isAdmin()) return;
+      try {
+        await deleteDoc(doc(db, 'videos', videoId));
+        showToast('Video deleted');
+      } catch (e) {
+        console.warn('Admin delete video error:', e);
+        showToast('Could not delete video');
+        return;
+      }
+      await markReportReviewed(reportId, 'actioned');
+    };
+
+    window.adminBanUser = async function(reportId, targetUid) {
+      if (!isAdmin() || !targetUid) return;
+      openConfirmModal('Ban this user?', 'They will be signed out immediately and unable to sign back in.', 'Ban', async () => {
+        try {
+          await setDoc(doc(db, 'users', targetUid), { banned: true }, { merge: true });
+          showToast('User banned');
+        } catch (e) {
+          console.warn('Admin ban error:', e);
+          showToast('Could not ban user');
+          return;
+        }
+        await markReportReviewed(reportId, 'actioned');
+      });
+    };
+
+    window.adminDismissReport = async function(reportId) {
+      await markReportReviewed(reportId, 'dismissed');
     };
 
     // ---- Desktop-only "..." account menu ----
@@ -4281,6 +4597,17 @@
         }
 
         saveKnownAccount(user.uid, myProfileData?.name, myProfileData?.handle, myProfileData?.pfp, user.email);
+
+        // A banned account gets signed out immediately, before anything
+        // else about the session gets set up further.
+        if (myProfileData?.banned) {
+          showToast('This account has been suspended.', 6000);
+          await signOut(auth);
+          return;
+        }
+
+        const adminMenuItem = document.getElementById('admin-menu-item');
+        if (adminMenuItem) adminMenuItem.style.display = isAdmin() ? 'block' : 'none';
 
         applyAgeGroupUI();
         if (typeof myProfileData.age !== 'number') {
@@ -4798,6 +5125,7 @@
     const playIndicator = document.getElementById('custom-play-indicator');
     const authorBar = document.getElementById('video-author-bar');
     const bufferingSpinner = document.getElementById('buffering-spinner');
+    const posterOverlay = document.getElementById('video-poster-overlay');
 
     // 'waiting' fires the instant playback stalls for more data (a real
     // rebuffer, not just a paused state); 'playing' fires the instant it
@@ -4816,6 +5144,20 @@
         clearTimeout(bufferingSpinnerTimeout);
         bufferingSpinner.classList.remove('visible');
       });
+    });
+
+    // Fades the standing-in poster image out only once the video is
+    // CONFIRMED to be painting real frames — not merely once playback was
+    // requested, which can precede the first actual frame by a beat,
+    // especially cold-starting muted autoplay on iOS Safari.
+    videoPlayer.addEventListener('playing', () => {
+      posterOverlay.classList.add('hidden');
+    });
+    // If it stalls badly enough to fall back to 'waiting' again having
+    // never really gotten going, bring the poster back rather than show a
+    // half-decoded/garbled frame underneath the spinner.
+    videoPlayer.addEventListener('waiting', () => {
+      if (videoPlayer.currentTime === 0) posterOverlay.classList.remove('hidden');
     });
 
     // The like/comment/share/privacy/delete action buttons live in ONE
@@ -4856,6 +5198,10 @@
           <svg class="icon-svg icon-line" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           <span class="action-count">Delete</span>
         </div>
+        <div class="action-item" id="report-action-item" style="display:none;" onclick="reportCurrentVideo()">
+          <svg class="icon-svg icon-line" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          <span class="action-count">Report</span>
+        </div>
         <div class="action-item audio-disc-item" id="audio-disc-item" style="display:none;">
           <div class="audio-disc" id="audio-disc">
             <img id="audio-disc-img" src="" alt="">
@@ -4879,23 +5225,64 @@
 
     renderActionBarShell();
 
+    // 'foryou' = everyone (current default, newest-first). 'friends' =
+    // only people the signed-in user follows — previously the tab existed
+    // but tapping it did nothing beyond a visual underline change.
+    let activeFeedFilter = 'foryou';
+
     async function loadFeed() {
       try {
-        const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'), limit(30));
+        // Fetch a wider pool than we'll necessarily show — the Friends
+        // filter narrows this down client-side afterward, so it needs
+        // enough recent videos in hand to find a decent number of matches
+        // rather than just the newest 30 across EVERYONE.
+        const q = query(collection(db, 'videos'), orderBy('createdAt', 'desc'), limit(60));
         const snap = await getDocs(q);
-        videoQueue = [];
+        let fetched = [];
         snap.forEach(d => {
           const data = d.data();
           // Skip other people's private videos - only the owner can see their own private posts
           if (data.isPrivate && (!currentUser || data.uid !== currentUser.uid)) return;
-          videoQueue.push({ id: d.id, ...data });
+          fetched.push({ id: d.id, ...data });
         });
+
+        if (activeFeedFilter === 'friends') {
+          const following = myProfileData?.following || [];
+          fetched = fetched.filter(v => following.includes(v.uid));
+        }
+
+        videoQueue = fetched.slice(0, 30);
       } catch (e) {
         console.warn("Feed load error:", e);
         videoQueue = [];
       }
       currentVideoIndex = videoQueue.length > 0 ? 0 : -1;
+      updateEmptyFeedCopy();
       renderCurrentVideo();
+    }
+
+    // The empty state needs different copy depending on which tab is
+    // showing nothing — "nobody's posted yet" doesn't make sense on
+    // Friends when the real reason is "you're not following anyone with
+    // videos yet."
+    function updateEmptyFeedCopy() {
+      const titleEl = document.getElementById('empty-feed-title');
+      const textEl = document.getElementById('empty-feed-text');
+      if (!titleEl || !textEl) return;
+
+      if (activeFeedFilter === 'friends') {
+        const followingCount = (myProfileData?.following || []).length;
+        if (followingCount === 0) {
+          titleEl.innerText = 'Follow people to see them here';
+          textEl.innerText = "You're not following anyone yet — videos from people you follow will show up on this tab.";
+        } else {
+          titleEl.innerText = 'No videos yet';
+          textEl.innerText = "Nobody you follow has posted recently. Check back later, or switch to For You.";
+        }
+      } else {
+        titleEl.innerText = 'No videos yet';
+        textEl.innerText = 'Nobody has posted a video yet. Be the first — sign in and upload one.';
+      }
     }
 
     // Tracks which video's actual media (src/poster/playback) is currently
@@ -4967,8 +5354,14 @@
 
       videoPlayer.style.display = 'block';
       // Shows the (already-cached) thumbnail immediately, so the swap to a
-      // new video never shows a blank black rectangle while it buffers.
-      videoPlayer.poster = getVideoThumbnail(v.videoUrl);
+      // new video never shows a blank black rectangle while it buffers —
+      // both via the native poster attribute AND the overlay image on top
+      // of it, which is the one that actually guarantees no black flash
+      // (see its own comments for why both exist).
+      const thumbUrl = getVideoThumbnail(v.videoUrl);
+      videoPlayer.poster = thumbUrl;
+      posterOverlay.src = thumbUrl;
+      posterOverlay.classList.remove('hidden');
       videoPlayer.src = getOptimizedVideoUrl(v.videoUrl);
       videoPlayer.currentTime = 0;
 
@@ -5033,10 +5426,12 @@
       document.querySelectorAll('#like-icon').forEach(el => { el.style.fill = isLiked ? '#ff2d55' : 'currentColor'; });
       document.querySelectorAll('#comment-count').forEach(el => { el.innerText = v.commentsCount || 0; });
 
-      // Owner-only privacy toggle + delete
+      // Owner-only privacy toggle + delete; Report is the inverse (only
+      // makes sense on someone ELSE's video, and only if signed in).
       const isOwner = currentUser && v.uid === currentUser.uid;
       document.querySelectorAll('#privacy-action-item').forEach(el => { el.style.display = isOwner ? 'flex' : 'none'; });
       document.querySelectorAll('#delete-action-item').forEach(el => { el.style.display = isOwner ? 'flex' : 'none'; });
+      document.querySelectorAll('#report-action-item').forEach(el => { el.style.display = (currentUser && !isOwner) ? 'flex' : 'none'; });
       if (isOwner) {
         document.querySelectorAll('#privacy-label').forEach(el => { el.innerText = v.isPrivate ? 'Private' : 'Public'; });
         document.querySelectorAll('#privacy-icon').forEach(el => { el.style.fill = v.isPrivate ? '#ff2d55' : 'currentColor'; });
@@ -5044,6 +5439,7 @@
     }
 
     const preloadVideoNext = document.getElementById('preload-video-next');
+    const preloadVideoNext2 = document.getElementById('preload-video-next2');
     const preloadVideoPrev = document.getElementById('preload-video-prev');
 
     // Warms the browser's cache for the video one swipe away in each
@@ -5051,27 +5447,35 @@
     // src and let it start fetching; we never play it. When the person
     // actually swipes there, the real player requests the same URL and gets
     // served from cache instead of stalling on a fresh network fetch.
+    // Warms the browser's cache for the videos immediately around the
+    // current one — two ahead (the dominant scroll direction in a feed)
+    // and one behind — so by the time a swipe actually happens, playback
+    // starts instantly from cache instead of stalling on a fresh fetch.
+    // Anything that FALLS OUT of that window gets explicitly unloaded: not
+    // just its src cleared, but .load() called right after, which is what
+    // actually tells the browser to release the buffered media memory —
+    // clearing src alone can leave the decoder's buffer allocated. Without
+    // this, a long scrolling session would keep accumulating buffered
+    // video data for every single video ever passed, rather than staying
+    // bounded to a small constant-size window around wherever you are now.
+    function preloadOrUnload(el, targetVideo) {
+      if (targetVideo) {
+        if (el.getAttribute('data-src') !== targetVideo.videoUrl) {
+          el.setAttribute('data-src', targetVideo.videoUrl);
+          el.src = getOptimizedVideoUrl(targetVideo.videoUrl);
+          el.load();
+        }
+      } else if (el.getAttribute('data-src')) {
+        el.removeAttribute('data-src');
+        el.removeAttribute('src');
+        el.load(); // actually releases the buffered memory, not just the reference
+      }
+    }
+
     function preloadAdjacentVideos() {
-      const nextVideo = videoQueue[currentVideoIndex + 1];
-      const prevVideo = videoQueue[currentVideoIndex - 1];
-
-      if (nextVideo && preloadVideoNext.getAttribute('data-src') !== nextVideo.videoUrl) {
-        preloadVideoNext.setAttribute('data-src', nextVideo.videoUrl);
-        preloadVideoNext.src = getOptimizedVideoUrl(nextVideo.videoUrl);
-        preloadVideoNext.load();
-      } else if (!nextVideo) {
-        preloadVideoNext.removeAttribute('data-src');
-        preloadVideoNext.removeAttribute('src');
-      }
-
-      if (prevVideo && preloadVideoPrev.getAttribute('data-src') !== prevVideo.videoUrl) {
-        preloadVideoPrev.setAttribute('data-src', prevVideo.videoUrl);
-        preloadVideoPrev.src = getOptimizedVideoUrl(prevVideo.videoUrl);
-        preloadVideoPrev.load();
-      } else if (!prevVideo) {
-        preloadVideoPrev.removeAttribute('data-src');
-        preloadVideoPrev.removeAttribute('src');
-      }
+      preloadOrUnload(preloadVideoNext, videoQueue[currentVideoIndex + 1]);
+      preloadOrUnload(preloadVideoNext2, videoQueue[currentVideoIndex + 2]);
+      preloadOrUnload(preloadVideoPrev, videoQueue[currentVideoIndex - 1]);
     }
 
     function hideDragPreviews() {
@@ -5209,8 +5613,15 @@
         if (Math.abs(deltaY) < DRAG_ACTIVATE_PX || videoQueue.length === 0) return;
         beginDrag(deltaY < 0 ? 'next' : 'prev');
       }
+      // Once we've taken over the gesture as a deliberate swipe, block iOS's
+      // own scroll/rubber-band bounce entirely — without this, the page
+      // itself could still elastically scroll underneath the custom
+      // transform-driven animation, showing as a double/conflicting motion
+      // during the drag. Only reachable after beginDrag() above, so a plain
+      // tap (no real movement) never has its default behavior touched.
+      e.preventDefault();
       applyDragTransform(deltaY);
-    }, { passive: true });
+    }, { passive: false });
 
     videoContainer.addEventListener('touchend', (e) => {
       if (touchStartY === null) return;
@@ -5247,8 +5658,18 @@
     }
 
     window.setActiveFeedTab = function(el) {
+      const newFilter = el.id === 'tab-friends' ? 'friends' : 'foryou';
+      const changed = newFilter !== activeFeedFilter;
       document.querySelectorAll('.feed-tab').forEach(t => t.classList.remove('active'));
       el.classList.add('active');
+      if (!changed) return;
+      activeFeedFilter = newFilter;
+      if (activeFeedFilter === 'friends' && !currentUser) {
+        showToast('Sign in to see videos from people you follow');
+        // Still switch the tab visually, but nothing to actually filter by
+        // signed out — loadFeed() will just show an empty state.
+      }
+      loadFeed();
     };
 
     // ---- Privacy toggle (video owner only) ----
@@ -5271,6 +5692,39 @@
         console.warn('Privacy update error:', e);
         showToast('Could not update privacy');
       }
+    };
+
+    // ---- Reporting (foundation for a moderation system — see chat for the
+    // full design discussion). Writes a real, persisted report instead of
+    // just showing a toast; there's no reviewer UI yet, but the data is
+    // real and queryable the moment one gets built. ----
+    async function submitReport(targetType, targetId, extra) {
+      if (!currentUser) {
+        showToast('Sign in to report');
+        return false;
+      }
+      try {
+        await addDoc(collection(db, 'reports'), {
+          reporterUid: currentUser.uid,
+          targetType,
+          targetId,
+          status: 'pending',
+          createdAt: serverTimestamp(),
+          ...extra
+        });
+        return true;
+      } catch (e) {
+        console.warn('Report submit error:', e);
+        return false;
+      }
+    }
+
+    window.reportCurrentVideo = async function() {
+      if (currentVideoIndex < 0) return;
+      const v = videoQueue[currentVideoIndex];
+      if (!currentUser || v.uid === currentUser.uid) return;
+      const ok = await submitReport('video', v.id, { videoOwnerUid: v.uid });
+      showToast(ok ? 'Reported — thanks, we\'ll take a look' : 'Could not submit report');
     };
 
     window.confirmDeleteCurrentVideo = function() {
