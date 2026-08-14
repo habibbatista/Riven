@@ -2915,8 +2915,10 @@
           <div class="profile-menu-dropdown" id="profile-menu-dropdown">
             <div class="profile-menu-item" onclick="toggleProfileMenu(); openEditModal();">Edit Profile</div>
             <div class="profile-menu-item" id="switch-account-menu-item" onclick="openSwitchAccountModal();">Switch Account</div>
+            <div class="profile-menu-item" onclick="toggleProfileMenu(true); openInviteCodesModal();">🎟️ Invite Codes</div>
             <div class="profile-menu-item" onclick="toggleProfileMenu(true); openRivenPlusModal();">✨ Riven+</div>
             <div class="profile-menu-item" id="admin-menu-item" style="display:none;" onclick="toggleProfileMenu(true); openAdminReportsModal();">🛡️ Admin</div>
+            <div class="profile-menu-item" onclick="toggleProfileMenu(true); openAboutModal();">ℹ️ About</div>
             <div class="profile-menu-item danger" onclick="logoutUser()">Log Out</div>
           </div>
         </div>
@@ -3070,7 +3072,6 @@
             <span class="plus-tier-name">Plus</span>
             <span class="plus-tier-price">$15<span>/mo</span></span>
           </div>
-          <span class="plus-tier-tagline">For casual creators</span>
         </div>
 
         <div class="plus-tier-card featured">
@@ -3078,7 +3079,6 @@
             <span class="plus-tier-name">Prime</span>
             <span class="plus-tier-price">$22.50<span>/mo</span></span>
           </div>
-          <span class="plus-tier-tagline">For regulars — our most popular tier</span>
         </div>
 
         <div class="plus-tier-card">
@@ -3086,7 +3086,6 @@
             <span class="plus-tier-name">Apex</span>
             <span class="plus-tier-price">$30<span>/mo</span></span>
           </div>
-          <span class="plus-tier-tagline">For power users and creators</span>
         </div>
 
         <button class="btn-notify-plus" id="notify-plus-btn" onclick="notifyMeForRivenPlus()">Notify me when it launches</button>
@@ -3103,8 +3102,42 @@
         <div id="admin-reports-list" style="display:flex; flex-direction:column; gap:12px;">
           <div class="comments-empty">Loading reports...</div>
         </div>
+        <div style="border-top:1px solid #f0f0f0; margin-top:16px; padding-top:14px;">
+          <h3 style="font-size:15px;">Banned Users</h3>
+          <div id="admin-banned-list" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+            <div class="comments-empty">Loading...</div>
+          </div>
+        </div>
         <div class="modal-buttons" style="justify-content:center; margin-top:4px;">
           <button class="modal-btn modal-btn-cancel" onclick="closeAdminReportsModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVITE CODES MODAL -->
+    <div class="modal-overlay" id="invite-codes-modal">
+      <div class="modal-content" style="width:92%; max-width:380px;">
+        <h3>Invite Codes</h3>
+        <p style="font-size:13px; color:#666; line-height:1.4;">You can generate up to 5 invite codes. Share one with a friend to let them join Riven.</p>
+        <div id="invite-codes-list" style="display:flex; flex-direction:column; gap:8px;">
+          <div class="comments-empty">Loading...</div>
+        </div>
+        <button class="btn-notify-plus" id="generate-invite-btn" onclick="generateInviteCode()">Generate Invite Code</button>
+        <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
+          <button class="modal-btn modal-btn-cancel" onclick="closeInviteCodesModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABOUT MODAL -->
+    <div class="modal-overlay" id="about-modal">
+      <div class="modal-content" style="width:90%; max-width:340px;">
+        <h3>RIVEN™</h3>
+        <p style="font-size:13px; color:#666; line-height:1.6; white-space:pre-line;">Version: v26.0 ALPHA (26814R1PV)
+
+DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
+        <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
+          <button class="modal-btn modal-btn-cancel" onclick="closeAboutModal()">Close</button>
         </div>
       </div>
     </div>
@@ -3316,6 +3349,10 @@
     let activeChatUnsubscribe = null;
     let pendingVideoFile = null;
     let pendingAudioFile = null;
+    // Keeps the most recent messages of the currently-open DM chat in memory
+    // (not just rendered in the DOM) so a report on this user/conversation
+    // can attach a slice of surrounding context for moderators to review.
+    let recentChatMessagesCache = [];
 
     // ---- Tab slide navigation state ----
     // Screens are always mounted and absolutely stacked; switching a tab just
@@ -3736,6 +3773,9 @@
     window.closeConfirmModal = function() {
       document.getElementById('confirm-modal').classList.remove('active');
       confirmModalCallback = null;
+      pendingReportInfo = null;
+      const confirmBtn = document.getElementById('confirm-modal-confirm-btn');
+      if (confirmBtn) confirmBtn.style.display = '';
     };
 
     window.confirmModalAction = function() {
@@ -4034,11 +4074,51 @@
       showToast(label);
     };
 
-    window.reportChatUser = async function() {
+    // ---- Report reason modal (shared by video reports and user/DM reports).
+    // Reuses the confirm-modal's sibling pattern: a lightweight prompt for a
+    // reason, then submits the underlying report with that reason attached.
+    // For a DM/conversation report, the last 15 messages are captured as
+    // context so moderators can see what actually happened. ----
+    const REPORT_REASONS = ['Spam', 'Harassment or bullying', 'Nudity or sexual content', 'Violence or hate speech', 'Impersonation', 'Self-harm or dangerous behavior', 'Other'];
+    let pendingReportInfo = null;
+
+    window.openReportReasonModal = function(targetType, targetId, extra) {
+      pendingReportInfo = { targetType, targetId, extra: extra || {} };
+      const list = REPORT_REASONS.map(r => `
+        <div class="profile-menu-item" style="border-radius:10px; background:#f7f7f7; margin-bottom:6px;" onclick="submitReportWithReason('${r.replace(/'/g, "\\'")}')">${r}</div>
+      `).join('');
+      openConfirmModal('Why are you reporting this?', '', 'Cancel', () => { pendingReportInfo = null; });
+      // Repurpose the confirm modal body to hold the reason list instead of plain text
+      document.getElementById('confirm-modal-text').innerHTML = list;
+      document.getElementById('confirm-modal-confirm-btn').style.display = 'none';
+    };
+
+    window.submitReportWithReason = async function(reason) {
+      if (!pendingReportInfo) return;
+      const { targetType, targetId, extra } = pendingReportInfo;
+      pendingReportInfo = null;
+      closeConfirmModal();
+      document.getElementById('confirm-modal-confirm-btn').style.display = '';
+
+      const payload = { ...extra, reason };
+      // Attach the last 15 messages of the current conversation as context
+      // when this is a DM/user report.
+      if (targetType === 'user' && extra.context === 'dm' && recentChatMessagesCache.length) {
+        payload.contextMessages = recentChatMessagesCache.slice(-15).map(m => ({
+          senderUid: m.senderUid || null,
+          text: m.type === 'video-share' ? '[shared a video]' : (m.text || ''),
+          createdAtMillis: m.createdAt?.toMillis ? m.createdAt.toMillis() : (typeof m.createdAt === 'number' ? m.createdAt : null)
+        }));
+      }
+
+      const ok = await submitReport(targetType, targetId, payload);
+      showToast(ok ? 'Reported — thanks, we\'ll take a look' : 'Could not submit report');
+    };
+
+    window.reportChatUser = function() {
       toggleChatMenu(true);
       if (!activeChatFriendUid) return;
-      const ok = await submitReport('user', activeChatFriendUid, { context: 'dm' });
-      showToast(ok ? 'Reported — thanks, we\'ll take a look' : 'Could not submit report');
+      openReportReasonModal('user', activeChatFriendUid, { context: 'dm' });
     };
 
     // ---- Admin: reports review queue ----
@@ -4049,8 +4129,11 @@
 
       if (!isAdmin()) {
         list.innerHTML = `<div class="comments-empty">Not authorized</div>`;
+        document.getElementById('admin-banned-list').innerHTML = '';
         return;
       }
+
+      adminLoadBannedUsers();
 
       try {
         // Fetching everything and filtering client-side (rather than a
@@ -4107,14 +4190,22 @@
         </div>`;
       }
       const banTargetUid = r.targetType === 'video' ? r.videoUid : r.targetId;
+      const reasonHtml = r.reason ? `<div style="font-size:12px; color:var(--accent-pink); font-weight:600; margin-top:4px;">${escapeHtml(r.reason)}</div>` : '';
+      const contextHtml = (r.contextMessages && r.contextMessages.length) ? `
+        <div style="margin-top:8px; padding:8px; background:#fff; border-radius:8px; border:1px solid #eee; max-height:160px; overflow-y:auto;">
+          <div style="font-size:11px; color:#999; font-weight:600; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.03em;">Last ${r.contextMessages.length} messages</div>
+          ${r.contextMessages.map(m => `<div style="font-size:12px; color:#333; margin-bottom:3px;">${escapeHtml(m.text || '')}</div>`).join('')}
+        </div>` : '';
       return `<div class="admin-report-card" id="admin-report-${r.id}">
         <div style="display:flex; gap:10px; align-items:center;">
           <img src="${r.thumb}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;background:#eee;" onerror="this.style.background='#2c2c2e'; this.removeAttribute('src');">
           <div style="flex:1; min-width:0;">
             <div style="font-size:13px; font-weight:600;">${escapeHtml(r.label)}</div>
             <div style="font-size:12px; color:#888; text-transform:capitalize;">${escapeHtml(r.targetType)} report</div>
+            ${reasonHtml}
           </div>
         </div>
+        ${contextHtml}
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
           ${r.targetType === 'video' ? `<button class="modal-btn" style="background:var(--accent-pink); color:#fff;" onclick="adminDeleteReportedVideo('${r.id}', '${r.targetId}')">Delete Video</button>` : ''}
           <button class="modal-btn" style="background:#111; color:#fff;" onclick="adminBanUser('${r.id}', '${banTargetUid}')">Ban User</button>
@@ -4166,11 +4257,135 @@
           return;
         }
         await markReportReviewed(reportId, 'actioned');
+        adminLoadBannedUsers();
       });
     };
 
     window.adminDismissReport = async function(reportId) {
       await markReportReviewed(reportId, 'dismissed');
+    };
+
+    // ---- Admin: banned users list + unban ----
+    async function adminLoadBannedUsers() {
+      const list = document.getElementById('admin-banned-list');
+      if (!list) return;
+      if (!isAdmin()) { list.innerHTML = ''; return; }
+      list.innerHTML = `<div class="comments-empty">Loading...</div>`;
+      try {
+        const q = query(collection(db, 'users'), where('banned', '==', true));
+        const snap = await getDocs(q);
+        const banned = [];
+        snap.forEach(d => banned.push({ uid: d.id, ...d.data() }));
+
+        if (banned.length === 0) {
+          list.innerHTML = `<div class="comments-empty">No banned users</div>`;
+          return;
+        }
+
+        list.innerHTML = banned.map(u => `
+          <div id="admin-banned-${u.uid}" style="display:flex; align-items:center; gap:10px; padding:8px; background:#fafafa; border-radius:10px;">
+            <img src="${u.pfp || DEFAULT_AVATAR_SVG}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:13px; font-weight:600;">${escapeHtml(u.name || 'User')}</div>
+              <div style="font-size:12px; color:#888;">@${escapeHtml(u.handle || 'user')}</div>
+            </div>
+            <button class="modal-btn" style="background:#111; color:#fff;" onclick="adminUnbanUser('${u.uid}')">Unban</button>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.warn('Load banned users error:', e);
+        list.innerHTML = `<div class="comments-empty">Could not load banned users</div>`;
+      }
+    }
+
+    window.adminUnbanUser = async function(uid) {
+      if (!isAdmin() || !uid) return;
+      try {
+        await setDoc(doc(db, 'users', uid), { banned: false }, { merge: true });
+        showToast('User unbanned');
+        const row = document.getElementById(`admin-banned-${uid}`);
+        if (row) row.remove();
+      } catch (e) {
+        console.warn('Unban error:', e);
+        showToast('Could not unban user');
+      }
+    };
+
+    // ---- Invite codes (max 5 per person) ----
+    const MAX_INVITE_CODES = 5;
+
+    function generateInviteCodeString() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      return code;
+    }
+
+    window.openInviteCodesModal = async function() {
+      document.getElementById('invite-codes-modal').classList.add('active');
+      await renderInviteCodesList();
+    };
+
+    window.closeInviteCodesModal = function() {
+      document.getElementById('invite-codes-modal').classList.remove('active');
+    };
+
+    async function renderInviteCodesList() {
+      const list = document.getElementById('invite-codes-list');
+      const genBtn = document.getElementById('generate-invite-btn');
+      if (!currentUser) {
+        list.innerHTML = `<div class="comments-empty">Sign in to generate invite codes</div>`;
+        genBtn.style.display = 'none';
+        return;
+      }
+      const codes = myProfileData?.inviteCodes || [];
+      if (codes.length === 0) {
+        list.innerHTML = `<div class="comments-empty">No invite codes yet</div>`;
+      } else {
+        list.innerHTML = codes.map(c => `
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#f7f7f7; border-radius:10px;">
+            <span style="font-family:monospace; font-size:15px; font-weight:600; letter-spacing:0.05em;">${escapeHtml(c)}</span>
+            <button class="modal-btn modal-btn-cancel" style="padding:6px 12px; font-size:12px;" onclick="copyInviteCode('${c}')">Copy</button>
+          </div>
+        `).join('');
+      }
+      genBtn.style.display = codes.length >= MAX_INVITE_CODES ? 'none' : 'block';
+    }
+
+    window.copyInviteCode = async function(code) {
+      if (navigator.clipboard) {
+        try { await navigator.clipboard.writeText(code); showToast('Invite code copied'); }
+        catch (e) { showToast('Could not copy code'); }
+      } else {
+        showToast('Copying not supported on this device');
+      }
+    };
+
+    window.generateInviteCode = async function() {
+      if (!currentUser) { showToast('Sign in first'); return; }
+      const codes = myProfileData?.inviteCodes || [];
+      if (codes.length >= MAX_INVITE_CODES) { showToast('You already have the maximum of 5 invite codes'); return; }
+
+      const newCode = generateInviteCodeString();
+      const updatedCodes = [...codes, newCode];
+      myProfileData.inviteCodes = updatedCodes;
+      localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
+      await renderInviteCodesList();
+      showToast('Invite code generated');
+
+      try {
+        await setDoc(doc(db, 'users', currentUser.uid), { inviteCodes: updatedCodes }, { merge: true });
+      } catch (e) {
+        console.warn('Invite code save error:', e);
+      }
+    };
+
+    // ---- About ----
+    window.openAboutModal = function() {
+      document.getElementById('about-modal').classList.add('active');
+    };
+    window.closeAboutModal = function() {
+      document.getElementById('about-modal').classList.remove('active');
     };
 
     // ---- Desktop-only "..." account menu ----
@@ -5719,12 +5934,11 @@
       }
     }
 
-    window.reportCurrentVideo = async function() {
+    window.reportCurrentVideo = function() {
       if (currentVideoIndex < 0) return;
       const v = videoQueue[currentVideoIndex];
       if (!currentUser || v.uid === currentUser.uid) return;
-      const ok = await submitReport('video', v.id, { videoOwnerUid: v.uid });
-      showToast(ok ? 'Reported — thanks, we\'ll take a look' : 'Could not submit report');
+      openReportReasonModal('video', v.id, { videoOwnerUid: v.uid });
     };
 
     window.confirmDeleteCurrentVideo = function() {
@@ -6554,11 +6768,13 @@
 
       activeChatUnsubscribe = onSnapshot(q, (snapshot) => {
         chatBody.innerHTML = '';
+        recentChatMessagesCache = [];
         if (snapshot.empty) {
           chatBody.innerHTML = `<div class="dm-empty-state"><p>No messages yet. Say hi!</p></div>`;
         } else {
           snapshot.forEach(docSnap => {
             const msg = docSnap.data();
+            recentChatMessagesCache.push(msg);
             const isMine = msg.senderUid === currentUser.uid;
             const bubble = document.createElement('div');
 
