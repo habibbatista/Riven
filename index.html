@@ -49,6 +49,9 @@
       --radius-squircle: 14px;
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
     }
 
     * {
@@ -169,7 +172,7 @@
       width: 100%;
       height: 100%;
       overflow-y: auto;
-      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: transform 0.4s var(--ease-smooth), opacity 0.4s var(--ease-smooth);
       will-change: transform, opacity;
     }
 
@@ -1832,15 +1835,39 @@
     .bottom-nav {
       height: calc(58px + var(--safe-bottom));
       padding-bottom: var(--safe-bottom);
-      background-color: #000;
+      background-color: rgba(0,0,0,0.86);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
       display: flex;
       justify-content: space-around;
       align-items: center;
-      border-top: 1px solid #1a1a1a;
+      border-top: 1px solid rgba(255,255,255,0.08);
       position: relative;
       z-index: 100;
       flex-shrink: 0;
-      transition: transform 0.2s ease, opacity 0.2s ease;
+      transition: transform 0.2s var(--ease-smooth), opacity 0.2s ease, background-color 0.25s ease;
+    }
+
+    /* Small pill that glides beneath whichever tab is active — positioned
+       via JS (positionNavActiveDot) since it needs to track a specific
+       icon's real layout position, not something CSS alone can target. */
+    .nav-active-dot {
+      position: absolute;
+      bottom: calc(6px + var(--safe-bottom));
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent-pink);
+      opacity: 0;
+      transform: translate(-50%, 0) scale(0);
+      transition: left 0.32s var(--ease-spring), transform 0.32s var(--ease-spring), opacity 0.2s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .nav-active-dot.visible {
+      opacity: 1;
+      transform: translate(-50%, 0) scale(1);
     }
 
     /* Hide Bottom Nav during active DM chat */
@@ -1857,17 +1884,25 @@
       width: 25%;
       height: 100%;
       opacity: 0.6;
-      transition: opacity 0.15s ease;
+      transform: translateY(0) scale(1);
+      transition: opacity 0.2s ease, transform 0.28s var(--ease-spring), color 0.2s ease;
+      position: relative;
     }
 
     .nav-item.active {
       opacity: 1;
+      transform: translateY(-2px) scale(1.08);
+    }
+
+    .nav-item:active {
+      transform: scale(0.82);
+      transition: transform 0.1s ease;
     }
 
     /* Toolbar goes white on any screen other than the main "For you" feed */
     .bottom-nav.light-nav {
-      background-color: #fff;
-      border-top: 1px solid #eee;
+      background-color: rgba(255,255,255,0.86);
+      border-top: 1px solid rgba(0,0,0,0.06);
     }
 
     .bottom-nav.light-nav .nav-item {
@@ -1882,6 +1917,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: transform 0.28s var(--ease-spring), box-shadow 0.25s ease;
+      box-shadow: 0 2px 10px rgba(255,45,85,0.35);
+    }
+
+    .nav-item:active .nav-upload-btn {
+      transform: scale(0.86);
+      box-shadow: 0 1px 4px rgba(255,45,85,0.25);
     }
 
     .nav-upload-btn .icon-svg {
@@ -1964,14 +2006,15 @@
     /* ANIMATIONS */
 
     @keyframes heartPop {
-      0%   { transform: scale(1); }
-      30%  { transform: scale(1.35); }
-      55%  { transform: scale(0.9); }
-      100% { transform: scale(1); }
+      0%   { transform: scale(1) rotate(0deg); }
+      25%  { transform: scale(0.82) rotate(-6deg); }
+      55%  { transform: scale(1.45) rotate(4deg); }
+      75%  { transform: scale(0.92) rotate(-2deg); }
+      100% { transform: scale(1) rotate(0deg); }
     }
 
     .like-pop {
-      animation: heartPop 0.35s ease;
+      animation: heartPop 0.5s var(--ease-spring);
     }
 
     /* Radiating ring burst behind the heart on like — purely decorative,
@@ -2054,14 +2097,14 @@
       animation: streakPop 0.4s ease;
     }
 
-    .action-item, .nav-item, .header-icon, .btn-follow, .btn-edit-profile,
+    .action-item, .header-icon, .btn-follow, .btn-edit-profile,
     .custom-file-upload, .modal-btn, .comment-send-btn, .search-result-card,
     .cancel-search-btn, .comments-close-btn, .profile-menu-item, .menu-dots-btn,
     .chat-icon-btn, .chat-back-btn {
       transition: transform 0.12s ease, opacity 0.12s ease;
     }
 
-    .action-item:active, .nav-item:active, .btn-follow:active, .btn-edit-profile:active,
+    .action-item:active, .btn-follow:active, .btn-edit-profile:active,
     .custom-file-upload:active, .modal-btn:active, .comment-send-btn:active,
     .search-result-card:active, .profile-menu-item:active, .chat-icon-btn:active,
     .chat-back-btn:active {
@@ -2096,7 +2139,7 @@
 
     .comments-sheet {
       transform: translateY(100%);
-      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: transform 0.36s var(--ease-sheet);
     }
 
     #comments-overlay.active .comments-sheet, #share-sheet-overlay.active .comments-sheet {
@@ -2116,21 +2159,21 @@
     }
 
     .modal-content {
-      transform: scale(0.92);
-      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+      transform: scale(0.88) translateY(6px);
+      transition: transform 0.32s var(--ease-spring);
     }
 
     .modal-overlay.active .modal-content {
-      transform: scale(1);
+      transform: scale(1) translateY(0);
     }
 
     .profile-menu-dropdown {
       display: block;
       opacity: 0;
-      transform: scale(0.92) translateY(-6px);
+      transform: scale(0.88) translateY(-10px);
       transform-origin: top right;
       pointer-events: none;
-      transition: opacity 0.15s ease, transform 0.15s ease;
+      transition: opacity 0.18s ease, transform 0.28s var(--ease-spring);
     }
 
     .profile-menu-dropdown.active {
@@ -2142,10 +2185,10 @@
     .chat-menu-dropdown {
       display: block;
       opacity: 0;
-      transform: scale(0.92) translateY(-6px);
+      transform: scale(0.88) translateY(-10px);
       transform-origin: top right;
       pointer-events: none;
-      transition: opacity 0.15s ease, transform 0.15s ease;
+      transition: opacity 0.18s ease, transform 0.28s var(--ease-spring);
     }
 
     .chat-menu-dropdown.active {
@@ -2667,7 +2710,7 @@
         width: 400px;
         max-width: 45%;
         transform: translateX(100%);
-        transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+        transition: transform 0.36s var(--ease-sheet);
       }
 
       #share-sheet-overlay.active .comments-sheet {
@@ -3230,6 +3273,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
+      <div class="nav-active-dot" id="nav-active-dot"></div>
       <div class="nav-item active" id="nav-feed-item" onclick="switchTab('feed-screen', this)">
         <svg class="icon-svg icon-line" viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg>
       </div>
@@ -7417,7 +7461,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
       });
-      if (navElement) navElement.classList.add('active');
+      if (navElement) {
+        navElement.classList.add('active');
+        positionNavActiveDot(navElement);
+      }
 
       document.querySelector('.bottom-nav').classList.toggle('light-nav', screenId !== 'feed-screen');
       syncChromeTheme(screenId);
@@ -7432,6 +7479,30 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         videoPlayer.pause();
       }
     };
+
+    // Positions the small pink dot beneath whichever nav icon is active.
+    // Reads real layout (getBoundingClientRect) rather than guessing a
+    // fixed offset, so it stays correct across the mobile bottom-bar
+    // layout and the desktop top-bar reordering alike.
+    function positionNavActiveDot(navElement) {
+      const dot = document.getElementById('nav-active-dot');
+      const bar = document.querySelector('.bottom-nav');
+      if (!dot || !bar || !navElement) return;
+      // Icons hidden via display:none (e.g. the feed icon on desktop, or
+      // the desktop-only "more" icon on mobile) have no usable rect —
+      // skip positioning rather than snapping the dot to (0,0).
+      if (getComputedStyle(navElement).display === 'none') { dot.classList.remove('visible'); return; }
+      const navRect = navElement.getBoundingClientRect();
+      const barRect = bar.getBoundingClientRect();
+      const centerX = navRect.left - barRect.left + navRect.width / 2;
+      dot.style.left = `${centerX}px`;
+      dot.classList.add('visible');
+    }
+
+    window.addEventListener('resize', () => {
+      const activeItem = document.querySelector('.nav-item.active');
+      if (activeItem) positionNavActiveDot(activeItem);
+    });
 
     // "Riven" wordmark in the desktop top bar — clicking it returns to the
     // feed, same as tapping the (now-hidden-on-desktop) feed nav icon did.
@@ -7453,6 +7524,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // Set the initial screen stacking without an entrance animation
     positionScreens(currentScreenId, false);
     syncChromeTheme(currentScreenId);
+    const initialActiveNavItem = document.querySelector('.nav-item.active');
+    if (initialActiveNavItem) positionNavActiveDot(initialActiveNavItem);
 
     // Initial feed load
     loadFeed();
