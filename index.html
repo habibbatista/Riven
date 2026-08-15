@@ -469,7 +469,7 @@
     .video-author-bar {
       position: absolute;
       left: 16px;
-      bottom: 28px;
+      bottom: calc(96px + var(--safe-bottom));
       z-index: 15;
       display: flex;
       align-items: center;
@@ -511,7 +511,7 @@
     .right-action-bar {
       position: absolute;
       right: 12px;
-      bottom: calc(24px + var(--safe-bottom));
+      bottom: calc(96px + var(--safe-bottom));
       display: none;
       flex-direction: column;
       align-items: center;
@@ -1833,19 +1833,24 @@
 
     /* BOTTOM NAV FIX */
     .bottom-nav {
-      height: calc(58px + var(--safe-bottom));
-      padding-bottom: var(--safe-bottom);
-      background-color: rgba(0,0,0,0.86);
-      backdrop-filter: blur(20px) saturate(1.4);
-      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: calc(14px + var(--safe-bottom));
+      height: 58px;
+      padding-bottom: 0;
+      border-radius: 999px;
+      background-color: rgba(0,0,0,0.55);
+      backdrop-filter: blur(24px) saturate(1.6);
+      -webkit-backdrop-filter: blur(24px) saturate(1.6);
       display: flex;
       justify-content: space-around;
       align-items: center;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      position: relative;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
       z-index: 100;
       flex-shrink: 0;
-      transition: transform 0.2s var(--ease-smooth), opacity 0.2s ease, background-color 0.25s ease;
+      transition: transform 0.2s var(--ease-smooth), opacity 0.2s ease;
     }
 
     /* Small pill that glides beneath whichever tab is active — positioned
@@ -1899,14 +1904,12 @@
       transition: transform 0.1s ease;
     }
 
-    /* Toolbar goes white on any screen other than the main "For you" feed */
+    /* The floating pill stays black/translucent on every tab now — no more
+       switching to a flat white bar on DM/profile, matching the reference
+       design's single, consistent nav treatment. */
     .bottom-nav.light-nav {
-      background-color: rgba(255,255,255,0.86);
-      border-top: 1px solid rgba(0,0,0,0.06);
-    }
-
-    .bottom-nav.light-nav .nav-item {
-      color: #111;
+      background-color: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.1);
     }
 
     .nav-upload-btn {
@@ -1937,7 +1940,7 @@
       position: absolute;
       left: 12px;
       right: 12px;
-      bottom: calc(70px + var(--safe-bottom));
+      bottom: calc(96px + var(--safe-bottom));
       z-index: 999998;
       display: none;
       align-items: center;
@@ -2459,6 +2462,10 @@
       }
 
       .bottom-nav {
+        position: relative;
+        left: auto;
+        right: auto;
+        bottom: auto;
         order: -1;
         flex-direction: row;
         justify-content: flex-end;
@@ -2468,14 +2475,26 @@
         padding: 0 24px;
         gap: 22px;
         flex-shrink: 0;
+        border-radius: 0;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
         /* Desktop's top bar is always light, regardless of whether the
            feed's own dark video viewport is currently showing — that
            dark/light toggle is a mobile-only concept for the bottom tab
            bar sitting flush against a full-bleed dark video. */
         background-color: #fff !important;
         color: #111 !important;
-        border-top: none;
+        border: none;
         border-bottom: 1px solid #eee;
+      }
+
+      .bottom-nav .nav-item {
+        color: #111;
+      }
+
+      .nav-active-dot {
+        display: none;
       }
 
       .bottom-nav::before {
