@@ -469,7 +469,7 @@
     .video-author-bar {
       position: absolute;
       left: 16px;
-      bottom: calc(96px + var(--safe-bottom));
+      bottom: max(90px, calc(82px + var(--safe-bottom)));
       z-index: 15;
       display: flex;
       align-items: center;
@@ -511,7 +511,7 @@
     .right-action-bar {
       position: absolute;
       right: 12px;
-      bottom: calc(96px + var(--safe-bottom));
+      bottom: max(90px, calc(82px + var(--safe-bottom)));
       display: none;
       flex-direction: column;
       align-items: center;
@@ -1847,7 +1847,7 @@
       position: absolute;
       left: 16px;
       right: 16px;
-      bottom: 16px;
+      bottom: max(16px, calc(8px + var(--safe-bottom)));
       height: 58px;
       padding-bottom: 0;
       border-radius: 999px;
@@ -1972,7 +1972,7 @@
       position: absolute;
       left: 12px;
       right: 12px;
-      bottom: calc(96px + var(--safe-bottom));
+      bottom: max(90px, calc(82px + var(--safe-bottom)));
       z-index: 999998;
       display: none;
       align-items: center;
@@ -3257,7 +3257,7 @@
     <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#666; line-height:1.6; white-space:pre-line;">Version: v26.0 ALPHA (26814R1PV)
+        <p style="font-size:13px; color:#666; line-height:1.6; white-space:pre-line;">Version: v26.0 ALPHA (26815R2A)
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -3398,7 +3398,234 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
   </div>
 
+  <!-- Liquid glass displacement library (github.com/srdavo/liquid-glass) —
+       generates an SVG feDisplacementMap-based refraction filter used as
+       backdrop-filter on the floating pill nav and the frosted menus.
+       Classic (non-module) scripts so they run synchronously and
+       window.DisplacementUtils is guaranteed to exist before the deferred
+       module script below runs. -->
+  <script>
+    /**
+     * Utilidades para crear mapas de desplazamiento y filtros
+     * Convertido desde TypeScript a JavaScript vanilla
+     */
+
+    function getDisplacementMap({ height, width, radius, depth }) {
+        const svg = `<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+            <style>
+                .mix { mix-blend-mode: screen; }
+            </style>
+            <defs>
+                <linearGradient 
+                  id="Y" 
+                  x1="0" 
+                  x2="0" 
+                  y1="${Math.ceil((radius / height) * 15)}%" 
+                  y2="${Math.floor(100 - (radius / height) * 15)}%">
+                    <stop offset="0%" stop-color="#0F0" />
+                    <stop offset="100%" stop-color="#000" />
+                </linearGradient>
+                <linearGradient 
+                  id="X" 
+                  x1="${Math.ceil((radius / width) * 15)}%" 
+                  x2="${Math.floor(100 - (radius / width) * 15)}%"
+                  y1="0" 
+                  y2="0">
+                    <stop offset="0%" stop-color="#F00" />
+                    <stop offset="100%" stop-color="#000" />
+                </linearGradient>
+            </defs>
+
+            <rect x="0" y="0" height="${height}" width="${width}" fill="#808080" />
+            <g filter="blur(2px)">
+              <rect x="0" y="0" height="${height}" width="${width}" fill="#000080" />
+              <rect
+                  x="0"
+                  y="0"
+                  height="${height}"
+                  width="${width}"
+                  fill="url(#Y)"
+                  class="mix"
+              />
+              <rect
+                  x="0"
+                  y="0"
+                  height="${height}"
+                  width="${width}"
+                  fill="url(#X)"
+                  class="mix"
+              />
+              <rect
+                  x="${depth}"
+                  y="${depth}"
+                  height="${height - 2 * depth}"
+                  width="${width - 2 * depth}"
+                  fill="#808080"
+                  rx="${radius}"
+                  ry="${radius}"
+                  filter="blur(${depth}px)"
+              />
+            </g>
+        </svg>`;
+
+        return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+    }
+
+    function getDisplacementFilter({ 
+        height, 
+        width, 
+        radius, 
+        depth, 
+        strength = 100, 
+        chromaticAberration = 0 
+    }) {
+        const displacementMapUrl = getDisplacementMap({ height, width, radius, depth });
+        
+        const svg = `<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="displace" color-interpolation-filters="sRGB">
+                    <feImage x="0" y="0" height="${height}" width="${width}" href="${displacementMapUrl}" result="displacementMap" />
+                    <feDisplacementMap
+                        transform-origin="center"
+                        in="SourceGraphic"
+                        in2="displacementMap"
+                        scale="${strength + chromaticAberration * 2}"
+                        xChannelSelector="R"
+                        yChannelSelector="G"
+                    />
+                    <feColorMatrix
+                    type="matrix"
+                    values="1 0 0 0 0
+                            0 0 0 0 0
+                            0 0 0 0 0
+                            0 0 0 1 0"
+                    result="displacedR"
+                            />
+                    <feDisplacementMap
+                        in="SourceGraphic"
+                        in2="displacementMap"
+                        scale="${strength + chromaticAberration}"
+                        xChannelSelector="R"
+                        yChannelSelector="G"
+                    />
+                    <feColorMatrix
+                    type="matrix"
+                    values="0 0 0 0 0
+                            0 1 0 0 0
+                            0 0 0 0 0
+                            0 0 0 1 0"
+                    result="displacedG"
+                            />
+                    <feDisplacementMap
+                            in="SourceGraphic"
+                            in2="displacementMap"
+                            scale="${strength}"
+                            xChannelSelector="R"
+                            yChannelSelector="G"
+                        />
+                        <feColorMatrix
+                        type="matrix"
+                        values="0 0 0 0 0
+                                0 0 0 0 0
+                                0 0 1 0 0
+                                0 0 0 1 0"
+                        result="displacedB"
+                                />
+                      <feBlend in="displacedR" in2="displacedG" mode="screen"/>
+                      <feBlend in2="displacedB" mode="screen"/>
+                </filter>
+            </defs>
+        </svg>`;
+
+        return "data:image/svg+xml;utf8," + encodeURIComponent(svg) + "#displace";
+    }
+
+    window.DisplacementUtils = {
+        getDisplacementMap,
+        getDisplacementFilter
+    };
+  </script>
+
   <script type="module">
+    // ---- Liquid glass helper (uses window.DisplacementUtils above) ----
+    // Chromium is currently the only engine that honors an SVG filter
+    // inside backdrop-filter, so every other browser gets a clean blur
+    // fallback instead of a broken/no-op filter string.
+    function detectSVGGlassSupport() {
+      const test = document.createElement('div');
+      test.style.backdropFilter = 'blur(1px)';
+      if (!test.style.backdropFilter) return false;
+      const ua = navigator.userAgent.toLowerCase();
+      const isChrome = /chrome|chromium|crios|edg/.test(ua) && !/firefox|fxios/.test(ua);
+      const isFirefox = /firefox|fxios/.test(ua);
+      const isSafari = /safari/.test(ua) && !/chrome|chromium|crios|edg/.test(ua);
+      if (isChrome) return true;
+      if (isFirefox || isSafari) return false;
+      try { test.style.backdropFilter = 'url(#test)'; return test.style.backdropFilter.includes('url'); }
+      catch (e) { return false; }
+    }
+    const SUPPORTS_SVG_GLASS = detectSVGGlassSupport();
+
+    // Applies the real liquid-glass refraction filter (or a plain blur
+    // fallback) to `el`, sized to its current rendered box. Safe to call
+    // repeatedly — e.g. every time a menu opens or the window resizes.
+    function applyLiquidGlass(el, { radius, strength = 55, chromaticAberration = 1.5, blur = 4 } = {}) {
+      if (!el || !window.DisplacementUtils) return;
+      const rect = el.getBoundingClientRect();
+      const width = Math.max(Math.ceil(rect.width), 2);
+      const height = Math.max(Math.ceil(rect.height), 2);
+      if (width < 4 || height < 4) return;
+      const r = radius != null ? radius : Math.min(width, height) / 2;
+      let filterValue;
+      if (SUPPORTS_SVG_GLASS) {
+        const depth = Math.max(r / 4, 6);
+        const url = window.DisplacementUtils.getDisplacementFilter({ height, width, radius: r, depth, strength, chromaticAberration });
+        filterValue = `blur(${blur / 2}px) url('${url}') blur(${blur}px) saturate(1.6) brightness(1.05)`;
+      } else {
+        filterValue = `blur(${blur * 3}px) saturate(1.6)`;
+      }
+      el.style.backdropFilter = filterValue;
+      el.style.webkitBackdropFilter = filterValue;
+    }
+
+    function refreshBottomNavGlass() {
+      const nav = document.querySelector('.bottom-nav');
+      if (!nav || getComputedStyle(nav).display === 'none') return;
+      const rect = nav.getBoundingClientRect();
+      applyLiquidGlass(nav, { radius: rect.height / 2, strength: 70, chromaticAberration: 2, blur: 5 });
+    }
+
+    // Menus that are laid out but hidden via opacity/pointer-events (the
+    // profile & chat dropdowns) can be measured any time; menus hidden via
+    // display:none (the video privacy/delete popup, every modal) need a
+    // frame after 'active' is added before their box has real dimensions.
+    function watchGlassTarget(el, opts) {
+      if (!el) return;
+      const observer = new MutationObserver(() => {
+        if (el.classList.contains('active')) {
+          requestAnimationFrame(() => applyLiquidGlass(el, opts));
+        }
+      });
+      observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    function setupLiquidGlassObservers() {
+      watchGlassTarget(document.getElementById('profile-menu-dropdown'), { radius: 12, strength: 45, chromaticAberration: 1, blur: 3 });
+      watchGlassTarget(document.getElementById('chat-menu-dropdown'), { radius: 12, strength: 45, chromaticAberration: 1, blur: 3 });
+      watchGlassTarget(document.getElementById('video-cell-menu'), { radius: 12, strength: 45, chromaticAberration: 1, blur: 3 });
+      document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        const observer = new MutationObserver(() => {
+          if (overlay.classList.contains('active')) {
+            const content = overlay.querySelector('.modal-content');
+            if (content) requestAnimationFrame(() => applyLiquidGlass(content, { radius: 20, strength: 45, chromaticAberration: 1, blur: 3 }));
+          }
+        });
+        observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
+      });
+    }
+
+    window.addEventListener('resize', refreshBottomNavGlass);
+
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import {
@@ -7630,6 +7857,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     syncChromeTheme(currentScreenId);
     const initialActiveNavItem = document.querySelector('.nav-item.active');
     if (initialActiveNavItem) positionNavActiveDot(initialActiveNavItem);
+
+    // Liquid glass: wire up the frosted menus/modals and render the pill nav
+    setupLiquidGlassObservers();
+    refreshBottomNavGlass();
 
     // Initial feed load
     loadFeed();
