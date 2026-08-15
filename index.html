@@ -1269,9 +1269,14 @@
     .video-cell-menu {
       display: none;
       position: absolute;
-      background: #fff;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.08) 60%),
+        rgba(255,255,255,0.75);
+      backdrop-filter: blur(20px) saturate(1.6);
+      -webkit-backdrop-filter: blur(20px) saturate(1.6);
+      border: 1px solid rgba(255,255,255,0.5);
       border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 8px 24px rgba(0,0,0,0.2);
       overflow: hidden;
       z-index: 400;
       min-width: 160px;
@@ -1333,7 +1338,12 @@
     }
 
     .modal-content {
-      background: #fff;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.06) 60%),
+        rgba(255,255,255,0.78);
+      backdrop-filter: blur(26px) saturate(1.7);
+      -webkit-backdrop-filter: blur(26px) saturate(1.7);
+      border: 1px solid rgba(255,255,255,0.5);
       border-radius: 20px;
       width: 88%;
       max-width: 340px;
@@ -1341,6 +1351,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 16px 40px rgba(0,0,0,0.25);
     }
 
     .modal-content h3 {
@@ -1836,21 +1847,40 @@
       position: absolute;
       left: 16px;
       right: 16px;
-      bottom: calc(14px + var(--safe-bottom));
+      bottom: 16px;
       height: 58px;
       padding-bottom: 0;
       border-radius: 999px;
-      background-color: rgba(0,0,0,0.55);
-      backdrop-filter: blur(24px) saturate(1.6);
-      -webkit-backdrop-filter: blur(24px) saturate(1.6);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.1) 100%),
+        rgba(0,0,0,0.5);
+      backdrop-filter: blur(24px) saturate(1.7);
+      -webkit-backdrop-filter: blur(24px) saturate(1.7);
       display: flex;
       justify-content: space-around;
       align-items: center;
-      border: 1px solid rgba(255,255,255,0.1);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.35), inset 0 -1px 2px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.35);
       z-index: 100;
       flex-shrink: 0;
       transition: transform 0.2s var(--ease-smooth), opacity 0.2s ease;
+      overflow: hidden;
+    }
+
+    /* Diagonal light streak — the signature "liquid glass" sheen, sitting
+       above the blur but below the icons so it never blocks taps. */
+    .bottom-nav::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 35%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bottom-nav > * {
+      position: relative;
+      z-index: 1;
     }
 
     /* Small pill that glides beneath whichever tab is active — positioned
@@ -1908,8 +1938,10 @@
        switching to a flat white bar on DM/profile, matching the reference
        design's single, consistent nav treatment. */
     .bottom-nav.light-nav {
-      background-color: rgba(0,0,0,0.55);
-      border: 1px solid rgba(255,255,255,0.1);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.1) 100%),
+        rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.22);
     }
 
     .nav-upload-btn {
@@ -2177,6 +2209,13 @@
       transform-origin: top right;
       pointer-events: none;
       transition: opacity 0.18s ease, transform 0.28s var(--ease-spring);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.08) 60%),
+        rgba(255,255,255,0.72);
+      backdrop-filter: blur(20px) saturate(1.6);
+      -webkit-backdrop-filter: blur(20px) saturate(1.6);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 8px 24px rgba(0,0,0,0.18);
     }
 
     .profile-menu-dropdown.active {
@@ -2192,6 +2231,13 @@
       transform-origin: top right;
       pointer-events: none;
       transition: opacity 0.18s ease, transform 0.28s var(--ease-spring);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.08) 60%),
+        rgba(255,255,255,0.72);
+      backdrop-filter: blur(20px) saturate(1.6);
+      -webkit-backdrop-filter: blur(20px) saturate(1.6);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 8px 24px rgba(0,0,0,0.18);
     }
 
     .chat-menu-dropdown.active {
@@ -2735,6 +2781,22 @@
       #share-sheet-overlay.active .comments-sheet {
         transform: translateX(0);
       }
+    }
+
+    @keyframes confettiFall {
+      0%   { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0.85; }
+    }
+
+    .confetti-piece {
+      position: fixed;
+      top: -10px;
+      z-index: 9999999;
+      pointer-events: none;
+      border-radius: 2px;
+      animation-name: confettiFall;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -3556,6 +3618,26 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       showToast._t = setTimeout(() => el.classList.remove('visible'), duration);
     }
 
+    // 🎉 It's her birthday — a little confetti never hurt anyone.
+    const CONFETTI_COLORS = ['#ff2d55', '#ffd60a', '#34c759', '#0a84ff', '#bf5af2', '#ff9f0a', '#ff375f'];
+
+    function launchConfetti(count = 90) {
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti-piece';
+        const size = 6 + Math.random() * 7;
+        el.style.left = `${Math.random() * 100}vw`;
+        el.style.width = `${size}px`;
+        el.style.height = `${size * 1.6}px`;
+        el.style.background = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+        el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        el.style.animationDuration = `${2.4 + Math.random() * 1.8}s`;
+        el.style.animationDelay = `${Math.random() * 0.6}s`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 5200);
+      }
+    }
+
     // Turns a Firestore Timestamp into a short, gray relative-date label
     function formatUploadDate(timestamp) {
       if (!timestamp) return 'Just now';
@@ -4090,6 +4172,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       Promise.all([minDisplayTime, appReady]).then(() => {
         splash.classList.add('fade-out');
         setTimeout(() => splash.remove(), 450); // matches the CSS transition duration
+        launchConfetti(110);
+        showToast('🎂 Happy Birthday! 🎉', 4000);
       });
     })();
 
@@ -6202,6 +6286,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           item.appendChild(ring);
           ring.addEventListener('animationend', () => ring.remove());
         });
+        launchConfetti(24);
       }
 
       if (alreadyLiked) {
