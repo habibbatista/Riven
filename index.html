@@ -1270,13 +1270,17 @@
       display: none;
       position: absolute;
       background:
-        linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.08) 60%),
-        rgba(255,255,255,0.75);
-      backdrop-filter: blur(20px) saturate(1.6);
-      -webkit-backdrop-filter: blur(20px) saturate(1.6);
-      border: 1px solid rgba(255,255,255,0.5);
+        linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 55%),
+        rgba(255,255,255,0.18);
+      backdrop-filter: blur(16px) saturate(1.9) brightness(1.08);
+      -webkit-backdrop-filter: blur(16px) saturate(1.9) brightness(1.08);
+      border: 1px solid rgba(255,255,255,0.45);
       border-radius: 12px;
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 8px 24px rgba(0,0,0,0.2);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.7),
+        inset 0 -1px 1px rgba(0,0,0,0.05),
+        inset 1px 0 0 rgba(255,255,255,0.3),
+        0 12px 28px rgba(0,0,0,0.2);
       overflow: hidden;
       z-index: 400;
       min-width: 160px;
@@ -1339,11 +1343,11 @@
 
     .modal-content {
       background:
-        linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.06) 60%),
-        rgba(255,255,255,0.78);
-      backdrop-filter: blur(26px) saturate(1.7);
-      -webkit-backdrop-filter: blur(26px) saturate(1.7);
-      border: 1px solid rgba(255,255,255,0.5);
+        linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 55%),
+        rgba(255,255,255,0.2);
+      backdrop-filter: blur(20px) saturate(1.9) brightness(1.08);
+      -webkit-backdrop-filter: blur(20px) saturate(1.9) brightness(1.08);
+      border: 1px solid rgba(255,255,255,0.45);
       border-radius: 20px;
       width: 88%;
       max-width: 340px;
@@ -1351,7 +1355,11 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 16px 40px rgba(0,0,0,0.25);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.7),
+        inset 0 -1px 1px rgba(0,0,0,0.05),
+        inset 1px 0 0 rgba(255,255,255,0.3),
+        0 20px 48px rgba(0,0,0,0.3);
     }
 
     .modal-content h3 {
@@ -1852,15 +1860,20 @@
       padding-bottom: 0;
       border-radius: 999px;
       background:
-        linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.1) 100%),
-        rgba(0,0,0,0.5);
-      backdrop-filter: blur(24px) saturate(1.7);
-      -webkit-backdrop-filter: blur(24px) saturate(1.7);
+        linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0.06) 100%),
+        rgba(0,0,0,0.2);
+      backdrop-filter: blur(14px) saturate(2.1) brightness(1.1);
+      -webkit-backdrop-filter: blur(14px) saturate(2.1) brightness(1.1);
       display: flex;
       justify-content: space-around;
       align-items: center;
-      border: 1px solid rgba(255,255,255,0.22);
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.35), inset 0 -1px 2px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.32);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.5),
+        inset 0 -1px 1px rgba(0,0,0,0.2),
+        inset 1px 0 0 rgba(255,255,255,0.18),
+        inset -1px 0 0 rgba(0,0,0,0.1),
+        0 12px 32px rgba(0,0,0,0.32);
       z-index: 100;
       flex-shrink: 0;
       transition: transform 0.2s var(--ease-smooth), opacity 0.2s ease;
@@ -1873,7 +1886,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(120deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 35%);
+      background: linear-gradient(120deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 32%);
       pointer-events: none;
       z-index: 0;
     }
@@ -1939,9 +1952,9 @@
        design's single, consistent nav treatment. */
     .bottom-nav.light-nav {
       background:
-        linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.1) 100%),
-        rgba(0,0,0,0.5);
-      border: 1px solid rgba(255,255,255,0.22);
+        linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 40%, rgba(255,255,255,0.06) 100%),
+        rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.32);
     }
 
     .nav-upload-btn {
@@ -2210,12 +2223,16 @@
       pointer-events: none;
       transition: opacity 0.18s ease, transform 0.28s var(--ease-spring);
       background:
-        linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.08) 60%),
-        rgba(255,255,255,0.72);
-      backdrop-filter: blur(20px) saturate(1.6);
-      -webkit-backdrop-filter: blur(20px) saturate(1.6);
-      border: 1px solid rgba(255,255,255,0.5);
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 8px 24px rgba(0,0,0,0.18);
+        linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 55%),
+        rgba(255,255,255,0.18);
+      backdrop-filter: blur(16px) saturate(1.9) brightness(1.08);
+      -webkit-backdrop-filter: blur(16px) saturate(1.9) brightness(1.08);
+      border: 1px solid rgba(255,255,255,0.45);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.7),
+        inset 0 -1px 1px rgba(0,0,0,0.05),
+        inset 1px 0 0 rgba(255,255,255,0.3),
+        0 12px 28px rgba(0,0,0,0.18);
     }
 
     .profile-menu-dropdown.active {
@@ -2232,12 +2249,16 @@
       pointer-events: none;
       transition: opacity 0.18s ease, transform 0.28s var(--ease-spring);
       background:
-        linear-gradient(135deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.08) 60%),
-        rgba(255,255,255,0.72);
-      backdrop-filter: blur(20px) saturate(1.6);
-      -webkit-backdrop-filter: blur(20px) saturate(1.6);
-      border: 1px solid rgba(255,255,255,0.5);
-      box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 8px 24px rgba(0,0,0,0.18);
+        linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 55%),
+        rgba(255,255,255,0.18);
+      backdrop-filter: blur(16px) saturate(1.9) brightness(1.08);
+      -webkit-backdrop-filter: blur(16px) saturate(1.9) brightness(1.08);
+      border: 1px solid rgba(255,255,255,0.45);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.7),
+        inset 0 -1px 1px rgba(0,0,0,0.05),
+        inset 1px 0 0 rgba(255,255,255,0.3),
+        0 12px 28px rgba(0,0,0,0.18);
     }
 
     .chat-menu-dropdown.active {
@@ -3592,7 +3613,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const nav = document.querySelector('.bottom-nav');
       if (!nav || getComputedStyle(nav).display === 'none') return;
       const rect = nav.getBoundingClientRect();
-      applyLiquidGlass(nav, { radius: rect.height / 2, strength: 70, chromaticAberration: 2, blur: 5 });
+      applyLiquidGlass(nav, { radius: rect.height / 2, strength: 100, chromaticAberration: 5, blur: 2.5 });
     }
 
     // Menus that are laid out but hidden via opacity/pointer-events (the
@@ -3610,14 +3631,14 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     }
 
     function setupLiquidGlassObservers() {
-      watchGlassTarget(document.getElementById('profile-menu-dropdown'), { radius: 12, strength: 45, chromaticAberration: 1, blur: 3 });
-      watchGlassTarget(document.getElementById('chat-menu-dropdown'), { radius: 12, strength: 45, chromaticAberration: 1, blur: 3 });
-      watchGlassTarget(document.getElementById('video-cell-menu'), { radius: 12, strength: 45, chromaticAberration: 1, blur: 3 });
+      watchGlassTarget(document.getElementById('profile-menu-dropdown'), { radius: 12, strength: 80, chromaticAberration: 4, blur: 2 });
+      watchGlassTarget(document.getElementById('chat-menu-dropdown'), { radius: 12, strength: 80, chromaticAberration: 4, blur: 2 });
+      watchGlassTarget(document.getElementById('video-cell-menu'), { radius: 12, strength: 80, chromaticAberration: 4, blur: 2 });
       document.querySelectorAll('.modal-overlay').forEach(overlay => {
         const observer = new MutationObserver(() => {
           if (overlay.classList.contains('active')) {
             const content = overlay.querySelector('.modal-content');
-            if (content) requestAnimationFrame(() => applyLiquidGlass(content, { radius: 20, strength: 45, chromaticAberration: 1, blur: 3 }));
+            if (content) requestAnimationFrame(() => applyLiquidGlass(content, { radius: 20, strength: 80, chromaticAberration: 4, blur: 2 }));
           }
         });
         observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
