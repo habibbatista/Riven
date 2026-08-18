@@ -1957,6 +1957,17 @@
       border: 1.5px solid rgba(255,255,255,0.5);
     }
 
+    /* Nav icon color now follows the background of whichever screen is
+       actually showing behind the frosted pill: black on the light
+       screens (Profile / DM), white on the feed (always a dark video
+       surface). The .light-nav toggle is set by switchTab()/syncChromeTheme
+       for exactly this. In dark mode every screen's background goes dark
+       (see the dark-mode block near the end of this stylesheet), so that
+       override flips these back to white there. */
+    .bottom-nav.light-nav .nav-item {
+      color: #111111;
+    }
+
     .nav-upload-btn {
       width: 40px;
       height: 30px;
@@ -2804,27 +2815,140 @@
       }
     }
 
-    @keyframes confettiFall {
-      0%   { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(110vh) rotate(720deg); opacity: 0.85; }
-    }
-
-    .confetti-piece {
-      position: fixed;
-      top: -10px;
-      z-index: 9999999;
-      pointer-events: none;
-      border-radius: 2px;
-      animation-name: confettiFall;
-      animation-timing-function: linear;
-      animation-fill-mode: forwards;
-    }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.001ms !important;
         transition-duration: 0.001ms !important;
       }
+    }
+
+    /* ==========================================================
+       DARK MODE (auto-detected via prefers-color-scheme)
+       ----------------------------------------------------------
+       The feed is always a dark, full-bleed video surface, so it
+       needs no dark-mode treatment of its own. Everything below
+       re-themes the light screens (Profile, DM, modals, sheets)
+       to match the system's dark appearance automatically — there
+       is no manual in-app toggle, it simply follows the OS/browser
+       setting via the media query, and updates live if that
+       setting changes while the app is open.
+       ========================================================== */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-light: #000000;
+        --text-dark: #f2f2f2;
+        --border-gray: #262628;
+      }
+
+      #app-container { background: var(--bg-light); }
+
+      .logged-out-box p { color: #9a9a9e; }
+
+      /* Frosted modals/menus keep the same glass technique, just tuned
+         for a dark backdrop instead of a light one. */
+      .modal-content,
+      .profile-menu-dropdown,
+      .chat-menu-dropdown,
+      .video-cell-menu {
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 22%),
+          rgba(28,28,30,0.82);
+        border-color: rgba(255,255,255,0.14);
+      }
+
+      .modal-content h3 { color: #fff; }
+      .modal-content p { color: #cfcfd2 !important; text-shadow: none !important; }
+      .modal-input {
+        background: #1c1c1e;
+        border-color: #3a3a3c;
+        color: #fff;
+      }
+      .modal-btn-cancel { background: #2c2c2e; color: #eee; }
+      .modal-btn-save { background: #fff; color: #000; }
+      .pfp-upload-label { background: #1c1c1e; border-color: #48484a; color: #eee; }
+
+      .profile-name, #user-display-name { color: #fff; }
+      .profile-handle { color: #9a9a9e; }
+      .menu-dots-btn { color: #fff; }
+      .profile-menu-item { color: #eee; border-bottom-color: #2c2c2e; }
+      .stat-value { color: #fff; }
+      .stat-label { color: #9a9a9e; }
+      .stat-sublabel { color: #6e6e73; }
+      .profile-stats-row { border-color: #232325; }
+      .profile-videos-section { border-top-color: #232325; }
+      .btn-edit-profile { background: #1c1c1e; color: #fff; }
+      .avatar-circle { background: #1c1c1e; border-color: #333; }
+      .profile-video-cell, .profile-video-thumb { background: #1c1c1e; }
+      .profile-videos-empty { color: #8e8e93; }
+
+      .plus-modal-badge { background: #2c2c2e; color: #ccc; }
+      .plus-tier-card { border-color: #2c2c2e; }
+      .plus-tier-name, .plus-tier-price { color: #fff; }
+      .plus-tier-tagline { color: #9a9a9e; }
+      .btn-notify-plus.notified { background: #2c2c2e; color: #fff; }
+      .admin-report-card { background: #1c1c1e; border-color: #262628; }
+
+      .comments-sheet { background: #0d0d0e; }
+      .comments-sheet-header { color: #fff; border-bottom-color: #232325; }
+      .comments-close-btn { color: #aaa; }
+      .comment-body .handle { color: #a5a5aa; }
+      .comment-body .text { color: #eee; }
+      .comment-action-btn { color: #8e8e93; }
+      .comment-action-btn .icon-svg { fill: #8e8e93; }
+      .comment-replies { border-left-color: #232325; }
+      .comments-empty { color: #8e8e93; }
+      .comments-input-wrapper { background: #0d0d0e; }
+      .comments-input-wrapper input { background: #1c1c1e; border-color: #3a3a3c; color: #fff; }
+      .comment-send-btn { background: #fff; color: #000; }
+      .comment-reply-input-wrapper input { background: #1c1c1e; border-color: #3a3a3c; color: #fff; }
+
+      .search-avatar { background: #2c2c2e; }
+
+      #dm-screen { background-color: var(--bg-light); }
+      .dm-header { background: #0d0d0e; }
+      .dm-title { color: #fff; }
+      .dm-friend-item { border-bottom-color: #1c1c1e; }
+      .dm-friend-item:active { background-color: #17171a; }
+      .dm-friend-avatar { background: #1c1c1e; }
+      .dm-friend-name { color: #fff; }
+      .dm-friend-preview { color: #9a9a9e; }
+      .dm-empty-state { color: #8e8e93; }
+      .presence-dot { border-color: #0d0d0e; }
+
+      .chat-header-bar { background: #0d0d0e; }
+      .chat-header-avatar { background: #1c1c1e; }
+      .chat-header-name { color: #fff; }
+      .chat-icon-btn { color: #eee; }
+      .chat-back-btn svg { fill: #eee; }
+      .dm-bubble.theirs { background: #1c1c1e; color: #fff; }
+      .dm-shared-video-thumb { background: #1c1c1e; }
+      .dm-input-wrapper { background: #0d0d0e; }
+      .dm-input-bubble { background: #0d0d0e; border-color: #3a3a3c; }
+      .dm-input-bubble input { color: #fff; }
+      .dm-input-bubble svg { fill: #eee !important; }
+
+      .switch-account-row { background: #1c1c1e; }
+      .switch-account-row:active { background: #262628; }
+      .switch-account-avatar { background: #2c2c2e; }
+      .switch-account-name { color: #fff; }
+      .switch-account-handle { color: #9a9a9e; }
+      .switch-account-empty { color: #8e8e93; }
+
+      .share-sheet-actions { border-top-color: #232325; }
+      .share-sheet-action-row:active { background: #1c1c1e; }
+      .share-sheet-action-icon { background: #1c1c1e; }
+      .share-sheet-action-icon .icon-svg { fill: #eee; }
+      .share-sheet-action-row span { color: #eee; }
+      .share-sheet-section-label { color: #8e8e93; }
+
+      /* Nav icon color: on the light (non-feed) screens the frosted pill
+         now sits over a dark background too, so keep the icons white
+         here instead of the light-mode black — see the .light-nav rule
+         earlier in this stylesheet for the light-mode counterpart. */
+      .bottom-nav.light-nav .nav-item { color: #ffffff; }
+
+      #ios-install-banner { background: #1c1c1e; }
     }
   </style>
 </head>
@@ -3278,7 +3402,7 @@
     <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.0 ALPHA (26815R2A)
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.0 ALPHA (26817R1A)
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -3866,26 +3990,6 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       showToast._t = setTimeout(() => el.classList.remove('visible'), duration);
     }
 
-    // 🎉 It's her birthday — a little confetti never hurt anyone.
-    const CONFETTI_COLORS = ['#ff2d55', '#ffd60a', '#34c759', '#0a84ff', '#bf5af2', '#ff9f0a', '#ff375f'];
-
-    function launchConfetti(count = 90) {
-      for (let i = 0; i < count; i++) {
-        const el = document.createElement('div');
-        el.className = 'confetti-piece';
-        const size = 6 + Math.random() * 7;
-        el.style.left = `${Math.random() * 100}vw`;
-        el.style.width = `${size}px`;
-        el.style.height = `${size * 1.6}px`;
-        el.style.background = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
-        el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-        el.style.animationDuration = `${2.4 + Math.random() * 1.8}s`;
-        el.style.animationDelay = `${Math.random() * 0.6}s`;
-        document.body.appendChild(el);
-        setTimeout(() => el.remove(), 5200);
-      }
-    }
-
     // Turns a Firestore Timestamp into a short, gray relative-date label
     function formatUploadDate(timestamp) {
       if (!timestamp) return 'Just now';
@@ -4420,8 +4524,6 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       Promise.all([minDisplayTime, appReady]).then(() => {
         splash.classList.add('fade-out');
         setTimeout(() => splash.remove(), 450); // matches the CSS transition duration
-        launchConfetti(110);
-        showToast('🎂 Happy Birthday! 🎉', 4000);
       });
     })();
 
@@ -6534,7 +6636,6 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           item.appendChild(ring);
           ring.addEventListener('animationend', () => ring.remove());
         });
-        launchConfetti(24);
       }
 
       if (alreadyLiked) {
@@ -7766,9 +7867,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       videoUpgradeHandled = false;
     }
 
+    // Detects whether the system/browser is currently in dark mode —
+    // used by syncChromeTheme() so the Safari toolbar tint and the app's
+    // own body background follow dark mode automatically, in addition to
+    // the CSS media query that re-themes the screens themselves.
+    function prefersDarkMode() {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
     // Syncs Safari's toolbar tint (theme-color) and the page's own
     // background to whichever tab is active — feed is a dark/immersive
-    // video experience, DM and profile are light, standard app chrome.
+    // video experience, DM and profile are light (or dark, in dark mode),
+    // standard app chrome otherwise.
     // Safari frequently ignores an in-place `setAttribute` on an existing
     // theme-color meta tag (it caches the value from when the tag was
     // inserted), so instead we remove the node(s) and insert a brand new
@@ -7779,7 +7889,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // is deferred to the next animation frame, since applying it mid-frame
     // is part of why Safari sometimes silently drops the update.
     function syncChromeTheme(screenId) {
-      const isDarkScreen = screenId === 'feed-screen';
+      const isDarkScreen = screenId === 'feed-screen' || prefersDarkMode();
       const color = isDarkScreen ? '#000000' : '#ffffff';
 
       requestAnimationFrame(() => {
@@ -7795,6 +7905,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       });
 
       document.body.style.backgroundColor = color;
+    }
+
+    // Live re-sync if the system's light/dark setting changes while the
+    // app is already open (e.g. the OS switches at sunset, or the person
+    // flips it in Settings) — re-applies the toolbar tint/background for
+    // whichever screen is currently showing; the CSS media query handles
+    // re-theming everything else automatically on its own.
+    if (window.matchMedia) {
+      const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleColorSchemeChange = () => syncChromeTheme(currentScreenId);
+      if (darkModeQuery.addEventListener) darkModeQuery.addEventListener('change', handleColorSchemeChange);
+      else if (darkModeQuery.addListener) darkModeQuery.addListener(handleColorSchemeChange);
     }
 
     window.switchTab = function(screenId, navElement) {
