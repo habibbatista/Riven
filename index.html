@@ -941,6 +941,12 @@
     #profile-screen {
       background-color: var(--bg-light);
       padding-top: calc(var(--safe-top) + 10px);
+      /* Without this, the video grid's last row scrolls to sit directly
+         behind the floating glass nav — its color shows straight through
+         the blur/tint, looking like a stray colored outline around the
+         nav icons. Reserve nav-height + its bottom offset + a little
+         breathing room so real content always stops above it. */
+      padding-bottom: calc(58px + max(16px, calc(8px + var(--safe-bottom))) + 24px);
     }
 
     .logged-out-box {
@@ -1025,8 +1031,9 @@
 
     .profile-card {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+      justify-content: flex-start;
+      align-items: flex-end;
+      gap: 14px;
       padding: 0 20px;
       margin-bottom: 16px;
       margin-top: -32px;
@@ -1628,6 +1635,9 @@
       display: flex;
       flex-direction: column;
       overflow-y: auto;
+      /* Same fix as #profile-screen — keep the last friend row from
+         scrolling directly behind the floating glass nav. */
+      padding-bottom: calc(58px + max(16px, calc(8px + var(--safe-bottom))) + 24px);
     }
 
     /* Presence status — an "Active now" / "Active Xm ago" text line shown
@@ -2026,14 +2036,17 @@
       transition: transform 0.1s ease;
     }
 
-    /* The floating pill stays black/translucent on every tab now — no more
-       switching to a flat white bar on DM/profile, matching the reference
-       design's single, consistent nav treatment. */
+    /* The floating pill keeps the same frosted-glass technique on every
+       tab, but on light (white) screens a near-transparent white border/
+       fill on a white page was effectively invisible — no visible pill,
+       just floating icons. Tinting it gray instead keeps the glass look
+       while actually being visible on Profile/DM. */
     .bottom-nav.light-nav {
       background:
-        linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 18%),
-        rgba(255,255,255,0.04);
-      border: 1.5px solid rgba(255,255,255,0.5);
+        linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0) 18%),
+        rgba(0,0,0,0.045);
+      border: 1.5px solid rgba(0,0,0,0.1);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.12);
     }
 
     /* Nav icon color now follows the background of whichever screen is
@@ -2618,6 +2631,13 @@
         box-shadow: 0 10px 60px rgba(0,0,0,0.35);
       }
 
+      /* Nav is a normal top bar here, not a floating pill — the extra
+         bottom padding added for mobile (so content doesn't scroll behind
+         the floating glass nav) would just be a dead gap here. */
+      #profile-screen, .dm-friends-list {
+        padding-bottom: 0;
+      }
+
       .bottom-nav {
         position: relative;
         left: auto;
@@ -3027,6 +3047,18 @@
          earlier in this stylesheet for the light-mode counterpart. */
       .bottom-nav.light-nav .nav-item { color: #ffffff; }
 
+      /* The light-mode gray-tinted glass (see .bottom-nav.light-nav
+         earlier) would be just as invisible against a black background as
+         the old white-tinted version was against white — flip the tint
+         back to white/light here so the pill still reads as glass. */
+      .bottom-nav.light-nav {
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 18%),
+          rgba(255,255,255,0.06);
+        border: 1.5px solid rgba(255,255,255,0.35);
+        box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+      }
+
       #ios-install-banner { background: #1c1c1e; }
     }
   </style>
@@ -3276,16 +3308,16 @@
         </div>
 
         <div class="profile-card">
+          <div class="avatar-with-status">
+            <img class="avatar-circle" id="profile-avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'><circle cx='45' cy='45' r='45' fill='%23eee'/></svg>">
+            <span class="presence-dot" id="profile-presence-dot" style="width:20px; height:20px;"></span>
+          </div>
           <div class="profile-meta">
             <h1 class="profile-name" id="user-display-name">---</h1>
             <div class="profile-handle-row">
               <span class="profile-handle" id="user-display-handle">@---</span>
             </div>
             <span class="activity-status" id="profile-activity-status" style="margin-top:4px;">...</span>
-          </div>
-          <div class="avatar-with-status">
-            <img class="avatar-circle" id="profile-avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'><circle cx='45' cy='45' r='45' fill='%23eee'/></svg>">
-            <span class="presence-dot" id="profile-presence-dot" style="width:20px; height:20px;"></span>
           </div>
         </div>
 
