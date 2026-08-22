@@ -1032,11 +1032,10 @@
     .profile-card {
       display: flex;
       justify-content: flex-start;
-      align-items: flex-end;
+      align-items: flex-start;
       gap: 14px;
       padding: 0 20px;
       margin-bottom: 16px;
-      margin-top: -32px;
     }
 
     .profile-meta {
@@ -1110,13 +1109,40 @@
     }
 
     /* PROFILE STATS SECTION */
-    .profile-stats-row {
+    .profile-stats-and-edit-row {
       display: flex;
-      justify-content: space-around;
       align-items: center;
+      gap: 12px;
       padding: 12px 20px;
       margin-bottom: 16px;
       border-bottom: 1px solid #f0f0f0;
+    }
+
+    .profile-stats-row {
+      display: flex;
+      flex: 1;
+      justify-content: space-around;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .btn-edit-icon {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background-color: #f2f2f7;
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .btn-edit-icon .icon-svg {
+      width: 18px;
+      height: 18px;
     }
 
     .stat-item {
@@ -1687,6 +1713,12 @@
       display: inline-flex;
     }
 
+    /* Only the avatar pokes up into the banner above — scoped here so
+       .avatar-with-status elsewhere (chat header, DM rows) is unaffected. */
+    .profile-card .avatar-with-status {
+      margin-top: -32px;
+    }
+
     .presence-dot {
       position: absolute;
       bottom: -1px;
@@ -2247,14 +2279,14 @@
       animation: streakPop 0.4s ease;
     }
 
-    .action-item, .header-icon, .btn-follow, .btn-edit-profile,
+    .action-item, .header-icon, .btn-follow, .btn-edit-profile, .btn-edit-icon,
     .custom-file-upload, .modal-btn, .comment-send-btn, .search-result-card,
     .cancel-search-btn, .comments-close-btn, .profile-menu-item, .menu-dots-btn,
     .chat-icon-btn, .chat-back-btn {
       transition: transform 0.12s ease, opacity 0.12s ease;
     }
 
-    .action-item:active, .btn-follow:active, .btn-edit-profile:active,
+    .action-item:active, .btn-follow:active, .btn-edit-profile:active, .btn-edit-icon:active,
     .custom-file-upload:active, .modal-btn:active, .comment-send-btn:active,
     .search-result-card:active, .profile-menu-item:active, .chat-icon-btn:active,
     .chat-back-btn:active {
@@ -2973,9 +3005,10 @@
       .stat-value { color: #fff; }
       .stat-label { color: #9a9a9e; }
       .stat-sublabel { color: #6e6e73; }
-      .profile-stats-row { border-color: #232325; }
+      .profile-stats-and-edit-row { border-color: #232325; }
       .profile-videos-section { border-top-color: #232325; }
       .btn-edit-profile { background: #1c1c1e; color: #fff; }
+      .btn-edit-icon { background-color: #1c1c1e; color: #fff; }
       .avatar-circle { background: #1c1c1e; border-color: #333; }
       .profile-video-cell, .profile-video-thumb { background: #1c1c1e; }
       .profile-videos-empty { color: #8e8e93; }
@@ -3320,26 +3353,33 @@
           </div>
         </div>
 
-        <!-- PROFILE STATS -->
-        <div class="profile-stats-row">
-          <div class="stat-item">
-            <span class="stat-value" id="followers-count">0</span>
-            <span class="stat-label">Followers</span>
+        <!-- PROFILE STATS + EDIT (own profile) -->
+        <div class="profile-stats-and-edit-row">
+          <div class="profile-stats-row">
+            <div class="stat-item">
+              <span class="stat-value" id="followers-count">0</span>
+              <span class="stat-label">Followers</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="following-count">0</span>
+              <span class="stat-label">Following</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="likes-count">0</span>
+              <span class="stat-label">Likes</span>
+              <span class="stat-sublabel">(incl. private)</span>
+            </div>
           </div>
-          <div class="stat-item">
-            <span class="stat-value" id="following-count">0</span>
-            <span class="stat-label">Following</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value" id="likes-count">0</span>
-            <span class="stat-label">Likes</span>
-            <span class="stat-sublabel">(incl. private)</span>
-          </div>
+          <button class="btn-edit-icon" id="btn-edit-action" onclick="openEditModal()" title="Edit Profile" aria-label="Edit Profile">
+            <svg class="icon-svg icon-line" viewBox="0 0 24 24">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </button>
         </div>
 
         <div class="profile-actions-wrapper">
           <button class="btn-follow" id="btn-follow-action" style="display:none;" onclick="toggleFollowUser()">Follow</button>
-          <button class="btn-edit-profile" id="btn-edit-action" onclick="openEditModal()">Edit Profile</button>
         </div>
 
         <div class="profile-videos-section">
@@ -5623,7 +5663,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       if (isOwnProfile) {
         followBtn.style.display = 'none';
-        editBtn.style.display = 'block';
+        editBtn.style.display = 'flex';
       } else {
         followBtn.style.display = 'block';
         editBtn.style.display = 'none';
