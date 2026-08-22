@@ -5581,7 +5581,14 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       // 'User'` only catches falsy values, not " ". Trim first so it always
       // falls back to something visible.
       const displayName = (name && name.trim()) ? name.trim() : (cleanHandle || 'User');
-      document.getElementById('user-display-name').innerText = displayName;
+      const nameEl = document.getElementById('user-display-name');
+      nameEl.innerText = displayName;
+      // Belt-and-suspenders: force the color inline instead of relying only
+      // on the stylesheet's dark-mode override, since that override was
+      // silently failing to apply to this element specifically (black text
+      // on a black background reads as "no name at all", identical to
+      // actually-empty text).
+      nameEl.style.color = prefersDarkMode() ? '#ffffff' : '#000000';
       document.getElementById('user-display-handle').innerHTML = withVerifiedBadge(`@${cleanHandle}`, cleanHandle, 15);
 
       setProfileUrl(cleanHandle);
