@@ -988,10 +988,18 @@
     }
 
     .menu-dots-btn {
-      background: none;
+      background: rgba(0,0,0,0.35);
       border: none;
       cursor: pointer;
-      color: #000;
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
     }
 
     .profile-menu-dropdown {
@@ -1032,14 +1040,14 @@
     .profile-card {
       padding: 0 20px 0 144px;
       margin-bottom: 16px;
-      min-height: 55px;
+      min-height: 75px;
     }
 
     .profile-meta {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      padding-top: 6px;
+      padding-top: 24px;
     }
 
     .profile-name {
@@ -1098,7 +1106,7 @@
     .avatar-with-status.profile-avatar-anchored {
       position: absolute;
       left: 20px;
-      bottom: -55px;
+      bottom: -35px;
       z-index: 2;
     }
 
@@ -2064,7 +2072,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 25%;
+      width: 20%;
       height: 100%;
       opacity: 0.6;
       transform: translateY(0) scale(1);
@@ -2091,7 +2099,7 @@
       background:
         linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0) 18%),
         rgba(0,0,0,0.045);
-      border: 1.5px solid rgba(0,0,0,0.1);
+      border: none;
       box-shadow: 0 6px 24px rgba(0,0,0,0.12);
     }
 
@@ -2107,26 +2115,16 @@
     }
 
     .nav-upload-btn {
-      width: 40px;
-      height: 30px;
-      border-radius: 8px;
-      background: var(--accent-pink);
+      width: 44px;
+      height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.28s var(--ease-spring), box-shadow 0.25s ease;
-      box-shadow: 0 2px 10px rgba(255,45,85,0.35);
+      transition: transform 0.28s var(--ease-spring);
     }
 
     .nav-item:active .nav-upload-btn {
       transform: scale(0.86);
-      box-shadow: 0 1px 4px rgba(255,45,85,0.25);
-    }
-
-    .nav-upload-btn .icon-svg {
-      width: 18px;
-      height: 18px;
-      fill: #fff;
     }
 
     /* TOAST */
@@ -2735,6 +2733,7 @@
          is redundant with the "Riven" wordmark at this width, so it's
          hidden rather than reordered in. */
       #nav-feed-item { display: none; }
+      #nav-search-item { display: none; }
       #nav-profile-btn { order: 1; }
       #nav-dm-item { order: 2; }
       #nav-upload-item { order: 3; }
@@ -2757,8 +2756,8 @@
       }
 
       .nav-upload-btn {
-        width: 40px;
-        height: 30px;
+        width: 44px;
+        height: 44px;
       }
 
       #screens-wrapper {
@@ -3102,7 +3101,7 @@
         background:
           linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 18%),
           rgba(255,255,255,0.06);
-        border: 1.5px solid rgba(255,255,255,0.35);
+        border: none;
         box-shadow: 0 6px 24px rgba(0,0,0,0.4);
       }
 
@@ -3574,7 +3573,7 @@
     <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.1 ALPHA (26.08.21R12A)
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.1 ALPHA (260823R1A)
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -3679,9 +3678,15 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           <path d="M10 21V17C10 15.8954 10.8954 15 12 15V15C13.1046 15 14 15.8954 14 17V21"/>
         </svg>
       </div>
+      <div class="nav-item" id="nav-search-item" onclick="openSearchOverlay()">
+        <svg class="icon-svg icon-line" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
       <div class="nav-item" id="nav-upload-item" onclick="triggerUploadFlow()">
         <div class="nav-upload-btn">
-          <svg class="icon-svg" viewBox="0 0 24 24" style="width:18px; height:18px; fill:#fff;">
+          <svg class="icon-svg" viewBox="0 0 24 24" style="width:28px; height:28px;">
             <path fill-rule="evenodd" clip-rule="evenodd" d="M6.39252 3.83025C7.04361 2.75654 8.20958 2 9.54508 2H14.4549C15.7904 2 16.9564 2.75654 17.6075 3.83025C17.8059 4.15753 18.0281 4.50118 18.257 4.81533C18.3665 4.96564 18.5804 5.08571 18.8771 5.08571H18.9998C21.209 5.08571 23 6.87668 23 9.08571V17C23 19.2091 21.2091 21 19 21H5C2.79086 21 1 19.2091 1 17V9.08572C1 6.87668 2.79052 5.08571 4.99976 5.08571H5.12238C5.41912 5.08571 5.63348 4.96564 5.74301 4.81533C5.97193 4.50118 6.19407 4.15753 6.39252 3.83025ZM9.54508 4C8.98673 4 8.43356 4.32159 8.10267 4.86727C7.88516 5.22596 7.63139 5.61989 7.35939 5.99317C6.81056 6.74635 5.94404 7.08571 5.12286 7.08571H5.00024C3.89578 7.08571 3 7.98104 3 9.08572V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V9.08571C21 7.98104 20.1047 7.08571 19.0002 7.08571H18.8776C18.0564 7.08571 17.1894 6.74635 16.6406 5.99317C16.3686 5.61989 16.1148 5.22596 15.8973 4.86727C15.5664 4.32159 15.0133 4 14.4549 4H9.54508ZM12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9ZM7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17C9.23858 17 7 14.7614 7 12Z"/>
           </svg>
         </div>
