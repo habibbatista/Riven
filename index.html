@@ -13,7 +13,7 @@
        ignores them for the actual system status bar. -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="apple-status-bar-meta" />
-  <meta name="apple-mobile-web-app-title" content="Riven" />
+  <meta name="apple-mobile-web-app-title" content="RIVEN" />
   <!-- PWA manifest + icons — required for "Add to Home Screen" on iOS to
        launch as a standalone app (no Safari chrome), which is itself a
        prerequisite for push notifications to work at all on iOS (Safari
@@ -22,7 +22,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" href="icons/icon-192.png" />
-  <title>Riven</title>
+  <title>RIVEN</title>
 
   <!-- Preconnect to primary asset origins to speed up fetch/upload loading times -->
   <link rel="preconnect" href="https://api.cloudinary.com">
@@ -1030,9 +1030,9 @@
     }
 
     .profile-card {
-      padding: 0 20px 0 126px;
+      padding: 0 20px 0 144px;
       margin-bottom: 16px;
-      min-height: 46px;
+      min-height: 55px;
     }
 
     .profile-meta {
@@ -1062,8 +1062,8 @@
     }
 
     .avatar-circle {
-      width: 86px;
-      height: 86px;
+      width: 104px;
+      height: 104px;
       border-radius: 50%;
       object-fit: cover;
       background: #eee;
@@ -1098,7 +1098,7 @@
     .avatar-with-status.profile-avatar-anchored {
       position: absolute;
       left: 20px;
-      bottom: -46px;
+      bottom: -55px;
       z-index: 2;
     }
 
@@ -2721,7 +2721,7 @@
       }
 
       .bottom-nav::before {
-        content: "Riven";
+        content: "RIVEN";
         margin-right: auto;
         font-size: 18px;
         font-weight: 600;
@@ -3120,7 +3120,7 @@
          where a splash would just be unnecessary ceremony. Fades into the
          real UI once the app shell has finished loading. -->
     <div id="splash-screen">
-      <img src="icons/icon-transparent.png" class="splash-icon" alt="Riven">
+      <img src="icons/icon-transparent.png" class="splash-icon" alt="RIVEN">
     </div>
 
     <div id="screens-wrapper">
@@ -3353,7 +3353,7 @@
             <div class="profile-menu-item" onclick="toggleProfileMenu(); openEditModal();">Edit Profile</div>
             <div class="profile-menu-item" id="switch-account-menu-item" onclick="openSwitchAccountModal();">Switch Account</div>
             <div class="profile-menu-item" onclick="toggleProfileMenu(true); openInviteCodesModal();">🎟️ Invite Codes</div>
-            <div class="profile-menu-item" onclick="toggleProfileMenu(true); openRivenPlusModal();">✨ Riven+</div>
+            <div class="profile-menu-item" onclick="toggleProfileMenu(true); openRivenPlusModal();">✨ RIVEN+</div>
             <div class="profile-menu-item" id="admin-menu-item" style="display:none;" onclick="toggleProfileMenu(true); openAdminReportsModal();">🛡️ Admin</div>
             <div class="profile-menu-item" onclick="toggleProfileMenu(true); openAboutModal();">ℹ️ About</div>
             <div class="profile-menu-item danger" onclick="logoutUser()">Log Out</div>
@@ -3441,7 +3441,7 @@
           <span id="banner-upload-label-text">Choose Banner Image</span>
         </label>
         <input type="file" id="banner-file-input" accept="image/*">
-        <p id="banner-plus-hint" style="display:none; font-size:11px; color:#999; margin-top:-6px;">✨ Riven+ members can use a video banner (up to 4s)</p>
+        <p id="banner-plus-hint" style="display:none; font-size:11px; color:#999; margin-top:-6px;">✨ RIVEN+ members can use a video banner (up to 4s)</p>
         <img id="banner-preview-img" class="upload-preview-banner">
         <video id="banner-preview-video" class="upload-preview-banner" muted loop playsinline autoplay></video>
 
@@ -3458,7 +3458,7 @@
     <div class="modal-overlay" id="age-gate-modal">
       <div class="modal-content">
         <h3 id="age-gate-title">What's your birthdate?</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">Riven tailors your experience based on age — this determines things like whether DMs are available and your default privacy. You can't skip this step.</p>
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">RIVEN tailors your experience based on age — this determines things like whether DMs are available and your default privacy. You can't skip this step.</p>
         <input type="date" id="age-gate-input" class="modal-input">
         <p id="age-gate-error" style="font-size:12px; color:#ff2d55; display:none;"></p>
         <div class="modal-buttons" style="justify-content: space-between;">
@@ -3505,8 +3505,8 @@
     <div class="modal-overlay" id="riven-plus-modal">
       <div class="modal-content plus-modal-content">
         <span class="plus-modal-badge">Coming soon</span>
-        <h3 style="margin-top:4px;">Riven+</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">A few extra perks for people who live on Riven. Pricing below is what's planned at launch — nothing to pay yet.</p>
+        <h3 style="margin-top:4px;">RIVEN+</h3>
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">A few extra perks for people who live on RIVEN. Pricing below is what's planned at launch — nothing to pay yet.</p>
 
         <div class="plus-tier-card">
           <div class="plus-tier-top">
@@ -3559,7 +3559,7 @@
     <div class="modal-overlay" id="invite-codes-modal">
       <div class="modal-content" style="width:92%; max-width:380px;">
         <h3>Invite Codes</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">You can generate up to 5 invite codes. Share one with a friend to let them join Riven.</p>
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">You can generate up to 5 invite codes. Share one with a friend to let them join RIVEN.</p>
         <div id="invite-codes-list" style="display:flex; flex-direction:column; gap:8px;">
           <div class="comments-empty">Loading...</div>
         </div>
@@ -3574,7 +3574,7 @@
     <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.1 ALPHA (26821R1A)
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.1 ALPHA (26.08.21R12A)
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -3714,7 +3714,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     <div id="ios-install-banner" style="display:none;">
       <div class="ios-install-text">
         <strong>Get calls &amp; notifications</strong>
-        <span>Add Riven to your Home Screen: tap <strong>Share</strong> <span class="ios-share-icon">⬆</span>, then <strong>Add to Home Screen</strong>.</span>
+        <span>Add RIVEN to your Home Screen: tap <strong>Share</strong> <span class="ios-share-icon">⬆</span>, then <strong>Add to Home Screen</strong>.</span>
       </div>
       <span class="ios-install-close" onclick="dismissIosInstallBanner()">✕</span>
     </div>
@@ -5302,7 +5302,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         return;
       }
       if (age < 9) {
-        errorEl.textContent = "Sorry, you must be at least 9 years old to use Riven.";
+        errorEl.textContent = "Sorry, you must be at least 9 years old to use RIVEN.";
         errorEl.style.display = 'block';
         return;
       }
@@ -5504,7 +5504,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
       myProfileData.plusInterestRequested = true;
       localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
-      showToast("You'll be the first to know when Riven+ launches!");
+      showToast("You'll be the first to know when RIVEN+ launches!");
       try {
         await setDoc(doc(db, 'users', currentUser.uid), { plusInterestRequested: true, plusInterestRequestedAt: serverTimestamp() }, { merge: true });
       } catch (e) {
@@ -5650,9 +5650,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       setProfileUrl(cleanHandle);
 
-      if (pfp) {
-        document.getElementById('profile-avatar-img').src = pfp;
-      }
+      document.getElementById('profile-avatar-img').src = pfp || DEFAULT_AVATAR_SVG;
 
       if (isOwnProfile) {
         renderProfileBanner(myProfileData?.bannerUrl, myProfileData?.bannerType);
@@ -5703,16 +5701,24 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
         // Following count, followers count, and the video grid are all
         // independent reads — fire them off together instead of awaiting
-        // one after another.
+        // one after another. Snapshot the uid locally: viewedProfileUid is
+        // a shared variable that a LATER call to this function (switching
+        // to a different profile before this fetch resolves) can reassign
+        // out from under us — without the snapshot + guard below, a slow
+        // fetch for the profile you navigated AWAY from could still land
+        // and overwrite the profile you're now looking at.
+        const uidForThisCall = viewedProfileUid;
         const countsPromise = (async () => {
           try {
-            const userDoc = await getDoc(doc(db, "users", viewedProfileUid));
+            const userDoc = await getDoc(doc(db, "users", uidForThisCall));
+            if (viewedProfileUid !== uidForThisCall) return; // navigated away while this was in flight
             if (userDoc.exists()) {
               const data = userDoc.data();
               document.getElementById('following-count').innerText = (data.following || []).length;
-              const followersCount = await getFollowersCountFast(viewedProfileUid, data);
+              const followersCount = await getFollowersCountFast(uidForThisCall, data);
+              if (viewedProfileUid !== uidForThisCall) return;
               document.getElementById('followers-count').innerText = followersCount;
-              cacheAndApplyActivityStatus(viewedProfileUid, data.lastActive, document.getElementById('profile-activity-status'), document.getElementById('profile-presence-dot'));
+              cacheAndApplyActivityStatus(uidForThisCall, data.lastActive, document.getElementById('profile-activity-status'), document.getElementById('profile-presence-dot'));
               if (!isOwnProfile) renderProfileBanner(data.bannerUrl, data.bannerType);
             }
           } catch (e) {
@@ -5956,7 +5962,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       document.getElementById('video-cell-menu').classList.remove('active');
       const id = videoCellMenuTargetId;
       if (!id) return;
-      openConfirmModal('Delete video?', 'This permanently removes the video from Riven. This cannot be undone.', 'Delete', () => deleteVideoById(id, false));
+      openConfirmModal('Delete video?', 'This permanently removes the video from RIVEN. This cannot be undone.', 'Delete', () => deleteVideoById(id, false));
     };
 
     // FOLLOW FUNCTIONALITY
@@ -6139,7 +6145,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       const isVideo = file.type.startsWith('video/');
       if (isVideo && !isRivenPlus()) {
-        showToast("Video banners are a Riven+ perk — pick an image, or upgrade");
+        showToast("Video banners are a RIVEN+ perk — pick an image, or upgrade");
         return;
       }
 
@@ -6189,7 +6195,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       if (pendingBannerFile) {
         if (pendingBannerType === 'video' && !isRivenPlus()) {
-          showToast("Video banners are a Riven+ perk");
+          showToast("Video banners are a RIVEN+ perk");
         } else if (pendingBannerType === 'video') {
           try {
             showToast('Compressing banner video...', 20000);
@@ -6866,7 +6872,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (currentVideoIndex < 0) return;
       const v = videoQueue[currentVideoIndex];
       if (!currentUser || v.uid !== currentUser.uid) return;
-      openConfirmModal('Delete video?', 'This permanently removes the video from Riven. This cannot be undone.', 'Delete', () => deleteVideoById(v.id, true));
+      openConfirmModal('Delete video?', 'This permanently removes the video from RIVEN. This cannot be undone.', 'Delete', () => deleteVideoById(v.id, true));
     };
 
     // Deletes a video's Firestore record. `fromFeed` re-renders the feed queue;
@@ -7396,7 +7402,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       updateSheetOpenBodyClass();
 
       if (!currentUser) {
-        listEl.innerHTML = `<div class="comments-empty">Sign in to send videos to friends in Riven DMs</div>`;
+        listEl.innerHTML = `<div class="comments-empty">Sign in to send videos to friends in RIVEN DMs</div>`;
         return;
       }
 
@@ -7460,7 +7466,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const shareUrl = `${window.location.origin}${window.location.pathname}#/v/${v.id}`;
       closeShareSheet();
       try {
-        await navigator.share({ title: 'Riven', text: `Check out this video by @${v.authorHandle}`, url: shareUrl });
+        await navigator.share({ title: 'RIVEN', text: `Check out this video by @${v.authorHandle}`, url: shareUrl });
       } catch (e) { /* user cancelled the native sheet — not an error */ }
     };
 
