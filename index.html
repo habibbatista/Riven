@@ -1030,19 +1030,16 @@
     }
 
     .profile-card {
-      display: flex;
-      justify-content: flex-start;
-      align-items: flex-start;
-      gap: 14px;
-      padding: 0 20px;
+      padding: 0 20px 0 126px;
       margin-bottom: 16px;
+      min-height: 46px;
     }
 
     .profile-meta {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      margin-top: 14px;
+      padding-top: 6px;
     }
 
     .profile-name {
@@ -1074,14 +1071,35 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.15);
     }
 
-    /* PROFILE BANNER — image, or for Riven+ a looping video up to 4s */
+    /* PROFILE BANNER — image, or for Riven+ a looping video up to 4s.
+       overflow is visible here (unlike the inner clip below) specifically
+       so the avatar can be anchored to this box and stick out past its
+       bottom edge without being cropped off. */
     .profile-banner-wrap {
       width: 100%;
       height: 120px;
-      background: #ececec;
-      overflow: hidden;
       position: relative;
       flex-shrink: 0;
+      overflow: visible;
+    }
+
+    .profile-banner-clip {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #ececec;
+    }
+
+    /* Anchored to profile-banner-wrap (not flexed alongside the name/handle
+       text) so its overlap with the banner is fixed and independent of
+       whatever the name/handle text does — no more fighting flex/margin
+       interactions between the two. Sits exactly half-in, half-out of the
+       banner (92px tall avatar box, 46px overlap). */
+    .avatar-with-status.profile-avatar-anchored {
+      position: absolute;
+      left: 20px;
+      bottom: -46px;
+      z-index: 2;
     }
 
     .profile-banner-media {
@@ -1716,11 +1734,6 @@
 
     /* Only the avatar pokes up into the banner above — scoped here so
        .avatar-with-status elsewhere (chat header, DM rows) is unaffected. */
-    .profile-card .avatar-with-status {
-      margin-top: -32px;
-      margin-left: -16px;
-    }
-
     .presence-dot {
       position: absolute;
       bottom: -1px;
@@ -3323,8 +3336,14 @@
 
       <div class="profile-authenticated" id="logged-in-state" style="display:none;">
         <div class="profile-banner-wrap" id="profile-banner-wrap">
-          <img class="profile-banner-media" id="profile-banner-img" alt="">
-          <video class="profile-banner-media" id="profile-banner-video" muted loop playsinline autoplay></video>
+          <div class="profile-banner-clip">
+            <img class="profile-banner-media" id="profile-banner-img" alt="">
+            <video class="profile-banner-media" id="profile-banner-video" muted loop playsinline autoplay></video>
+          </div>
+          <div class="avatar-with-status profile-avatar-anchored">
+            <img class="avatar-circle" id="profile-avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'><circle cx='45' cy='45' r='45' fill='%23eee'/></svg>">
+            <span class="presence-dot" id="profile-presence-dot" style="width:20px; height:20px;"></span>
+          </div>
         </div>
         <div class="profile-top-bar" id="profile-top-bar">
           <button class="menu-dots-btn" onclick="toggleProfileMenu()">
@@ -3342,10 +3361,6 @@
         </div>
 
         <div class="profile-card">
-          <div class="avatar-with-status">
-            <img class="avatar-circle" id="profile-avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'><circle cx='45' cy='45' r='45' fill='%23eee'/></svg>">
-            <span class="presence-dot" id="profile-presence-dot" style="width:20px; height:20px;"></span>
-          </div>
           <div class="profile-meta">
             <h1 class="profile-name" id="user-display-name">---</h1>
             <div class="profile-handle-row">
