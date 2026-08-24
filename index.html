@@ -3132,15 +3132,15 @@
         <img class="desktop-panel-avatar" id="desktop-panel-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><circle cx='45' cy='45' r='45' fill='%23eee'/></svg>">
         <div class="desktop-panel-name" id="desktop-panel-name">DisplayName</div>
         <div class="desktop-panel-handle" id="desktop-panel-handle">@handle</div>
-        <button class="btn-follow" id="desktop-panel-follow-btn" style="display:none;">Follow</button>
+        <button class="btn-follow" id="desktop-panel-follow-btn" data-i18n="follow" style="display:none;">Follow</button>
         <div class="desktop-panel-stats">
           <div class="stat-item">
             <span class="stat-value" id="desktop-panel-following-count">0</span>
-            <span class="stat-label">Following</span>
+            <span class="stat-label" data-i18n="following">Following</span>
           </div>
           <div class="stat-item">
             <span class="stat-value" id="desktop-panel-followers-count">0</span>
-            <span class="stat-label">Followers</span>
+            <span class="stat-label" data-i18n="followers">Followers</span>
           </div>
         </div>
       </div>
@@ -3153,8 +3153,8 @@
                it slides, not scroll/slide along with the gesture. -->
           <div class="feed-header">
             <div class="feed-tabs">
-              <span class="feed-tab" id="tab-friends" onclick="setActiveFeedTab(this)">Friends</span>
-              <span class="feed-tab active" id="tab-foryou" onclick="setActiveFeedTab(this)">For you</span>
+              <span class="feed-tab" id="tab-friends" data-i18n="tab_friends" onclick="setActiveFeedTab(this)">Friends</span>
+              <span class="feed-tab active" id="tab-foryou" data-i18n="tab_foryou" onclick="setActiveFeedTab(this)">For you</span>
             </div>
             <div class="header-icon" onclick="openSearchOverlay()">
               <svg class="icon-svg icon-line" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -3214,11 +3214,11 @@
 
         <div class="upload-empty-state" id="upload-prompt">
           <svg class="icon-svg" style="width:48px; height:48px; fill:#555;" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/></svg>
-          <h3 id="empty-feed-title">No videos yet</h3>
-          <p id="empty-feed-text">Nobody has posted a video yet. Be the first — sign in and upload one.</p>
+          <h3 id="empty-feed-title" data-i18n="empty_feed_title">No videos yet</h3>
+          <p id="empty-feed-text" data-i18n="empty_feed_text">Nobody has posted a video yet. Be the first — sign in and upload one.</p>
           <label for="video-file-input" class="custom-file-upload" id="upload-label">
             <svg class="icon-svg" style="width:18px; height:18px; fill:#000;" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
-            Upload or Record Video
+            <span data-i18n="upload_label">Upload or Record Video</span>
           </label>
           <input type="file" id="video-file-input" accept="video/*">
           <input type="file" id="audio-file-input" accept="audio/*">
@@ -3238,19 +3238,19 @@
         <div class="comments-backdrop" onclick="closeComments()"></div>
         <div class="comments-sheet">
           <div class="comments-sheet-header">
-            <span id="comments-sheet-title">Comments</span>
+            <span id="comments-sheet-title" data-i18n="comments_title">Comments</span>
             <span class="comments-close-btn" onclick="closeComments()">✕</span>
           </div>
           <div class="comments-list" id="comments-list">
-            <div class="comments-empty">No comments yet</div>
+            <div class="comments-empty" data-i18n="comments_empty">No comments yet</div>
           </div>
           <div class="comments-input-wrapper">
             <label for="comment-image-input" class="chat-icon-btn" id="comment-image-btn" style="display:none;" title="Attach image">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/></svg>
             </label>
             <input type="file" id="comment-image-input" accept="image/*" style="display:none;">
-            <input type="text" id="comment-input" placeholder="Add a comment...">
-            <button class="comment-send-btn" onclick="submitComment()">Post</button>
+            <input type="text" id="comment-input" data-i18n-placeholder="comment_placeholder" placeholder="Add a comment...">
+            <button class="comment-send-btn" data-i18n="comment_post" onclick="submitComment()">Post</button>
           </div>
         </div>
       </div>
@@ -3261,14 +3261,14 @@
       <!-- DM List View -->
       <div id="dm-list-container" style="display: flex; flex-direction: column; height: 100%;">
         <header class="dm-header">
-          <span class="dm-title">Messages</span>
+          <span class="dm-title" data-i18n="dm_title">Messages</span>
           <svg class="icon-svg" style="fill:#111;" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
         </header>
 
         <div class="dm-friends-list" id="dm-friends-list">
           <div class="dm-empty-state" id="dm-empty-state">
             <svg class="icon-svg" style="width:40px; height:40px; fill:#ccc;" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-            <p>No messages or friends yet</p>
+            <p data-i18n="dm_empty">No messages or friends yet</p>
           </div>
         </div>
       </div>
@@ -3289,22 +3289,22 @@
             <span class="activity-status" id="chat-header-activity">...</span>
           </div>
           <div class="chat-header-icons">
-            <div class="chat-icon-btn" onclick="startCall('video')" title="Video call">
+            <div class="chat-icon-btn" onclick="startCall('video')" data-i18n-title="video_call" title="Video call">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
             </div>
-            <div class="chat-icon-btn" onclick="startCall('voice')" title="Voice call">
+            <div class="chat-icon-btn" onclick="startCall('voice')" data-i18n-title="voice_call" title="Voice call">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
             </div>
-            <div class="chat-icon-btn" onclick="reportChatUser()" title="Report">
+            <div class="chat-icon-btn" onclick="reportChatUser()" data-i18n-title="report" title="Report">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
             </div>
-            <div class="chat-icon-btn" onclick="toggleChatMenu()" title="More">
+            <div class="chat-icon-btn" onclick="toggleChatMenu()" data-i18n-title="more" title="More">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
             </div>
           </div>
           <div class="chat-menu-dropdown" id="chat-menu-dropdown">
-            <div class="profile-menu-item" onclick="toggleChatMenu(true); stubChatAction('User blocked');">Block User</div>
-            <div class="profile-menu-item danger" onclick="reportChatUser()">Report</div>
+            <div class="profile-menu-item" data-i18n="block_user" onclick="toggleChatMenu(true); stubChatAction('User blocked');">Block User</div>
+            <div class="profile-menu-item danger" data-i18n="report" onclick="reportChatUser()">Report</div>
           </div>
         </header>
 
@@ -3312,7 +3312,7 @@
 
         <div class="dm-input-wrapper">
           <div class="dm-input-bubble">
-            <input type="text" id="dm-text-input" placeholder="Message..." onkeydown="if(event.key==='Enter'){sendDmMessage();}">
+            <input type="text" id="dm-text-input" data-i18n-placeholder="dm_message_placeholder" placeholder="Message..." onkeydown="if(event.key==='Enter'){sendDmMessage();}">
             <svg class="icon-svg dm-send-icon" style="fill:#111;" viewBox="0 0 24 24" onclick="sendDmMessage()"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
           </div>
         </div>
@@ -3323,14 +3323,14 @@
     <section id="profile-screen" class="screen-view" data-pos="right">
       <div class="logged-out-box" id="logged-out-state">
         <svg class="icon-svg" style="width:64px; height:64px; fill:#ccc;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
-        <h2>Please log in first</h2>
-        <p>Sign in to view your profile.</p>
+        <h2 data-i18n="logged_out_title">Please log in first</h2>
+        <p data-i18n="logged_out_text">Sign in to view your profile.</p>
         <!-- Only shown on Apple platforms (iOS/iPadOS/macOS/watchOS/visionOS/tvOS) via isApplePlatform() at load time -->
         <button class="btn-follow" id="apple-signin-btn" style="display:none; max-width: 240px; background:#000; gap:8px; align-items:center; justify-content:center;" onclick="signInWithApple()">
           <svg class="icon-svg" style="width:18px; height:18px; fill:#fff; vertical-align:-4px; margin-right:6px;" viewBox="0 0 384 512"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
-          Sign in with Apple
+          <span data-i18n="signin_apple">Sign in with Apple</span>
         </button>
-        <button class="btn-follow" style="max-width: 240px; background:#000;" onclick="signInWithGoogle()">Sign in with Google</button>
+        <button class="btn-follow" style="max-width: 240px; background:#000;" data-i18n="signin_google" onclick="signInWithGoogle()">Sign in with Google</button>
       </div>
 
       <div class="profile-authenticated" id="logged-in-state" style="display:none;">
@@ -3349,13 +3349,14 @@
             <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
           </button>
           <div class="profile-menu-dropdown" id="profile-menu-dropdown">
-            <div class="profile-menu-item" onclick="toggleProfileMenu(); openEditModal();">Edit Profile</div>
-            <div class="profile-menu-item" id="switch-account-menu-item" onclick="openSwitchAccountModal();">Switch Account</div>
-            <div class="profile-menu-item" onclick="toggleProfileMenu(true); openInviteCodesModal();">🎟️ Invite Codes</div>
+            <div class="profile-menu-item" data-i18n="edit_profile" onclick="toggleProfileMenu(); openEditModal();">Edit Profile</div>
+            <div class="profile-menu-item" id="switch-account-menu-item" data-i18n="switch_account" onclick="openSwitchAccountModal();">Switch Account</div>
+            <div class="profile-menu-item" onclick="toggleProfileMenu(true); openInviteCodesModal();">🎟️ <span data-i18n="invite_codes">Invite Codes</span></div>
             <div class="profile-menu-item" onclick="toggleProfileMenu(true); openRivenPlusModal();">✨ RIVEN+</div>
-            <div class="profile-menu-item" id="admin-menu-item" style="display:none;" onclick="toggleProfileMenu(true); openAdminReportsModal();">🛡️ Admin</div>
-            <div class="profile-menu-item" onclick="toggleProfileMenu(true); openAboutModal();">ℹ️ About</div>
-            <div class="profile-menu-item danger" onclick="logoutUser()">Log Out</div>
+            <div class="profile-menu-item" id="admin-menu-item" style="display:none;" onclick="toggleProfileMenu(true); openAdminReportsModal();">🛡️ <span data-i18n="admin">Admin</span></div>
+            <div class="profile-menu-item" onclick="openSettingsModal();">⚙️ <span data-i18n="settings">Settings</span></div>
+            <div class="profile-menu-item" onclick="toggleProfileMenu(true); openAboutModal();">ℹ️ <span data-i18n="about">About</span></div>
+            <div class="profile-menu-item danger" data-i18n="log_out" onclick="logoutUser()">Log Out</div>
           </div>
         </div>
 
@@ -3374,19 +3375,19 @@
           <div class="profile-stats-row">
             <div class="stat-item">
               <span class="stat-value" id="followers-count">0</span>
-              <span class="stat-label">Followers</span>
+              <span class="stat-label" data-i18n="followers">Followers</span>
             </div>
             <div class="stat-item">
               <span class="stat-value" id="following-count">0</span>
-              <span class="stat-label">Following</span>
+              <span class="stat-label" data-i18n="following">Following</span>
             </div>
             <div class="stat-item">
               <span class="stat-value" id="likes-count">0</span>
-              <span class="stat-label">Likes</span>
-              <span class="stat-sublabel">(incl. private)</span>
+              <span class="stat-label" data-i18n="likes">Likes</span>
+              <span class="stat-sublabel" data-i18n="likes_private">(incl. private)</span>
             </div>
           </div>
-          <button class="btn-edit-icon" id="btn-edit-action" onclick="openEditModal()" title="Edit Profile" aria-label="Edit Profile">
+          <button class="btn-edit-icon" id="btn-edit-action" onclick="openEditModal()" data-i18n-title="edit_profile" title="Edit Profile" aria-label="Edit Profile">
             <svg class="icon-svg icon-line" viewBox="0 0 24 24">
               <path d="M12 20h9"/>
               <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -3395,7 +3396,7 @@
         </div>
 
         <div class="profile-actions-wrapper">
-          <button class="btn-follow" id="btn-follow-action" style="display:none;" onclick="toggleFollowUser()">Follow</button>
+          <button class="btn-follow" id="btn-follow-action" data-i18n="follow" style="display:none;" onclick="toggleFollowUser()">Follow</button>
         </div>
 
         <div class="profile-videos-section">
@@ -3411,12 +3412,12 @@
       <div class="search-header">
         <div class="search-input-box">
           <svg class="icon-svg" style="width:18px; height:18px; fill:#888;" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          <input type="text" id="search-input" placeholder="Search accounts..." oninput="debouncedHandleSearch(this.value)">
+          <input type="text" id="search-input" data-i18n-placeholder="search_placeholder" placeholder="Search accounts..." oninput="debouncedHandleSearch(this.value)">
         </div>
-        <span class="cancel-search-btn" onclick="closeSearchOverlay()">Cancel</span>
+        <span class="cancel-search-btn" data-i18n="cancel" onclick="closeSearchOverlay()">Cancel</span>
       </div>
       <div class="search-results-list" id="search-results">
-        <div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">Type to search users...</div>
+        <div id="search-prompt-text" data-i18n="search_prompt" style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">Type to search users...</div>
       </div>
     </div>
 
@@ -3424,29 +3425,29 @@
     <!-- EDIT PROFILE MODAL -->
     <div class="modal-overlay" id="edit-modal">
       <div class="modal-content">
-        <h3>Edit Profile</h3>
-        <input type="text" id="edit-name-input" class="modal-input" placeholder="Display Name">
-        <input type="text" id="edit-handle-input" class="modal-input" placeholder="Handle (e.g. user1270108)">
+        <h3 data-i18n="edit_profile">Edit Profile</h3>
+        <input type="text" id="edit-name-input" class="modal-input" data-i18n-placeholder="display_name_ph" placeholder="Display Name">
+        <input type="text" id="edit-handle-input" class="modal-input" data-i18n-placeholder="handle_ph" placeholder="Handle (e.g. user1270108)">
         
         <label for="pfp-file-input" class="pfp-upload-label">
           <svg class="icon-svg" style="width:16px; height:16px; fill:#333;" viewBox="0 0 24 24"><path d="M19 7v10H5V7h14m0-2H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-5 8l-2.5-3.15L9.5 13l-1.5-2L5 15h14l-4-5z"/></svg>
-          Choose Image from Phone
+          <span data-i18n="choose_image">Choose Image from Phone</span>
         </label>
         <input type="file" id="pfp-file-input" accept="image/*">
         <img id="pfp-preview-img" class="upload-preview-pfp">
 
         <label for="banner-file-input" class="pfp-upload-label">
           <svg class="icon-svg" style="width:16px; height:16px; fill:#333;" viewBox="0 0 24 24"><path d="M19 7v10H5V7h14m0-2H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-5 8l-2.5-3.15L9.5 13l-1.5-2L5 15h14l-4-5z"/></svg>
-          <span id="banner-upload-label-text">Choose Banner Image</span>
+          <span id="banner-upload-label-text" data-i18n="choose_banner">Choose Banner Image</span>
         </label>
         <input type="file" id="banner-file-input" accept="image/*">
-        <p id="banner-plus-hint" style="display:none; font-size:11px; color:#999; margin-top:-6px;">✨ RIVEN+ members can use a video banner (up to 4s)</p>
+        <p id="banner-plus-hint" data-i18n="banner_plus_hint" style="display:none; font-size:11px; color:#999; margin-top:-6px;">✨ RIVEN+ members can use a video banner (up to 4s)</p>
         <img id="banner-preview-img" class="upload-preview-banner">
         <video id="banner-preview-video" class="upload-preview-banner" muted loop playsinline autoplay></video>
 
         <div class="modal-buttons">
-          <button class="modal-btn modal-btn-cancel" onclick="closeEditModal()">Cancel</button>
-          <button class="modal-btn modal-btn-save" onclick="saveProfileChanges()">Save</button>
+          <button class="modal-btn modal-btn-cancel" data-i18n="cancel" onclick="closeEditModal()">Cancel</button>
+          <button class="modal-btn modal-btn-save" data-i18n="save" onclick="saveProfileChanges()">Save</button>
         </div>
       </div>
     </div>
@@ -3456,13 +3457,13 @@
          existing accounts that predate this. -->
     <div class="modal-overlay" id="age-gate-modal">
       <div class="modal-content">
-        <h3 id="age-gate-title">What's your birthdate?</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">RIVEN tailors your experience based on age — this determines things like whether DMs are available and your default privacy. You can't skip this step.</p>
+        <h3 id="age-gate-title" data-i18n="age_gate_title">What's your birthdate?</h3>
+        <p data-i18n="age_gate_body" style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">RIVEN tailors your experience based on age — this determines things like whether DMs are available and your default privacy. You can't skip this step.</p>
         <input type="date" id="age-gate-input" class="modal-input">
         <p id="age-gate-error" style="font-size:12px; color:#ff2d55; display:none;"></p>
         <div class="modal-buttons" style="justify-content: space-between;">
-          <button class="modal-btn modal-btn-cancel" onclick="logoutUser()">Log Out</button>
-          <button class="modal-btn modal-btn-save" onclick="submitAgeGate()">Continue</button>
+          <button class="modal-btn modal-btn-cancel" data-i18n="log_out" onclick="logoutUser()">Log Out</button>
+          <button class="modal-btn modal-btn-save" data-i18n="continue" onclick="submitAgeGate()">Continue</button>
         </div>
       </div>
     </div>
@@ -3470,32 +3471,32 @@
     <!-- ADD AUDIO PROMPT MODAL -->
     <div class="modal-overlay" id="audio-prompt-modal">
       <div class="modal-content">
-        <h3>Add sound to your video?</h3>
-        <p style="font-size:14px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">Choose an audio file from your device to play with this video, or skip to keep the video's original sound.</p>
+        <h3 data-i18n="audio_prompt_title">Add sound to your video?</h3>
+        <p data-i18n="audio_prompt_body" style="font-size:14px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">Choose an audio file from your device to play with this video, or skip to keep the video's original sound.</p>
         <label for="audio-file-input" class="pfp-upload-label">
           <svg class="icon-svg" style="width:16px; height:16px; fill:#333;" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z"/></svg>
-          Choose Audio from Device
+          <span data-i18n="choose_audio">Choose Audio from Device</span>
         </label>
         <div class="modal-buttons">
-          <button class="modal-btn modal-btn-cancel" onclick="skipAudioAndPost()">Skip</button>
+          <button class="modal-btn modal-btn-cancel" data-i18n="skip" onclick="skipAudioAndPost()">Skip</button>
         </div>
       </div>
     </div>
 
     <!-- VIDEO CELL MENU (privacy / delete on a profile grid thumbnail) -->
     <div class="video-cell-menu" id="video-cell-menu">
-      <div class="profile-menu-item" id="video-cell-menu-privacy" onclick="cellMenuTogglePrivacy()">Make Private</div>
-      <div class="profile-menu-item danger" onclick="cellMenuDelete()">Delete</div>
+      <div class="profile-menu-item" id="video-cell-menu-privacy" data-i18n="make_private" onclick="cellMenuTogglePrivacy()">Make Private</div>
+      <div class="profile-menu-item danger" data-i18n="delete" onclick="cellMenuDelete()">Delete</div>
     </div>
 
     <!-- GENERIC CONFIRM MODAL -->
     <div class="modal-overlay" id="confirm-modal">
       <div class="modal-content">
-        <h3 id="confirm-modal-title">Are you sure?</h3>
+        <h3 id="confirm-modal-title" data-i18n="confirm_title">Are you sure?</h3>
         <p id="confirm-modal-text" style="font-size:14px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;"></p>
         <div class="modal-buttons">
-          <button class="modal-btn modal-btn-cancel" onclick="closeConfirmModal()">Cancel</button>
-          <button class="modal-btn" id="confirm-modal-confirm-btn" style="background:var(--accent-pink); color:#fff;" onclick="confirmModalAction()">Delete</button>
+          <button class="modal-btn modal-btn-cancel" data-i18n="cancel" onclick="closeConfirmModal()">Cancel</button>
+          <button class="modal-btn" id="confirm-modal-confirm-btn" data-i18n="delete" style="background:var(--accent-pink); color:#fff;" onclick="confirmModalAction()">Delete</button>
         </div>
       </div>
     </div>
@@ -3503,9 +3504,9 @@
         <!-- RIVEN+ TIER MODAL — coming soon, no purchase flow yet. -->
     <div class="modal-overlay" id="riven-plus-modal">
       <div class="modal-content plus-modal-content">
-        <span class="plus-modal-badge">Coming soon</span>
+        <span class="plus-modal-badge" data-i18n="plus_coming_soon">Coming soon</span>
         <h3 style="margin-top:4px;">RIVEN+</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">A few extra perks for people who live on RIVEN. Pricing below is what's planned at launch — nothing to pay yet.</p>
+        <p data-i18n="plus_body" style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">A few extra perks for people who live on RIVEN. Pricing below is what's planned at launch — nothing to pay yet.</p>
 
         <div class="plus-tier-card">
           <div class="plus-tier-top">
@@ -3528,9 +3529,9 @@
           </div>
         </div>
 
-        <button class="btn-notify-plus" id="notify-plus-btn" onclick="notifyMeForRivenPlus()">Notify me when it launches</button>
+        <button class="btn-notify-plus" id="notify-plus-btn" data-i18n="plus_notify" onclick="notifyMeForRivenPlus()">Notify me when it launches</button>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
-          <button class="modal-btn modal-btn-cancel" onclick="closeRivenPlusModal()">Close</button>
+          <button class="modal-btn modal-btn-cancel" data-i18n="close" onclick="closeRivenPlusModal()">Close</button>
         </div>
       </div>
     </div>
@@ -3538,18 +3539,18 @@
         <!-- ADMIN REPORTS MODAL -->
     <div class="modal-overlay" id="admin-reports-modal">
       <div class="modal-content" style="width:92%; max-width:420px; max-height:82vh; overflow-y:auto;">
-        <h3>Reports</h3>
+        <h3 data-i18n="reports_title">Reports</h3>
         <div id="admin-reports-list" style="display:flex; flex-direction:column; gap:12px;">
-          <div class="comments-empty">Loading reports...</div>
+          <div class="comments-empty" data-i18n="loading_reports">Loading reports...</div>
         </div>
         <div style="border-top:1px solid #f0f0f0; margin-top:16px; padding-top:14px;">
-          <h3 style="font-size:15px;">Banned Users</h3>
+          <h3 style="font-size:15px;" data-i18n="banned_users">Banned Users</h3>
           <div id="admin-banned-list" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-            <div class="comments-empty">Loading...</div>
+            <div class="comments-empty" data-i18n="loading">Loading...</div>
           </div>
         </div>
         <div class="modal-buttons" style="justify-content:center; margin-top:4px;">
-          <button class="modal-btn modal-btn-cancel" onclick="closeAdminReportsModal()">Close</button>
+          <button class="modal-btn modal-btn-cancel" data-i18n="close" onclick="closeAdminReportsModal()">Close</button>
         </div>
       </div>
     </div>
@@ -3557,14 +3558,14 @@
     <!-- INVITE CODES MODAL -->
     <div class="modal-overlay" id="invite-codes-modal">
       <div class="modal-content" style="width:92%; max-width:380px;">
-        <h3>Invite Codes</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">You can generate up to 5 invite codes. Share one with a friend to let them join RIVEN.</p>
+        <h3 data-i18n="invite_codes">Invite Codes</h3>
+        <p data-i18n="invite_codes_body" style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">You can generate up to 5 invite codes. Share one with a friend to let them join RIVEN.</p>
         <div id="invite-codes-list" style="display:flex; flex-direction:column; gap:8px;">
-          <div class="comments-empty">Loading...</div>
+          <div class="comments-empty" data-i18n="loading">Loading...</div>
         </div>
-        <button class="btn-notify-plus" id="generate-invite-btn" onclick="generateInviteCode()">Generate Invite Code</button>
+        <button class="btn-notify-plus" id="generate-invite-btn" data-i18n="generate_invite" onclick="generateInviteCode()">Generate Invite Code</button>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
-          <button class="modal-btn modal-btn-cancel" onclick="closeInviteCodesModal()">Close</button>
+          <button class="modal-btn modal-btn-cancel" data-i18n="close" onclick="closeInviteCodesModal()">Close</button>
         </div>
       </div>
     </div>
@@ -3577,7 +3578,20 @@
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
-          <button class="modal-btn modal-btn-cancel" onclick="closeAboutModal()">Close</button>
+          <button class="modal-btn modal-btn-cancel" data-i18n="close" onclick="closeAboutModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div class="modal-overlay" id="settings-modal">
+      <div class="modal-content" style="width:90%; max-width:340px;">
+        <h3 data-i18n="settings">Settings</h3>
+        <p data-i18n="settings_language" style="font-size:13px; font-weight:600; color:#333; margin-bottom:0;">Language</p>
+        <p data-i18n="settings_language_hint" style="font-size:12px; color:#888; margin-top:2px; line-height:1.4;">Choose the language RIVEN displays in. This won't follow your phone's language automatically.</p>
+        <div id="settings-language-list" style="display:flex; flex-direction:column; gap:6px; margin-top:6px;"></div>
+        <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
+          <button class="modal-btn modal-btn-cancel" data-i18n="close" onclick="closeSettingsModal()">Close</button>
         </div>
       </div>
     </div>
@@ -3585,11 +3599,11 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     <!-- SWITCH ACCOUNT MODAL -->
     <div class="modal-overlay" id="switch-account-modal">
       <div class="modal-content">
-        <h3>Switch Account</h3>
+        <h3 data-i18n="switch_account_title">Switch Account</h3>
         <div id="switch-account-list" class="switch-account-list"></div>
         <div class="modal-buttons" style="justify-content: space-between;">
-          <button class="modal-btn modal-btn-cancel" onclick="closeSwitchAccountModal()">Cancel</button>
-          <button class="modal-btn modal-btn-save" onclick="addAnotherAccount()">+ Add Account</button>
+          <button class="modal-btn modal-btn-cancel" data-i18n="cancel" onclick="closeSwitchAccountModal()">Cancel</button>
+          <button class="modal-btn modal-btn-save" data-i18n="add_account" onclick="addAnotherAccount()">+ Add Account</button>
         </div>
       </div>
     </div>
@@ -3599,24 +3613,24 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       <div class="comments-backdrop" onclick="closeShareSheet()"></div>
       <div class="comments-sheet">
         <div class="comments-sheet-header">
-          <span>Share</span>
+          <span data-i18n="share">Share</span>
           <span class="comments-close-btn" onclick="closeShareSheet()">✕</span>
         </div>
         <div class="comments-list" id="share-sheet-friends-list">
-          <div class="comments-empty">Loading friends...</div>
+          <div class="comments-empty" data-i18n="loading">Loading friends...</div>
         </div>
         <div class="share-sheet-actions">
           <div class="share-sheet-action-row" onclick="copyVideoLink()">
             <div class="share-sheet-action-icon">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
             </div>
-            <span>Copy Link</span>
+            <span data-i18n="copy_link">Copy Link</span>
           </div>
           <div class="share-sheet-action-row" id="share-sheet-native-row" onclick="shareVideoNative()" style="display:none;">
             <div class="share-sheet-action-icon">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l6.96-4.11c.52.48 1.2.78 1.96.78 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.33 6.82 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.82 0 1.5-.33 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
             </div>
-            <span>Share via...</span>
+            <span data-i18n="share_via">Share via...</span>
           </div>
         </div>
       </div>
@@ -3629,7 +3643,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           <img class="incoming-call-avatar" id="incoming-call-avatar" src="">
         </div>
         <div class="incoming-call-name" id="incoming-call-name">Name</div>
-        <div class="incoming-call-type" id="incoming-call-type">Incoming video call...</div>
+        <div class="incoming-call-type" id="incoming-call-type" data-i18n="incoming_video_call">Incoming video call...</div>
         <div class="incoming-call-actions">
           <div class="call-action-btn decline" onclick="declineIncomingCall()">
             <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 3.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.68-1.36-2.66-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
@@ -3650,7 +3664,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       <video id="local-call-video" autoplay playsinline muted></video>
       <div class="call-top-bar">
         <div class="call-peer-name" id="call-peer-name">Name</div>
-        <div class="call-status-text" id="call-status-text">Calling...</div>
+        <div class="call-status-text" id="call-status-text" data-i18n="calling">Calling...</div>
       </div>
       <div class="call-controls-bar">
         <div class="call-control-btn" id="call-mute-btn" onclick="toggleCallMute()" title="Mute">
@@ -3735,6 +3749,796 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
        window.DisplacementUtils is guaranteed to exist before the deferred
        module script below runs. -->
   <script>
+    /* ========================================================================
+       I18N — RIVEN supports en (default), es, zh, pt, de, ja.
+       The app NEVER auto-detects from navigator.language/device locale —
+       language is explicitly chosen in Settings and persisted in
+       localStorage under 'riven_language'. Falls back to English.
+       ==================================================================== */
+    const RIVEN_LANGUAGES = {
+      en: 'English',
+      es: 'Español',
+      zh: '中文',
+      pt: 'Português',
+      de: 'Deutsch',
+      ja: '日本語'
+    };
+
+    const TRANSLATIONS = {
+      en: {
+        tab_friends: 'Friends', tab_foryou: 'For you',
+        empty_feed_title: 'No videos yet',
+        empty_feed_text: "Nobody has posted a video yet. Be the first — sign in and upload one.",
+        empty_feed_following_title: 'Follow people to see them here',
+        empty_feed_following_text: "You're not following anyone yet — videos from people you follow will show up on this tab.",
+        empty_feed_following_empty_title: 'No videos yet',
+        empty_feed_following_empty_text: "Nobody you follow has posted recently. Check back later, or switch to For You.",
+        upload_label: 'Upload or Record Video',
+        comments_title: 'Comments', comments_empty: 'No comments yet',
+        comment_placeholder: 'Add a comment...', comment_post: 'Post',
+        dm_title: 'Messages', dm_empty: 'No messages or friends yet',
+        video_call: 'Video call', voice_call: 'Voice call', report: 'Report', more: 'More',
+        block_user: 'Block User',
+        dm_message_placeholder: 'Message...',
+        logged_out_title: 'Please log in first', logged_out_text: 'Sign in to view your profile.',
+        signin_apple: 'Sign in with Apple', signin_google: 'Sign in with Google',
+        edit_profile: 'Edit Profile', switch_account: 'Switch Account',
+        invite_codes: 'Invite Codes', riven_plus: 'RIVEN+', admin: 'Admin',
+        about: 'About', settings: 'Settings', log_out: 'Log Out',
+        followers: 'Followers', following: 'Following', likes: 'Likes',
+        likes_private: '(incl. private)', follow: 'Follow', unfollow: 'Following',
+        search_placeholder: 'Search accounts...', search_prompt: 'Type to search users...',
+        no_results_for: 'No results found for',
+        cancel: 'Cancel',
+        display_name_ph: 'Display Name', handle_ph: 'Handle (e.g. user1270108)',
+        choose_image: 'Choose Image from Phone', choose_banner: 'Choose Banner Image',
+        banner_plus_hint: '✨ RIVEN+ members can use a video banner (up to 4s)',
+        save: 'Save',
+        age_gate_title: "What's your birthdate?",
+        age_gate_body: "RIVEN tailors your experience based on age — this determines things like whether DMs are available and your default privacy. You can't skip this step.",
+        continue: 'Continue',
+        audio_prompt_title: 'Add sound to your video?',
+        audio_prompt_body: "Choose an audio file from your device to play with this video, or skip to keep the video's original sound.",
+        choose_audio: 'Choose Audio from Device', skip: 'Skip',
+        make_private: 'Make Private', delete: 'Delete',
+        confirm_title: 'Are you sure?',
+        plus_coming_soon: 'Coming soon',
+        plus_body: "A few extra perks for people who live on RIVEN. Pricing below is what's planned at launch — nothing to pay yet.",
+        plus_notify: 'Notify me when it launches', close: 'Close',
+        reports_title: 'Reports', loading_reports: 'Loading reports...',
+        banned_users: 'Banned Users', loading: 'Loading...',
+        invite_codes_body: 'You can generate up to 5 invite codes. Share one with a friend to let them join RIVEN.',
+        generate_invite: 'Generate Invite Code',
+        switch_account_title: 'Switch Account', add_account: '+ Add Account',
+        share: 'Share', copy_link: 'Copy Link', share_via: 'Share via...',
+        settings_language: 'Language', settings_language_hint: "Choose the language RIVEN displays in. This won't follow your phone's language automatically.",
+        toast_signin_failed: 'Sign-in failed. Please try again.',
+        toast_apple_not_configured: "Apple sign-in isn't configured yet.",
+        toast_logged_out: 'Logged out',
+        toast_reported: "Reported — thanks, we'll take a look",
+        toast_report_failed: 'Could not submit report',
+        toast_video_deleted: 'Video deleted',
+        toast_video_delete_failed: 'Could not delete video',
+        toast_user_banned: 'User banned', toast_ban_failed: 'Could not ban user',
+        toast_user_unbanned: 'User unbanned', toast_unban_failed: 'Could not unban user',
+        toast_invite_copied: 'Invite code copied', toast_invite_copy_failed: 'Could not copy code',
+        toast_copy_unsupported: 'Copying not supported on this device',
+        toast_signin_first: 'Sign in first',
+        toast_max_invites: 'You already have the maximum of 5 invite codes',
+        toast_invite_generated: 'Invite code generated',
+        toast_account_switch_under13: "Account switching isn't available for accounts under 13",
+        toast_signin_then_notify: 'Sign in first, then we can notify you',
+        toast_already_on_list: "You're already on the list!",
+        toast_notify_success: "You'll be the first to know when RIVEN+ launches!",
+        toast_switch_failed: 'Could not switch accounts',
+        toast_suspended: 'This account has been suspended.',
+        toast_signin_to_follow: 'Sign in to follow users',
+        toast_follow_error: 'Error updating follow status',
+        toast_video_unavailable: 'This video is no longer available',
+        toast_video_private: 'This video is private',
+        toast_video_open_failed: 'Could not open video',
+        toast_video_now_private: 'Video set to private', toast_video_now_public: 'Video set to public',
+        incoming_video_call: 'Incoming video call...', incoming_voice_call: 'Incoming voice call...', calling: 'Calling...',
+        toast_privacy_failed: 'Could not update privacy',
+        toast_own_profile_only: 'You can only edit your own profile',
+        toast_banner_plus_perk: 'Video banners are a RIVEN+ perk — pick an image, or upgrade',
+        toast_notified_on_list: "You're on the list ✓",
+        error_birthdate_required: 'Please select your birthdate.',
+        error_birthdate_invalid: 'Please enter a valid birthdate.',
+        error_age_minimum: 'Sorry, you must be at least 9 years old to use RIVEN.',
+        toast_safety_update: "For your safety, we've updated your account based on what you posted.",
+        toast_signin_follow_feed: 'Sign in to see videos from people you follow',
+        toast_signin_report: 'Sign in to report',
+        toast_signin_upload: 'Sign in first to post a video',
+        toast_upload_age_13: 'Video uploads are available for accounts 13 and up',
+        toast_dm_age_13: "DMs aren't available for accounts under 13",
+        toast_uploading_video: 'Uploading video...',
+        toast_uploading_audio: 'Uploading audio...',
+        toast_audio_failed: 'Audio upload failed — posting with original sound',
+        toast_signin_like: 'Sign in to like videos',
+        toast_signin_react: 'Sign in to react to comments',
+        toast_save_failed: 'Could not save that',
+        toast_signin_reply: 'Sign in to reply',
+        toast_reply_save_failed: 'Could not save reply',
+        toast_signin_comment: 'Sign in to comment',
+        toast_comment_save_failed: 'Could not save comment',
+        toast_image_attached: 'Image attached — tap Post to send it with your comment',
+        toast_link_copied: 'Link copied to clipboard',
+        toast_link_copy_failed: 'Could not copy link',
+        toast_video_send_failed: 'Could not send video',
+        toast_message_send_failed: 'Failed to send message',
+        toast_already_switching_video: 'Already switching to video...',
+        toast_camera_denied: 'Camera permission denied',
+        toast_switch_video_failed: 'Could not switch to video',
+        toast_switched_video: 'Switched to video call',
+        toast_already_in_call: 'Already in a call',
+        toast_cam_mic_denied: 'Camera/mic permission denied',
+        toast_call_start_failed: 'Could not start call',
+        toast_call_declined: 'Call declined',
+        toast_no_answer: 'No answer',
+        toast_call_join_failed: 'Could not join call',
+        toast_compressing_banner: 'Compressing banner video...',
+        toast_uploading_banner: 'Uploading banner...',
+        toast_video_process_failed: 'Could not process that video',
+        toast_banner_upload_failed: 'Could not upload banner',
+        toast_profile_updated: 'Profile updated',
+      },
+      es: {
+        tab_friends: 'Amigos', tab_foryou: 'Para ti',
+        empty_feed_title: 'Aún no hay videos',
+        empty_feed_text: 'Nadie ha publicado un video todavía. Sé el primero — inicia sesión y sube uno.',
+        empty_feed_following_title: 'Sigue a personas para verlas aquí',
+        empty_feed_following_text: 'Aún no sigues a nadie — los videos de las personas que sigas aparecerán en esta pestaña.',
+        empty_feed_following_empty_title: 'Aún no hay videos',
+        empty_feed_following_empty_text: 'Nadie a quien sigues ha publicado recientemente. Vuelve más tarde o cambia a Para ti.',
+        upload_label: 'Subir o grabar video',
+        comments_title: 'Comentarios', comments_empty: 'Aún no hay comentarios',
+        comment_placeholder: 'Añade un comentario...', comment_post: 'Publicar',
+        dm_title: 'Mensajes', dm_empty: 'Aún no hay mensajes ni amigos',
+        video_call: 'Videollamada', voice_call: 'Llamada de voz', report: 'Reportar', more: 'Más',
+        block_user: 'Bloquear usuario',
+        dm_message_placeholder: 'Mensaje...',
+        logged_out_title: 'Inicia sesión primero', logged_out_text: 'Inicia sesión para ver tu perfil.',
+        signin_apple: 'Iniciar sesión con Apple', signin_google: 'Iniciar sesión con Google',
+        edit_profile: 'Editar perfil', switch_account: 'Cambiar de cuenta',
+        invite_codes: 'Códigos de invitación', riven_plus: 'RIVEN+', admin: 'Admin',
+        about: 'Acerca de', settings: 'Configuración', log_out: 'Cerrar sesión',
+        followers: 'Seguidores', following: 'Siguiendo', likes: 'Me gusta',
+        likes_private: '(incl. privados)', follow: 'Seguir', unfollow: 'Siguiendo',
+        search_placeholder: 'Buscar cuentas...', search_prompt: 'Escribe para buscar usuarios...',
+        no_results_for: 'No se encontraron resultados para',
+        cancel: 'Cancelar',
+        display_name_ph: 'Nombre para mostrar', handle_ph: 'Usuario (ej. user1270108)',
+        choose_image: 'Elegir imagen del teléfono', choose_banner: 'Elegir imagen de portada',
+        banner_plus_hint: '✨ Los miembros de RIVEN+ pueden usar una portada en video (hasta 4s)',
+        save: 'Guardar',
+        age_gate_title: '¿Cuál es tu fecha de nacimiento?',
+        age_gate_body: 'RIVEN adapta tu experiencia según tu edad — esto determina cosas como si los DM están disponibles y tu privacidad predeterminada. No puedes omitir este paso.',
+        continue: 'Continuar',
+        audio_prompt_title: '¿Añadir sonido a tu video?',
+        audio_prompt_body: 'Elige un archivo de audio de tu dispositivo para reproducir con este video, u omite para conservar el sonido original.',
+        choose_audio: 'Elegir audio del dispositivo', skip: 'Omitir',
+        make_private: 'Hacer privado', delete: 'Eliminar',
+        confirm_title: '¿Estás seguro?',
+        plus_coming_soon: 'Próximamente',
+        plus_body: 'Algunas ventajas extra para quienes viven en RIVEN. Los precios de abajo son los planeados para el lanzamiento — todavía no hay que pagar nada.',
+        plus_notify: 'Avísame cuando se lance', close: 'Cerrar',
+        reports_title: 'Reportes', loading_reports: 'Cargando reportes...',
+        banned_users: 'Usuarios baneados', loading: 'Cargando...',
+        invite_codes_body: 'Puedes generar hasta 5 códigos de invitación. Comparte uno con un amigo para que se una a RIVEN.',
+        generate_invite: 'Generar código de invitación',
+        switch_account_title: 'Cambiar de cuenta', add_account: '+ Añadir cuenta',
+        share: 'Compartir', copy_link: 'Copiar enlace', share_via: 'Compartir vía...',
+        settings_language: 'Idioma', settings_language_hint: 'Elige el idioma en el que se muestra RIVEN. No seguirá automáticamente el idioma de tu teléfono.',
+        toast_signin_failed: 'Error al iniciar sesión. Inténtalo de nuevo.',
+        toast_apple_not_configured: 'El inicio de sesión con Apple aún no está configurado.',
+        toast_logged_out: 'Sesión cerrada',
+        toast_reported: 'Reportado — gracias, lo revisaremos',
+        toast_report_failed: 'No se pudo enviar el reporte',
+        toast_video_deleted: 'Video eliminado',
+        toast_video_delete_failed: 'No se pudo eliminar el video',
+        toast_user_banned: 'Usuario baneado', toast_ban_failed: 'No se pudo banear al usuario',
+        toast_user_unbanned: 'Usuario desbaneado', toast_unban_failed: 'No se pudo desbanear al usuario',
+        toast_invite_copied: 'Código de invitación copiado', toast_invite_copy_failed: 'No se pudo copiar el código',
+        toast_copy_unsupported: 'Copiar no es compatible en este dispositivo',
+        toast_signin_first: 'Inicia sesión primero',
+        toast_max_invites: 'Ya tienes el máximo de 5 códigos de invitación',
+        toast_invite_generated: 'Código de invitación generado',
+        toast_account_switch_under13: 'El cambio de cuenta no está disponible para cuentas menores de 13 años',
+        toast_signin_then_notify: 'Inicia sesión primero para poder avisarte',
+        toast_already_on_list: '¡Ya estás en la lista!',
+        toast_notify_success: '¡Serás de los primeros en saber cuándo se lance RIVEN+!',
+        toast_switch_failed: 'No se pudo cambiar de cuenta',
+        toast_suspended: 'Esta cuenta ha sido suspendida.',
+        toast_signin_to_follow: 'Inicia sesión para seguir usuarios',
+        toast_follow_error: 'Error al actualizar el estado de seguimiento',
+        toast_video_unavailable: 'Este video ya no está disponible',
+        toast_video_private: 'Este video es privado',
+        toast_video_open_failed: 'No se pudo abrir el video',
+        toast_video_now_private: 'Video configurado como privado', toast_video_now_public: 'Video configurado como público',
+        incoming_video_call: 'Videollamada entrante...', incoming_voice_call: 'Llamada de voz entrante...', calling: 'Llamando...',
+        toast_privacy_failed: 'No se pudo actualizar la privacidad',
+        toast_own_profile_only: 'Solo puedes editar tu propio perfil',
+        toast_banner_plus_perk: 'Las portadas en video son una ventaja de RIVEN+ — elige una imagen, o mejora tu plan',
+        toast_notified_on_list: 'Ya estás en la lista ✓',
+        error_birthdate_required: 'Por favor selecciona tu fecha de nacimiento.',
+        error_birthdate_invalid: 'Por favor introduce una fecha de nacimiento válida.',
+        error_age_minimum: 'Lo sentimos, debes tener al menos 9 años para usar RIVEN.',
+        toast_safety_update: 'Por tu seguridad, hemos actualizado tu cuenta según lo que publicaste.',
+        toast_signin_follow_feed: 'Inicia sesión para ver videos de las personas que sigues',
+        toast_signin_report: 'Inicia sesión para reportar',
+        toast_signin_upload: 'Inicia sesión primero para publicar un video',
+        toast_upload_age_13: 'La subida de videos está disponible para cuentas de 13 años en adelante',
+        toast_dm_age_13: 'Los DM no están disponibles para cuentas menores de 13 años',
+        toast_uploading_video: 'Subiendo video...',
+        toast_uploading_audio: 'Subiendo audio...',
+        toast_audio_failed: 'Error al subir el audio — publicando con el sonido original',
+        toast_signin_like: 'Inicia sesión para dar me gusta a los videos',
+        toast_signin_react: 'Inicia sesión para reaccionar a los comentarios',
+        toast_save_failed: 'No se pudo guardar eso',
+        toast_signin_reply: 'Inicia sesión para responder',
+        toast_reply_save_failed: 'No se pudo guardar la respuesta',
+        toast_signin_comment: 'Inicia sesión para comentar',
+        toast_comment_save_failed: 'No se pudo guardar el comentario',
+        toast_image_attached: 'Imagen adjuntada — toca Publicar para enviarla con tu comentario',
+        toast_link_copied: 'Enlace copiado al portapapeles',
+        toast_link_copy_failed: 'No se pudo copiar el enlace',
+        toast_video_send_failed: 'No se pudo enviar el video',
+        toast_message_send_failed: 'No se pudo enviar el mensaje',
+        toast_already_switching_video: 'Ya se está cambiando a video...',
+        toast_camera_denied: 'Permiso de cámara denegado',
+        toast_switch_video_failed: 'No se pudo cambiar a video',
+        toast_switched_video: 'Se cambió a videollamada',
+        toast_already_in_call: 'Ya estás en una llamada',
+        toast_cam_mic_denied: 'Permiso de cámara/micrófono denegado',
+        toast_call_start_failed: 'No se pudo iniciar la llamada',
+        toast_call_declined: 'Llamada rechazada',
+        toast_no_answer: 'Sin respuesta',
+        toast_call_join_failed: 'No se pudo unir a la llamada',
+        toast_compressing_banner: 'Comprimiendo video de portada...',
+        toast_uploading_banner: 'Subiendo portada...',
+        toast_video_process_failed: 'No se pudo procesar ese video',
+        toast_banner_upload_failed: 'No se pudo subir la portada',
+        toast_profile_updated: 'Perfil actualizado',
+      },
+      zh: {
+        tab_friends: '好友', tab_foryou: '推荐',
+        empty_feed_title: '暂无视频',
+        empty_feed_text: '还没有人发布视频。快来当第一个吧——登录并上传一个。',
+        empty_feed_following_title: '关注他人以在此查看',
+        empty_feed_following_text: '你还没有关注任何人——你关注的人发布的视频会显示在这个标签页。',
+        empty_feed_following_empty_title: '暂无视频',
+        empty_feed_following_empty_text: '你关注的人最近没有发布内容。请稍后再来，或切换到推荐。',
+        upload_label: '上传或录制视频',
+        comments_title: '评论', comments_empty: '暂无评论',
+        comment_placeholder: '添加评论...', comment_post: '发布',
+        dm_title: '消息', dm_empty: '暂无消息或好友',
+        video_call: '视频通话', voice_call: '语音通话', report: '举报', more: '更多',
+        block_user: '屏蔽用户',
+        dm_message_placeholder: '发消息...',
+        logged_out_title: '请先登录', logged_out_text: '登录后查看你的个人主页。',
+        signin_apple: '通过 Apple 登录', signin_google: '通过 Google 登录',
+        edit_profile: '编辑资料', switch_account: '切换账号',
+        invite_codes: '邀请码', riven_plus: 'RIVEN+', admin: '管理员',
+        about: '关于', settings: '设置', log_out: '退出登录',
+        followers: '粉丝', following: '关注', likes: '获赞',
+        likes_private: '（含私密）', follow: '关注', unfollow: '已关注',
+        search_placeholder: '搜索账号...', search_prompt: '输入以搜索用户...',
+        no_results_for: '未找到相关结果：',
+        cancel: '取消',
+        display_name_ph: '显示名称', handle_ph: '用户名（如 user1270108）',
+        choose_image: '从手机选择图片', choose_banner: '选择封面图片',
+        banner_plus_hint: '✨ RIVEN+ 会员可使用视频封面（最长 4 秒）',
+        save: '保存',
+        age_gate_title: '你的出生日期是？',
+        age_gate_body: 'RIVEN 会根据年龄定制你的体验——这决定了私信是否可用以及默认隐私设置等内容。此步骤无法跳过。',
+        continue: '继续',
+        audio_prompt_title: '为你的视频添加声音？',
+        audio_prompt_body: '从设备中选择一个音频文件与此视频一起播放，或跳过以保留视频原声。',
+        choose_audio: '从设备选择音频', skip: '跳过',
+        make_private: '设为私密', delete: '删除',
+        confirm_title: '确定吗？',
+        plus_coming_soon: '即将推出',
+        plus_body: '为常驻 RIVEN 的用户提供的一些额外福利。以下价格为发布时的计划价格——目前无需付费。',
+        plus_notify: '上线时通知我', close: '关闭',
+        reports_title: '举报', loading_reports: '正在加载举报...',
+        banned_users: '已封禁用户', loading: '加载中...',
+        invite_codes_body: '你最多可以生成 5 个邀请码。分享给朋友，邀请他们加入 RIVEN。',
+        generate_invite: '生成邀请码',
+        switch_account_title: '切换账号', add_account: '+ 添加账号',
+        share: '分享', copy_link: '复制链接', share_via: '通过...分享',
+        settings_language: '语言', settings_language_hint: '选择 RIVEN 的显示语言。它不会自动跟随你手机的语言设置。',
+        toast_signin_failed: '登录失败，请重试。',
+        toast_apple_not_configured: 'Apple 登录尚未配置。',
+        toast_logged_out: '已退出登录',
+        toast_reported: '已举报——谢谢，我们会处理',
+        toast_report_failed: '无法提交举报',
+        toast_video_deleted: '视频已删除',
+        toast_video_delete_failed: '无法删除视频',
+        toast_user_banned: '用户已封禁', toast_ban_failed: '无法封禁该用户',
+        toast_user_unbanned: '用户已解封', toast_unban_failed: '无法解封该用户',
+        toast_invite_copied: '邀请码已复制', toast_invite_copy_failed: '无法复制邀请码',
+        toast_copy_unsupported: '此设备不支持复制',
+        toast_signin_first: '请先登录',
+        toast_max_invites: '你已达到 5 个邀请码的上限',
+        toast_invite_generated: '邀请码已生成',
+        toast_account_switch_under13: '13 岁以下账号不支持切换账号',
+        toast_signin_then_notify: '请先登录，我们才能通知你',
+        toast_already_on_list: '你已经在名单中啦！',
+        toast_notify_success: 'RIVEN+ 上线时你将第一时间收到通知！',
+        toast_switch_failed: '无法切换账号',
+        toast_suspended: '此账号已被暂停。',
+        toast_signin_to_follow: '登录后即可关注用户',
+        toast_follow_error: '更新关注状态时出错',
+        toast_video_unavailable: '此视频已不可用',
+        toast_video_private: '此视频为私密视频',
+        toast_video_open_failed: '无法打开视频',
+        toast_video_now_private: '视频已设为私密', toast_video_now_public: '视频已设为公开',
+        incoming_video_call: '视频通话来电...', incoming_voice_call: '语音通话来电...', calling: '正在呼叫...',
+        toast_privacy_failed: '无法更新隐私设置',
+        toast_own_profile_only: '你只能编辑自己的资料',
+        toast_banner_plus_perk: '视频封面是 RIVEN+ 会员权益——请选择图片，或升级会员',
+        toast_notified_on_list: '你已在名单中 ✓',
+        error_birthdate_required: '请选择你的出生日期。',
+        error_birthdate_invalid: '请输入有效的出生日期。',
+        error_age_minimum: '抱歉，你必须年满 9 岁才能使用 RIVEN。',
+        toast_safety_update: '为了你的安全，我们已根据你发布的内容更新了你的账号。',
+        toast_signin_follow_feed: '登录后即可查看你关注的人发布的视频',
+        toast_signin_report: '登录后即可举报',
+        toast_signin_upload: '请先登录再发布视频',
+        toast_upload_age_13: '视频上传功能仅限 13 岁及以上账号使用',
+        toast_dm_age_13: '13 岁以下账号不支持私信',
+        toast_uploading_video: '正在上传视频...',
+        toast_uploading_audio: '正在上传音频...',
+        toast_audio_failed: '音频上传失败——将以原声发布',
+        toast_signin_like: '登录后即可点赞视频',
+        toast_signin_react: '登录后即可回应评论',
+        toast_save_failed: '无法保存',
+        toast_signin_reply: '登录后即可回复',
+        toast_reply_save_failed: '无法保存回复',
+        toast_signin_comment: '登录后即可评论',
+        toast_comment_save_failed: '无法保存评论',
+        toast_image_attached: '图片已附加——点击发布即可随评论发送',
+        toast_link_copied: '链接已复制到剪贴板',
+        toast_link_copy_failed: '无法复制链接',
+        toast_video_send_failed: '无法发送视频',
+        toast_message_send_failed: '消息发送失败',
+        toast_already_switching_video: '正在切换到视频...',
+        toast_camera_denied: '摄像头权限被拒绝',
+        toast_switch_video_failed: '无法切换到视频',
+        toast_switched_video: '已切换到视频通话',
+        toast_already_in_call: '你已在通话中',
+        toast_cam_mic_denied: '摄像头/麦克风权限被拒绝',
+        toast_call_start_failed: '无法发起通话',
+        toast_call_declined: '通话已被拒绝',
+        toast_no_answer: '无人接听',
+        toast_call_join_failed: '无法加入通话',
+        toast_compressing_banner: '正在压缩封面视频...',
+        toast_uploading_banner: '正在上传封面...',
+        toast_video_process_failed: '无法处理该视频',
+        toast_banner_upload_failed: '无法上传封面',
+        toast_profile_updated: '资料已更新',
+      },
+      pt: {
+        tab_friends: 'Amigos', tab_foryou: 'Para você',
+        empty_feed_title: 'Ainda não há vídeos',
+        empty_feed_text: 'Ninguém publicou um vídeo ainda. Seja o primeiro — entre e envie um.',
+        empty_feed_following_title: 'Siga pessoas para vê-las aqui',
+        empty_feed_following_text: 'Você ainda não segue ninguém — os vídeos das pessoas que você seguir aparecerão nesta aba.',
+        empty_feed_following_empty_title: 'Ainda não há vídeos',
+        empty_feed_following_empty_text: 'Ninguém que você segue publicou recentemente. Volte mais tarde ou mude para Para você.',
+        upload_label: 'Enviar ou gravar vídeo',
+        comments_title: 'Comentários', comments_empty: 'Ainda não há comentários',
+        comment_placeholder: 'Adicione um comentário...', comment_post: 'Publicar',
+        dm_title: 'Mensagens', dm_empty: 'Ainda não há mensagens ou amigos',
+        video_call: 'Chamada de vídeo', voice_call: 'Chamada de voz', report: 'Denunciar', more: 'Mais',
+        block_user: 'Bloquear usuário',
+        dm_message_placeholder: 'Mensagem...',
+        logged_out_title: 'Faça login primeiro', logged_out_text: 'Entre para ver seu perfil.',
+        signin_apple: 'Entrar com a Apple', signin_google: 'Entrar com o Google',
+        edit_profile: 'Editar perfil', switch_account: 'Trocar de conta',
+        invite_codes: 'Códigos de convite', riven_plus: 'RIVEN+', admin: 'Admin',
+        about: 'Sobre', settings: 'Configurações', log_out: 'Sair',
+        followers: 'Seguidores', following: 'Seguindo', likes: 'Curtidas',
+        likes_private: '(incl. privados)', follow: 'Seguir', unfollow: 'Seguindo',
+        search_placeholder: 'Buscar contas...', search_prompt: 'Digite para buscar usuários...',
+        no_results_for: 'Nenhum resultado encontrado para',
+        cancel: 'Cancelar',
+        display_name_ph: 'Nome de exibição', handle_ph: 'Usuário (ex. user1270108)',
+        choose_image: 'Escolher imagem do celular', choose_banner: 'Escolher imagem de capa',
+        banner_plus_hint: '✨ Membros RIVEN+ podem usar uma capa em vídeo (até 4s)',
+        save: 'Salvar',
+        age_gate_title: 'Qual é a sua data de nascimento?',
+        age_gate_body: 'O RIVEN personaliza sua experiência com base na idade — isso determina coisas como se as DMs estão disponíveis e sua privacidade padrão. Você não pode pular esta etapa.',
+        continue: 'Continuar',
+        audio_prompt_title: 'Adicionar som ao seu vídeo?',
+        audio_prompt_body: 'Escolha um arquivo de áudio do seu dispositivo para tocar com este vídeo, ou pule para manter o som original do vídeo.',
+        choose_audio: 'Escolher áudio do dispositivo', skip: 'Pular',
+        make_private: 'Tornar privado', delete: 'Excluir',
+        confirm_title: 'Tem certeza?',
+        plus_coming_soon: 'Em breve',
+        plus_body: 'Alguns benefícios extras para quem vive no RIVEN. Os preços abaixo são os planejados para o lançamento — nada a pagar ainda.',
+        plus_notify: 'Avise-me quando for lançado', close: 'Fechar',
+        reports_title: 'Denúncias', loading_reports: 'Carregando denúncias...',
+        banned_users: 'Usuários banidos', loading: 'Carregando...',
+        invite_codes_body: 'Você pode gerar até 5 códigos de convite. Compartilhe um com um amigo para que ele entre no RIVEN.',
+        generate_invite: 'Gerar código de convite',
+        switch_account_title: 'Trocar de conta', add_account: '+ Adicionar conta',
+        share: 'Compartilhar', copy_link: 'Copiar link', share_via: 'Compartilhar via...',
+        settings_language: 'Idioma', settings_language_hint: 'Escolha o idioma de exibição do RIVEN. Ele não seguirá automaticamente o idioma do seu celular.',
+        toast_signin_failed: 'Falha no login. Tente novamente.',
+        toast_apple_not_configured: 'O login com a Apple ainda não está configurado.',
+        toast_logged_out: 'Sessão encerrada',
+        toast_reported: 'Denunciado — obrigado, vamos analisar',
+        toast_report_failed: 'Não foi possível enviar a denúncia',
+        toast_video_deleted: 'Vídeo excluído',
+        toast_video_delete_failed: 'Não foi possível excluir o vídeo',
+        toast_user_banned: 'Usuário banido', toast_ban_failed: 'Não foi possível banir o usuário',
+        toast_user_unbanned: 'Usuário desbanido', toast_unban_failed: 'Não foi possível desbanir o usuário',
+        toast_invite_copied: 'Código de convite copiado', toast_invite_copy_failed: 'Não foi possível copiar o código',
+        toast_copy_unsupported: 'Copiar não é compatível neste dispositivo',
+        toast_signin_first: 'Entre primeiro',
+        toast_max_invites: 'Você já tem o máximo de 5 códigos de convite',
+        toast_invite_generated: 'Código de convite gerado',
+        toast_account_switch_under13: 'A troca de conta não está disponível para contas com menos de 13 anos',
+        toast_signin_then_notify: 'Entre primeiro para que possamos te avisar',
+        toast_already_on_list: 'Você já está na lista!',
+        toast_notify_success: 'Você será o primeiro a saber quando o RIVEN+ for lançado!',
+        toast_switch_failed: 'Não foi possível trocar de conta',
+        toast_suspended: 'Esta conta foi suspensa.',
+        toast_signin_to_follow: 'Entre para seguir usuários',
+        toast_follow_error: 'Erro ao atualizar o status de seguir',
+        toast_video_unavailable: 'Este vídeo não está mais disponível',
+        toast_video_private: 'Este vídeo é privado',
+        toast_video_open_failed: 'Não foi possível abrir o vídeo',
+        toast_video_now_private: 'Vídeo definido como privado', toast_video_now_public: 'Vídeo definido como público',
+        incoming_video_call: 'Chamada de vídeo recebida...', incoming_voice_call: 'Chamada de voz recebida...', calling: 'Chamando...',
+        toast_privacy_failed: 'Não foi possível atualizar a privacidade',
+        toast_own_profile_only: 'Você só pode editar seu próprio perfil',
+        toast_banner_plus_perk: 'Capas em vídeo são um benefício RIVEN+ — escolha uma imagem, ou faça upgrade',
+        toast_notified_on_list: 'Você já está na lista ✓',
+        error_birthdate_required: 'Selecione sua data de nascimento.',
+        error_birthdate_invalid: 'Insira uma data de nascimento válida.',
+        error_age_minimum: 'Desculpe, você precisa ter pelo menos 9 anos para usar o RIVEN.',
+        toast_safety_update: 'Para sua segurança, atualizamos sua conta com base no que você publicou.',
+        toast_signin_follow_feed: 'Entre para ver vídeos das pessoas que você segue',
+        toast_signin_report: 'Entre para denunciar',
+        toast_signin_upload: 'Entre primeiro para publicar um vídeo',
+        toast_upload_age_13: 'O envio de vídeos está disponível para contas a partir de 13 anos',
+        toast_dm_age_13: 'As DMs não estão disponíveis para contas com menos de 13 anos',
+        toast_uploading_video: 'Enviando vídeo...',
+        toast_uploading_audio: 'Enviando áudio...',
+        toast_audio_failed: 'Falha ao enviar áudio — publicando com o som original',
+        toast_signin_like: 'Entre para curtir vídeos',
+        toast_signin_react: 'Entre para reagir a comentários',
+        toast_save_failed: 'Não foi possível salvar isso',
+        toast_signin_reply: 'Entre para responder',
+        toast_reply_save_failed: 'Não foi possível salvar a resposta',
+        toast_signin_comment: 'Entre para comentar',
+        toast_comment_save_failed: 'Não foi possível salvar o comentário',
+        toast_image_attached: 'Imagem anexada — toque em Publicar para enviá-la com seu comentário',
+        toast_link_copied: 'Link copiado para a área de transferência',
+        toast_link_copy_failed: 'Não foi possível copiar o link',
+        toast_video_send_failed: 'Não foi possível enviar o vídeo',
+        toast_message_send_failed: 'Falha ao enviar a mensagem',
+        toast_already_switching_video: 'Já mudando para vídeo...',
+        toast_camera_denied: 'Permissão de câmera negada',
+        toast_switch_video_failed: 'Não foi possível mudar para vídeo',
+        toast_switched_video: 'Mudou para chamada de vídeo',
+        toast_already_in_call: 'Você já está em uma chamada',
+        toast_cam_mic_denied: 'Permissão de câmera/microfone negada',
+        toast_call_start_failed: 'Não foi possível iniciar a chamada',
+        toast_call_declined: 'Chamada recusada',
+        toast_no_answer: 'Sem resposta',
+        toast_call_join_failed: 'Não foi possível entrar na chamada',
+        toast_compressing_banner: 'Compactando vídeo de capa...',
+        toast_uploading_banner: 'Enviando capa...',
+        toast_video_process_failed: 'Não foi possível processar esse vídeo',
+        toast_banner_upload_failed: 'Não foi possível enviar a capa',
+        toast_profile_updated: 'Perfil atualizado',
+      },
+      de: {
+        tab_friends: 'Freunde', tab_foryou: 'Für dich',
+        empty_feed_title: 'Noch keine Videos',
+        empty_feed_text: 'Noch hat niemand ein Video gepostet. Sei der Erste — melde dich an und lade eins hoch.',
+        empty_feed_following_title: 'Folge Leuten, um sie hier zu sehen',
+        empty_feed_following_text: 'Du folgst noch niemandem — Videos von Leuten, denen du folgst, erscheinen in diesem Tab.',
+        empty_feed_following_empty_title: 'Noch keine Videos',
+        empty_feed_following_empty_text: 'Niemand, dem du folgst, hat kürzlich gepostet. Schau später wieder vorbei oder wechsle zu Für dich.',
+        upload_label: 'Video hochladen oder aufnehmen',
+        comments_title: 'Kommentare', comments_empty: 'Noch keine Kommentare',
+        comment_placeholder: 'Kommentar hinzufügen...', comment_post: 'Posten',
+        dm_title: 'Nachrichten', dm_empty: 'Noch keine Nachrichten oder Freunde',
+        video_call: 'Videoanruf', voice_call: 'Sprachanruf', report: 'Melden', more: 'Mehr',
+        block_user: 'Nutzer blockieren',
+        dm_message_placeholder: 'Nachricht...',
+        logged_out_title: 'Bitte zuerst anmelden', logged_out_text: 'Melde dich an, um dein Profil zu sehen.',
+        signin_apple: 'Mit Apple anmelden', signin_google: 'Mit Google anmelden',
+        edit_profile: 'Profil bearbeiten', switch_account: 'Konto wechseln',
+        invite_codes: 'Einladungscodes', riven_plus: 'RIVEN+', admin: 'Admin',
+        about: 'Über', settings: 'Einstellungen', log_out: 'Abmelden',
+        followers: 'Follower', following: 'Folge ich', likes: 'Gefällt mir',
+        likes_private: '(inkl. privat)', follow: 'Folgen', unfollow: 'Gefolgt',
+        search_placeholder: 'Konten suchen...', search_prompt: 'Tippen, um Nutzer zu suchen...',
+        no_results_for: 'Keine Ergebnisse gefunden für',
+        cancel: 'Abbrechen',
+        display_name_ph: 'Anzeigename', handle_ph: 'Benutzername (z. B. user1270108)',
+        choose_image: 'Bild vom Telefon wählen', choose_banner: 'Bannerbild wählen',
+        banner_plus_hint: '✨ RIVEN+ Mitglieder können ein Video-Banner nutzen (bis zu 4s)',
+        save: 'Speichern',
+        age_gate_title: 'Wie lautet dein Geburtsdatum?',
+        age_gate_body: 'RIVEN passt deine Erfahrung an dein Alter an — das bestimmt z. B., ob DMs verfügbar sind, und deine Standard-Privatsphäre. Diesen Schritt kannst du nicht überspringen.',
+        continue: 'Weiter',
+        audio_prompt_title: 'Ton zu deinem Video hinzufügen?',
+        audio_prompt_body: 'Wähle eine Audiodatei von deinem Gerät, die mit diesem Video abgespielt wird, oder überspringe, um den Originalton zu behalten.',
+        choose_audio: 'Audio vom Gerät wählen', skip: 'Überspringen',
+        make_private: 'Privat machen', delete: 'Löschen',
+        confirm_title: 'Bist du sicher?',
+        plus_coming_soon: 'Demnächst',
+        plus_body: 'Ein paar zusätzliche Vorteile für alle, die RIVEN lieben. Die Preise unten sind für den Start geplant — noch ist nichts zu zahlen.',
+        plus_notify: 'Benachrichtige mich beim Start', close: 'Schließen',
+        reports_title: 'Meldungen', loading_reports: 'Meldungen werden geladen...',
+        banned_users: 'Gesperrte Nutzer', loading: 'Wird geladen...',
+        invite_codes_body: 'Du kannst bis zu 5 Einladungscodes erstellen. Teile einen mit einem Freund, damit er RIVEN beitreten kann.',
+        generate_invite: 'Einladungscode erstellen',
+        switch_account_title: 'Konto wechseln', add_account: '+ Konto hinzufügen',
+        share: 'Teilen', copy_link: 'Link kopieren', share_via: 'Teilen über...',
+        settings_language: 'Sprache', settings_language_hint: 'Wähle die Sprache, in der RIVEN angezeigt wird. Sie folgt nicht automatisch der Sprache deines Telefons.',
+        toast_signin_failed: 'Anmeldung fehlgeschlagen. Bitte erneut versuchen.',
+        toast_apple_not_configured: 'Die Apple-Anmeldung ist noch nicht eingerichtet.',
+        toast_logged_out: 'Abgemeldet',
+        toast_reported: 'Gemeldet — danke, wir schauen es uns an',
+        toast_report_failed: 'Meldung konnte nicht gesendet werden',
+        toast_video_deleted: 'Video gelöscht',
+        toast_video_delete_failed: 'Video konnte nicht gelöscht werden',
+        toast_user_banned: 'Nutzer gesperrt', toast_ban_failed: 'Nutzer konnte nicht gesperrt werden',
+        toast_user_unbanned: 'Sperre aufgehoben', toast_unban_failed: 'Sperre konnte nicht aufgehoben werden',
+        toast_invite_copied: 'Einladungscode kopiert', toast_invite_copy_failed: 'Code konnte nicht kopiert werden',
+        toast_copy_unsupported: 'Kopieren wird auf diesem Gerät nicht unterstützt',
+        toast_signin_first: 'Bitte zuerst anmelden',
+        toast_max_invites: 'Du hast bereits die maximalen 5 Einladungscodes',
+        toast_invite_generated: 'Einladungscode erstellt',
+        toast_account_switch_under13: 'Der Kontowechsel ist für Konten unter 13 Jahren nicht verfügbar',
+        toast_signin_then_notify: 'Melde dich zuerst an, damit wir dich benachrichtigen können',
+        toast_already_on_list: 'Du stehst schon auf der Liste!',
+        toast_notify_success: 'Du erfährst als Erstes, wenn RIVEN+ startet!',
+        toast_switch_failed: 'Konto konnte nicht gewechselt werden',
+        toast_suspended: 'Dieses Konto wurde gesperrt.',
+        toast_signin_to_follow: 'Melde dich an, um Nutzern zu folgen',
+        toast_follow_error: 'Fehler beim Aktualisieren des Folge-Status',
+        toast_video_unavailable: 'Dieses Video ist nicht mehr verfügbar',
+        toast_video_private: 'Dieses Video ist privat',
+        toast_video_open_failed: 'Video konnte nicht geöffnet werden',
+        toast_video_now_private: 'Video auf privat gesetzt', toast_video_now_public: 'Video auf öffentlich gesetzt',
+        incoming_video_call: 'Eingehender Videoanruf...', incoming_voice_call: 'Eingehender Sprachanruf...', calling: 'Anruf läuft...',
+        toast_privacy_failed: 'Privatsphäre konnte nicht aktualisiert werden',
+        toast_own_profile_only: 'Du kannst nur dein eigenes Profil bearbeiten',
+        toast_banner_plus_perk: 'Video-Banner sind ein RIVEN+ Vorteil — wähle ein Bild oder upgrade',
+        toast_notified_on_list: 'Du stehst auf der Liste ✓',
+        error_birthdate_required: 'Bitte wähle dein Geburtsdatum aus.',
+        error_birthdate_invalid: 'Bitte gib ein gültiges Geburtsdatum ein.',
+        error_age_minimum: 'Entschuldigung, du musst mindestens 9 Jahre alt sein, um RIVEN zu nutzen.',
+        toast_safety_update: 'Zu deiner Sicherheit haben wir dein Konto basierend auf deinem Beitrag aktualisiert.',
+        toast_signin_follow_feed: 'Melde dich an, um Videos von Leuten zu sehen, denen du folgst',
+        toast_signin_report: 'Melde dich an, um zu melden',
+        toast_signin_upload: 'Melde dich zuerst an, um ein Video zu posten',
+        toast_upload_age_13: 'Video-Uploads sind ab 13 Jahren verfügbar',
+        toast_dm_age_13: 'DMs sind für Konten unter 13 Jahren nicht verfügbar',
+        toast_uploading_video: 'Video wird hochgeladen...',
+        toast_uploading_audio: 'Audio wird hochgeladen...',
+        toast_audio_failed: 'Audio-Upload fehlgeschlagen — wird mit Originalton gepostet',
+        toast_signin_like: 'Melde dich an, um Videos zu liken',
+        toast_signin_react: 'Melde dich an, um auf Kommentare zu reagieren',
+        toast_save_failed: 'Konnte nicht gespeichert werden',
+        toast_signin_reply: 'Melde dich an, um zu antworten',
+        toast_reply_save_failed: 'Antwort konnte nicht gespeichert werden',
+        toast_signin_comment: 'Melde dich an, um zu kommentieren',
+        toast_comment_save_failed: 'Kommentar konnte nicht gespeichert werden',
+        toast_image_attached: 'Bild angehängt — tippe auf Posten, um es mit deinem Kommentar zu senden',
+        toast_link_copied: 'Link in die Zwischenablage kopiert',
+        toast_link_copy_failed: 'Link konnte nicht kopiert werden',
+        toast_video_send_failed: 'Video konnte nicht gesendet werden',
+        toast_message_send_failed: 'Nachricht konnte nicht gesendet werden',
+        toast_already_switching_video: 'Wechsle bereits zu Video...',
+        toast_camera_denied: 'Kamerazugriff verweigert',
+        toast_switch_video_failed: 'Konnte nicht zu Video wechseln',
+        toast_switched_video: 'Zu Videoanruf gewechselt',
+        toast_already_in_call: 'Du bist bereits in einem Anruf',
+        toast_cam_mic_denied: 'Kamera-/Mikrofonzugriff verweigert',
+        toast_call_start_failed: 'Anruf konnte nicht gestartet werden',
+        toast_call_declined: 'Anruf abgelehnt',
+        toast_no_answer: 'Keine Antwort',
+        toast_call_join_failed: 'Anruf konnte nicht beigetreten werden',
+        toast_compressing_banner: 'Banner-Video wird komprimiert...',
+        toast_uploading_banner: 'Banner wird hochgeladen...',
+        toast_video_process_failed: 'Video konnte nicht verarbeitet werden',
+        toast_banner_upload_failed: 'Banner konnte nicht hochgeladen werden',
+        toast_profile_updated: 'Profil aktualisiert',
+      },
+      ja: {
+        tab_friends: '友達', tab_foryou: 'おすすめ',
+        empty_feed_title: 'まだ動画がありません',
+        empty_feed_text: 'まだ誰も動画を投稿していません。最初のひとりになろう — ログインして動画をアップロード。',
+        empty_feed_following_title: 'フォローするとここに表示されます',
+        empty_feed_following_text: 'まだ誰もフォローしていません — フォローした人の動画がこのタブに表示されます。',
+        empty_feed_following_empty_title: 'まだ動画がありません',
+        empty_feed_following_empty_text: 'フォロー中の人が最近投稿していません。後で確認するか、おすすめに切り替えてください。',
+        upload_label: '動画をアップロード／録画',
+        comments_title: 'コメント', comments_empty: 'まだコメントがありません',
+        comment_placeholder: 'コメントを追加...', comment_post: '投稿',
+        dm_title: 'メッセージ', dm_empty: 'メッセージも友達もまだいません',
+        video_call: 'ビデオ通話', voice_call: '音声通話', report: '報告', more: 'その他',
+        block_user: 'ユーザーをブロック',
+        dm_message_placeholder: 'メッセージ...',
+        logged_out_title: 'まずログインしてください', logged_out_text: 'プロフィールを見るにはログインしてください。',
+        signin_apple: 'Appleでログイン', signin_google: 'Googleでログイン',
+        edit_profile: 'プロフィールを編集', switch_account: 'アカウントを切り替え',
+        invite_codes: '招待コード', riven_plus: 'RIVEN+', admin: '管理者',
+        about: 'について', settings: '設定', log_out: 'ログアウト',
+        followers: 'フォロワー', following: 'フォロー中', likes: 'いいね',
+        likes_private: '（非公開含む）', follow: 'フォロー', unfollow: 'フォロー中',
+        search_placeholder: 'アカウントを検索...', search_prompt: '入力してユーザーを検索...',
+        no_results_for: '検索結果が見つかりません：',
+        cancel: 'キャンセル',
+        display_name_ph: '表示名', handle_ph: 'ユーザー名（例：user1270108）',
+        choose_image: 'スマホから画像を選択', choose_banner: 'バナー画像を選択',
+        banner_plus_hint: '✨ RIVEN+ メンバーは動画バナー（最大4秒）を使用できます',
+        save: '保存',
+        age_gate_title: '生年月日を教えてください',
+        age_gate_body: 'RIVENは年齢に応じて体験を調整します — これによりDMの利用可否やデフォルトのプライバシー設定などが決まります。この手順は省略できません。',
+        continue: '続ける',
+        audio_prompt_title: '動画にサウンドを追加しますか？',
+        audio_prompt_body: 'デバイスからこの動画と一緒に再生する音声ファイルを選ぶか、スキップして動画の元の音声を保持します。',
+        choose_audio: 'デバイスから音声を選択', skip: 'スキップ',
+        make_private: '非公開にする', delete: '削除',
+        confirm_title: 'よろしいですか？',
+        plus_coming_soon: '近日公開',
+        plus_body: 'RIVENを使い込んでいる人向けの追加特典です。以下の価格はローンチ時の予定価格で、今はまだ支払いは発生しません。',
+        plus_notify: 'ローンチ時に通知を受け取る', close: '閉じる',
+        reports_title: '報告', loading_reports: '報告を読み込み中...',
+        banned_users: 'BANされたユーザー', loading: '読み込み中...',
+        invite_codes_body: '招待コードは最大5個まで生成できます。友達と共有してRIVENに招待しましょう。',
+        generate_invite: '招待コードを生成',
+        switch_account_title: 'アカウントを切り替え', add_account: '+ アカウントを追加',
+        share: '共有', copy_link: 'リンクをコピー', share_via: '共有方法を選択...',
+        settings_language: '言語', settings_language_hint: 'RIVENを表示する言語を選択してください。スマホの言語設定には自動的に従いません。',
+        toast_signin_failed: 'ログインに失敗しました。もう一度お試しください。',
+        toast_apple_not_configured: 'Appleサインインはまだ設定されていません。',
+        toast_logged_out: 'ログアウトしました',
+        toast_reported: '報告しました — ありがとうございます、確認します',
+        toast_report_failed: '報告を送信できませんでした',
+        toast_video_deleted: '動画を削除しました',
+        toast_video_delete_failed: '動画を削除できませんでした',
+        toast_user_banned: 'ユーザーをBANしました', toast_ban_failed: 'ユーザーをBANできませんでした',
+        toast_user_unbanned: 'ユーザーのBANを解除しました', toast_unban_failed: 'BANを解除できませんでした',
+        toast_invite_copied: '招待コードをコピーしました', toast_invite_copy_failed: 'コードをコピーできませんでした',
+        toast_copy_unsupported: 'このデバイスではコピーに対応していません',
+        toast_signin_first: 'まずログインしてください',
+        toast_max_invites: '招待コードはすでに上限の5個に達しています',
+        toast_invite_generated: '招待コードを生成しました',
+        toast_account_switch_under13: '13歳未満のアカウントはアカウント切り替えを利用できません',
+        toast_signin_then_notify: '通知を受け取るには先にログインしてください',
+        toast_already_on_list: 'すでにリストに登録済みです！',
+        toast_notify_success: 'RIVEN+がローンチしたら一番に通知します！',
+        toast_switch_failed: 'アカウントを切り替えられませんでした',
+        toast_suspended: 'このアカウントは停止されています。',
+        toast_signin_to_follow: 'フォローするにはログインしてください',
+        toast_follow_error: 'フォロー状態の更新中にエラーが発生しました',
+        toast_video_unavailable: 'この動画は利用できなくなりました',
+        toast_video_private: 'この動画は非公開です',
+        toast_video_open_failed: '動画を開けませんでした',
+        toast_video_now_private: '動画を非公開に設定しました', toast_video_now_public: '動画を公開に設定しました',
+        incoming_video_call: 'ビデオ通話の着信...', incoming_voice_call: '音声通話の着信...', calling: '発信中...',
+        toast_privacy_failed: '公開設定を更新できませんでした',
+        toast_own_profile_only: '自分のプロフィールのみ編集できます',
+        toast_banner_plus_perk: '動画バナーはRIVEN+の特典です — 画像を選ぶか、アップグレードしてください',
+        toast_notified_on_list: 'リストに登録済みです ✓',
+        error_birthdate_required: '生年月日を選択してください。',
+        error_birthdate_invalid: '有効な生年月日を入力してください。',
+        error_age_minimum: '申し訳ありませんが、RIVENの利用には9歳以上である必要があります。',
+        toast_safety_update: '安全のため、投稿内容に基づいてアカウントを更新しました。',
+        toast_signin_follow_feed: 'フォロー中の人の動画を見るにはログインしてください',
+        toast_signin_report: '報告するにはログインしてください',
+        toast_signin_upload: '動画を投稿するには先にログインしてください',
+        toast_upload_age_13: '動画のアップロードは13歳以上のアカウントで利用できます',
+        toast_dm_age_13: 'DMは13歳未満のアカウントでは利用できません',
+        toast_uploading_video: '動画をアップロード中...',
+        toast_uploading_audio: '音声をアップロード中...',
+        toast_audio_failed: '音声のアップロードに失敗しました — 元の音声で投稿します',
+        toast_signin_like: '動画にいいねするにはログインしてください',
+        toast_signin_react: 'コメントにリアクションするにはログインしてください',
+        toast_save_failed: '保存できませんでした',
+        toast_signin_reply: '返信するにはログインしてください',
+        toast_reply_save_failed: '返信を保存できませんでした',
+        toast_signin_comment: 'コメントするにはログインしてください',
+        toast_comment_save_failed: 'コメントを保存できませんでした',
+        toast_image_attached: '画像を添付しました — 投稿をタップしてコメントと一緒に送信',
+        toast_link_copied: 'リンクをクリップボードにコピーしました',
+        toast_link_copy_failed: 'リンクをコピーできませんでした',
+        toast_video_send_failed: '動画を送信できませんでした',
+        toast_message_send_failed: 'メッセージの送信に失敗しました',
+        toast_already_switching_video: 'すでにビデオに切り替え中...',
+        toast_camera_denied: 'カメラの権限が拒否されました',
+        toast_switch_video_failed: 'ビデオに切り替えられませんでした',
+        toast_switched_video: 'ビデオ通話に切り替えました',
+        toast_already_in_call: 'すでに通話中です',
+        toast_cam_mic_denied: 'カメラ/マイクの権限が拒否されました',
+        toast_call_start_failed: '通話を開始できませんでした',
+        toast_call_declined: '通話が拒否されました',
+        toast_no_answer: '応答がありません',
+        toast_call_join_failed: '通話に参加できませんでした',
+        toast_compressing_banner: 'バナー動画を圧縮中...',
+        toast_uploading_banner: 'バナーをアップロード中...',
+        toast_video_process_failed: 'その動画を処理できませんでした',
+        toast_banner_upload_failed: 'バナーをアップロードできませんでした',
+        toast_profile_updated: 'プロフィールを更新しました',
+      },
+    };
+
+    // Explicitly NOT navigator.language — defaults to English until the
+    // person picks a language in Settings, and stays put after that.
+    function getAppLanguage() {
+      const stored = localStorage.getItem('riven_language');
+      return (stored && TRANSLATIONS[stored]) ? stored : 'en';
+    }
+
+    function t(key) {
+      const lang = getAppLanguage();
+      return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.en[key] || key;
+    }
+
+    function applyTranslations() {
+      const lang = getAppLanguage();
+      document.documentElement.setAttribute('lang', lang);
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.getAttribute('data-i18n'));
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+      });
+      document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        el.setAttribute('title', t(el.getAttribute('data-i18n-title')));
+      });
+      // Re-render anything currently showing dynamic translated text.
+      if (typeof refreshDynamicTranslations === 'function') refreshDynamicTranslations();
+    }
+
+    window.setAppLanguage = function(lang) {
+      if (!TRANSLATIONS[lang]) return;
+      localStorage.setItem('riven_language', lang);
+      applyTranslations();
+      if (typeof renderSettingsLanguageList === 'function') renderSettingsLanguageList();
+      if (typeof closeSettingsModal === 'function') closeSettingsModal();
+    };
+
+    window.renderSettingsLanguageList = function() {
+      const list = document.getElementById('settings-language-list');
+      if (!list) return;
+      const current = getAppLanguage();
+      list.innerHTML = Object.keys(RIVEN_LANGUAGES).map(code => `
+        <div class="profile-menu-item" style="display:flex; align-items:center; justify-content:space-between;" onclick="setAppLanguage('${code}')">
+          <span>${RIVEN_LANGUAGES[code]}</span>
+          ${code === current ? '<span style="color:var(--accent-pink,#ff2d55); font-weight:600;">✓</span>' : ''}
+        </div>
+      `).join('');
+    };
+
+    window.openSettingsModal = function() {
+      toggleProfileMenu(true);
+      renderSettingsLanguageList();
+      document.getElementById('settings-modal').classList.add('active');
+    };
+    window.closeSettingsModal = function() {
+      document.getElementById('settings-modal').classList.remove('active');
+    };
+
+    /* Some UI text is swapped in dynamically by other functions (Follow
+       button state, feed empty-states, age-gate errors, etc). Those call
+       sites use t('key') directly at the point they set textContent, so
+       there's nothing to re-run here beyond re-applying data-i18n — this
+       hook exists for future dynamic sections. */
+    function refreshDynamicTranslations() {}
+
     /**
      * Utilidades para crear mapas de desplazamiento y filtros
      * Convertido desde TypeScript a JavaScript vanilla
@@ -4605,7 +5409,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         await signInWithPopup(auth, provider);
       } catch (error) {
         console.error("Auth Error:", error);
-        showToast("Sign-in failed. Please try again.");
+        showToast(t('toast_signin_failed'));
       }
     };
 
@@ -4615,9 +5419,9 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       } catch (error) {
         console.error("Apple Auth Error:", error);
         if (error?.code === 'auth/operation-not-allowed') {
-          showToast("Apple sign-in isn't configured yet.");
+          showToast(t('toast_apple_not_configured'));
         } else {
-          showToast("Sign-in failed. Please try again.");
+          showToast(t('toast_signin_failed'));
         }
       }
     };
@@ -4848,7 +5652,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       currentUser = null;
       document.getElementById('logged-out-state').style.display = 'flex';
       document.getElementById('logged-in-state').style.display = 'none';
-      showToast("Logged out");
+      showToast(t('toast_logged_out'));
       switchTab('feed-screen', document.getElementById('nav-feed-item'));
     };
 
@@ -5031,10 +5835,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (!isAdmin()) return;
       try {
         await deleteDoc(doc(db, 'videos', videoId));
-        showToast('Video deleted');
+        showToast(t('toast_video_deleted'));
       } catch (e) {
         console.warn('Admin delete video error:', e);
-        showToast('Could not delete video');
+        showToast(t('toast_video_delete_failed'));
         return;
       }
       await markReportReviewed(reportId, 'actioned');
@@ -5045,10 +5849,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       openConfirmModal('Ban this user?', 'They will be signed out immediately and unable to sign back in.', 'Ban', async () => {
         try {
           await setDoc(doc(db, 'users', targetUid), { banned: true }, { merge: true });
-          showToast('User banned');
+          showToast(t('toast_user_banned'));
         } catch (e) {
           console.warn('Admin ban error:', e);
-          showToast('Could not ban user');
+          showToast(t('toast_ban_failed'));
           return;
         }
         await markReportReviewed(reportId, 'actioned');
@@ -5097,12 +5901,12 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (!isAdmin() || !uid) return;
       try {
         await setDoc(doc(db, 'users', uid), { banned: false }, { merge: true });
-        showToast('User unbanned');
+        showToast(t('toast_user_unbanned'));
         const row = document.getElementById(`admin-banned-${uid}`);
         if (row) row.remove();
       } catch (e) {
         console.warn('Unban error:', e);
-        showToast('Could not unban user');
+        showToast(t('toast_unban_failed'));
       }
     };
 
@@ -5149,24 +5953,24 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     window.copyInviteCode = async function(code) {
       if (navigator.clipboard) {
-        try { await navigator.clipboard.writeText(code); showToast('Invite code copied'); }
-        catch (e) { showToast('Could not copy code'); }
+        try { await navigator.clipboard.writeText(code); showToast(t('toast_invite_copied')); }
+        catch (e) { showToast(t('toast_invite_copy_failed')); }
       } else {
-        showToast('Copying not supported on this device');
+        showToast(t('toast_copy_unsupported'));
       }
     };
 
     window.generateInviteCode = async function() {
-      if (!currentUser) { showToast('Sign in first'); return; }
+      if (!currentUser) { showToast(t('toast_signin_first')); return; }
       const codes = myProfileData?.inviteCodes || [];
-      if (codes.length >= MAX_INVITE_CODES) { showToast('You already have the maximum of 5 invite codes'); return; }
+      if (codes.length >= MAX_INVITE_CODES) { showToast(t('toast_max_invites')); return; }
 
       const newCode = generateInviteCodeString();
       const updatedCodes = [...codes, newCode];
       myProfileData.inviteCodes = updatedCodes;
       localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
       await renderInviteCodesList();
-      showToast('Invite code generated');
+      showToast(t('toast_invite_generated'));
 
       try {
         await setDoc(doc(db, 'users', currentUser.uid), { inviteCodes: updatedCodes }, { merge: true });
@@ -5191,7 +5995,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     window.toggleDesktopMoreMenu = function(event) {
       if (event) event.stopPropagation();
       if (!currentUser) {
-        showToast('Sign in first');
+        showToast(t('toast_signin_first'));
         return;
       }
       const menu = document.getElementById('profile-menu-dropdown');
@@ -5295,19 +6099,19 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const dobStr = input.value;
 
       if (!dobStr) {
-        errorEl.textContent = 'Please select your birthdate.';
+        errorEl.textContent = t('error_birthdate_required');
         errorEl.style.display = 'block';
         return;
       }
 
       const age = computeAgeFromBirthdate(dobStr);
       if (age === null || age < 0 || age > 120) {
-        errorEl.textContent = 'Please enter a valid birthdate.';
+        errorEl.textContent = t('error_birthdate_invalid');
         errorEl.style.display = 'block';
         return;
       }
       if (age < 9) {
-        errorEl.textContent = "Sorry, you must be at least 9 years old to use RIVEN.";
+        errorEl.textContent = t('error_age_minimum');
         errorEl.style.display = 'block';
         return;
       }
@@ -5387,7 +6191,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         console.warn('Age safety downgrade sync error:', e);
       }
 
-      showToast("For your safety, we've updated your account based on what you posted.", 6000);
+      showToast(t('toast_safety_update'), 6000);
     }
 
     // ---- Basic content filter (viewer-side, by the CURRENT user's tier) ----
@@ -5471,7 +6275,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     window.openSwitchAccountModal = function() {
       toggleProfileMenu(true);
       if (myProfileData?.ageGroup && !canSwitchAccounts(myProfileData.ageGroup)) {
-        showToast("Account switching isn't available for accounts under 13");
+        showToast(t('toast_account_switch_under13'));
         return;
       }
       renderSwitchAccountList();
@@ -5484,7 +6288,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const alreadyNotified = currentUser && myProfileData?.plusInterestRequested;
       if (notifyBtn) {
         notifyBtn.classList.toggle('notified', !!alreadyNotified);
-        notifyBtn.innerText = alreadyNotified ? "You're on the list ✓" : 'Notify me when it launches';
+        notifyBtn.innerText = alreadyNotified ? t('toast_notified_on_list') : t('plus_notify');
       }
       document.getElementById('riven-plus-modal').classList.add('active');
     };
@@ -5495,21 +6299,21 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     window.notifyMeForRivenPlus = async function() {
       if (!currentUser) {
-        showToast('Sign in first, then we can notify you');
+        showToast(t('toast_signin_then_notify'));
         return;
       }
       const notifyBtn = document.getElementById('notify-plus-btn');
       if (myProfileData?.plusInterestRequested) {
-        showToast("You're already on the list!");
+        showToast(t('toast_already_on_list'));
         return;
       }
       if (notifyBtn) {
         notifyBtn.classList.add('notified');
-        notifyBtn.innerText = "You're on the list ✓";
+        notifyBtn.innerText = t('toast_notified_on_list');
       }
       myProfileData.plusInterestRequested = true;
       localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
-      showToast("You'll be the first to know when RIVEN+ launches!");
+      showToast(t('toast_notify_success'));
       try {
         await setDoc(doc(db, 'users', currentUser.uid), { plusInterestRequested: true, plusInterestRequestedAt: serverTimestamp() }, { merge: true });
       } catch (e) {
@@ -5536,7 +6340,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         await signInWithPopup(auth, provider);
       } catch (e) {
         console.error('Switch account error:', e);
-        showToast('Could not switch accounts');
+        showToast(t('toast_switch_failed'));
       } finally {
         provider.setCustomParameters({ prompt: 'select_account' });
       }
@@ -5552,7 +6356,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         await signInWithPopup(auth, provider);
       } catch (e) {
         console.error('Add account error:', e);
-        showToast('Sign-in failed. Please try again.');
+        showToast(t('toast_signin_failed'));
       }
     };
 
@@ -5611,7 +6415,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         // A banned account gets signed out immediately, before anything
         // else about the session gets set up further.
         if (myProfileData?.banned) {
-          showToast('This account has been suspended.', 6000);
+          showToast(t('toast_suspended'), 6000);
           await signOut(auth);
           return;
         }
@@ -5690,10 +6494,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
         const myFollowing = myProfileData?.following || [];
         if (myFollowing.includes(viewedProfileUid)) {
-          followBtn.innerText = "Following";
+          followBtn.innerText = t('unfollow');
           followBtn.classList.add('following');
         } else {
-          followBtn.innerText = "Follow";
+          followBtn.innerText = t('follow');
           followBtn.classList.remove('following');
         }
       }
@@ -5783,7 +6587,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       } else {
         followBtn.style.display = 'block';
         const isFollowing = (myProfileData?.following || []).includes(video.uid);
-        followBtn.innerText = isFollowing ? 'Following' : 'Follow';
+        followBtn.innerText = isFollowing ? t('unfollow') : t('follow');
         followBtn.classList.toggle('following', isFollowing);
         followBtn.onclick = () => toggleFollowFromDesktopPanel(video.uid);
       }
@@ -5810,7 +6614,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // (which might be showing a completely different person at the time).
     window.toggleFollowFromDesktopPanel = async function(targetUid) {
       if (!currentUser) {
-        showToast('Sign in to follow users');
+        showToast(t('toast_signin_to_follow'));
         return;
       }
       if (!targetUid || targetUid === currentUser.uid) return;
@@ -5837,7 +6641,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         loadFriendsAndDms();
       } catch (e) {
         console.error('Follow error (desktop panel):', e);
-        showToast('Error updating follow status');
+        showToast(t('toast_follow_error'));
       }
     };
 
@@ -5901,12 +6705,12 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       try {
         const snap = await getDoc(doc(db, 'videos', videoId));
         if (!snap.exists()) {
-          showToast('This video is no longer available');
+          showToast(t('toast_video_unavailable'));
           return;
         }
         const data = snap.data();
         if (data.isPrivate && (!currentUser || data.uid !== currentUser.uid)) {
-          showToast('This video is private');
+          showToast(t('toast_video_private'));
           return;
         }
         videoQueue = [{ id: snap.id, ...data }];
@@ -5915,7 +6719,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         renderCurrentVideo();
       } catch (e) {
         console.warn('Open shared video error:', e);
-        showToast('Could not open video');
+        showToast(t('toast_video_open_failed'));
       }
     };
 
@@ -5959,7 +6763,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         if (currentVideoIndex >= 0 && videoQueue[currentVideoIndex]?.id === id) renderCurrentVideo();
       } catch (e) {
         console.warn('Privacy update error:', e);
-        showToast('Could not update privacy');
+        showToast(t('toast_privacy_failed'));
       }
     };
 
@@ -5973,7 +6777,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // FOLLOW FUNCTIONALITY
     window.toggleFollowUser = async function() {
       if (!currentUser) {
-        showToast("Sign in to follow users");
+        showToast(t('toast_signin_to_follow'));
         return;
       }
       if (!viewedProfileUid || viewedProfileUid === currentUser.uid) return;
@@ -5984,11 +6788,11 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       if (isFollowing) {
         myFollowing = myFollowing.filter(id => id !== viewedProfileUid);
-        followBtn.innerText = "Follow";
+        followBtn.innerText = t('follow');
         followBtn.classList.remove('following');
       } else {
         myFollowing.push(viewedProfileUid);
-        followBtn.innerText = "Following";
+        followBtn.innerText = t('unfollow');
         followBtn.classList.add('following');
       }
 
@@ -6015,7 +6819,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         loadFriendsAndDms();
       } catch (e) {
         console.error("Follow error:", e);
-        showToast("Error updating follow status");
+        showToast(t('toast_follow_error'));
       }
     };
 
@@ -6037,7 +6841,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const q = query_.trim().toLowerCase();
 
       if (!q) {
-        resultsContainer.innerHTML = `<div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">Type to search users...</div>`;
+        resultsContainer.innerHTML = `<div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">${t('search_prompt')}</div>`;
         return;
       }
 
@@ -6053,7 +6857,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
 
       if (matches.length === 0) {
-        resultsContainer.innerHTML = `<div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">No results found for "${query_}"</div>`;
+        resultsContainer.innerHTML = `<div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">${t('no_results_for')} "${query_}"</div>`;
         return;
       }
 
@@ -6086,7 +6890,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       // Guard against editing anyone but yourself, even if triggered by a
       // stale click on a menu that hadn't hidden yet.
       if (!currentUser || viewedProfileUid !== currentUser.uid) {
-        showToast("You can only edit your own profile");
+        showToast(t('toast_own_profile_only'));
         return;
       }
       document.getElementById('edit-name-input').value = document.getElementById('user-display-name').innerText;
@@ -6150,7 +6954,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       const isVideo = file.type.startsWith('video/');
       if (isVideo && !isRivenPlus()) {
-        showToast("Video banners are a RIVEN+ perk — pick an image, or upgrade");
+        showToast(t('toast_banner_plus_perk'));
         return;
       }
 
@@ -6200,28 +7004,28 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       if (pendingBannerFile) {
         if (pendingBannerType === 'video' && !isRivenPlus()) {
-          showToast("Video banners are a RIVEN+ perk");
+          showToast(t('toast_banner_plus_perk'));
         } else if (pendingBannerType === 'video') {
           try {
-            showToast('Compressing banner video...', 20000);
+            showToast(t('toast_compressing_banner'), 20000);
             const { blob, mimeType } = await compressBannerVideo(pendingBannerFile);
             const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
             const compressedFile = new File([blob], `banner.${ext}`, { type: mimeType });
-            showToast('Uploading banner...', 20000);
+            showToast(t('toast_uploading_banner'), 20000);
             bannerUrl = await uploadBannerFile(compressedFile, 'video');
             bannerType = 'video';
           } catch (e) {
             console.warn('Banner video compression/upload error:', e);
-            showToast('Could not process that video: ' + (e.message || 'unknown error'), 4000);
+            showToast(t('toast_video_process_failed') + ': ' + (e.message || 'unknown error'), 4000);
           }
         } else {
           try {
-            showToast('Uploading banner...', 15000);
+            showToast(t('toast_uploading_banner'), 15000);
             bannerUrl = await uploadBannerFile(pendingBannerFile, 'image');
             bannerType = 'image';
           } catch (e) {
             console.warn('Banner image upload error:', e);
-            showToast('Could not upload banner: ' + (e.message || 'unknown error'), 4000);
+            showToast(t('toast_banner_upload_failed') + ': ' + (e.message || 'unknown error'), 4000);
           }
         }
       }
@@ -6253,7 +7057,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       pendingBannerFile = null;
       pendingBannerType = null;
       closeEditModal();
-      showToast('Profile updated');
+      showToast(t('toast_profile_updated'));
     };
 
     window.openMyProfile = function(navElement) {
@@ -6420,15 +7224,15 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (activeFeedFilter === 'friends') {
         const followingCount = (myProfileData?.following || []).length;
         if (followingCount === 0) {
-          titleEl.innerText = 'Follow people to see them here';
-          textEl.innerText = "You're not following anyone yet — videos from people you follow will show up on this tab.";
+          titleEl.innerText = t('empty_feed_following_title');
+          textEl.innerText = t('empty_feed_following_text');
         } else {
-          titleEl.innerText = 'No videos yet';
-          textEl.innerText = "Nobody you follow has posted recently. Check back later, or switch to For You.";
+          titleEl.innerText = t('empty_feed_following_empty_title');
+          textEl.innerText = t('empty_feed_following_empty_text');
         }
       } else {
-        titleEl.innerText = 'No videos yet';
-        textEl.innerText = 'Nobody has posted a video yet. Be the first — sign in and upload one.';
+        titleEl.innerText = t('empty_feed_title');
+        textEl.innerText = t('empty_feed_text');
       }
     }
 
@@ -6812,7 +7616,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (!changed) return;
       activeFeedFilter = newFilter;
       if (activeFeedFilter === 'friends' && !currentUser) {
-        showToast('Sign in to see videos from people you follow');
+        showToast(t('toast_signin_follow_feed'));
         // Still switch the tab visually, but nothing to actually filter by
         // signed out — loadFeed() will just show an empty state.
       }
@@ -6837,7 +7641,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         }
       } catch (e) {
         console.warn('Privacy update error:', e);
-        showToast('Could not update privacy');
+        showToast(t('toast_privacy_failed'));
       }
     };
 
@@ -6847,7 +7651,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // real and queryable the moment one gets built. ----
     async function submitReport(targetType, targetId, extra) {
       if (!currentUser) {
-        showToast('Sign in to report');
+        showToast(t('toast_signin_report'));
         return false;
       }
       try {
@@ -6885,10 +7689,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     async function deleteVideoById(videoId, fromFeed) {
       try {
         await deleteDoc(doc(db, 'videos', videoId));
-        showToast('Video deleted');
+        showToast(t('toast_video_deleted'));
       } catch (e) {
         console.error('Delete video error:', e);
-        showToast('Could not delete video');
+        showToast(t('toast_video_delete_failed'));
         return;
       }
 
@@ -6910,12 +7714,12 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // ---- Upload flow ----
     window.triggerUploadFlow = function() {
       if (!currentUser) {
-        showToast('Sign in first to post a video');
+        showToast(t('toast_signin_upload'));
         switchTab('profile-screen', document.getElementById('nav-profile-btn'));
         return;
       }
       if (myProfileData?.ageGroup && !canUploadVideos(myProfileData.ageGroup)) {
-        showToast("Video uploads are available for accounts 13 and up");
+        showToast(t('toast_upload_age_13'));
         return;
       }
       document.getElementById('video-file-input').click();
@@ -6923,7 +7727,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     window.openDmTab = function(navElement) {
       if (currentUser && myProfileData?.ageGroup && !canUseDMs(myProfileData.ageGroup)) {
-        showToast("DMs aren't available for accounts under 13");
+        showToast(t('toast_dm_age_13'));
         return;
       }
       switchTab('dm-screen', navElement);
@@ -6938,7 +7742,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (!file) return;
 
       if (!currentUser) {
-        showToast('Sign in first to post a video');
+        showToast(t('toast_signin_upload'));
         switchTab('profile-screen', document.getElementById('nav-profile-btn'));
         return;
       }
@@ -6969,7 +7773,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     async function uploadVideoWithAudio(file, audioFile) {
       if (!file) return;
       try {
-        showToast('Uploading video...', 60000);
+        showToast(t('toast_uploading_video'), 60000);
 
         const formData = new FormData();
         formData.append('file', file);
@@ -6989,7 +7793,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         let audioUrl = null;
         let audioName = null;
         if (audioFile) {
-          showToast('Uploading audio...', 60000);
+          showToast(t('toast_uploading_audio'), 60000);
           const audioForm = new FormData();
           audioForm.append('file', audioFile);
           audioForm.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
@@ -7005,11 +7809,11 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
               audioName = audioFile.name || 'Custom audio';
             } else {
               console.warn('Audio upload failed:', audioUploadResult);
-              showToast('Audio upload failed — posting with original sound');
+              showToast(t('toast_audio_failed'));
             }
           } catch (audioErr) {
             console.warn('Audio upload error:', audioErr);
-            showToast('Audio upload failed — posting with original sound');
+            showToast(t('toast_audio_failed'));
           }
         }
 
@@ -7048,7 +7852,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     window.toggleLike = async function() {
       if (currentVideoIndex < 0) return;
       if (!currentUser) {
-        showToast('Sign in to like videos');
+        showToast(t('toast_signin_like'));
         return;
       }
       document.querySelectorAll('#like-icon').forEach(likeIconEl => {
@@ -7210,7 +8014,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     window.toggleCommentReaction = async function(commentId, type) {
       if (!currentUser) {
-        showToast('Sign in to react to comments');
+        showToast(t('toast_signin_react'));
         return;
       }
       if (!currentCommentsVideoId) return;
@@ -7255,7 +8059,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         await updateDoc(doc(db, 'videos', currentCommentsVideoId, 'comments', commentId), updates);
       } catch (e) {
         console.warn('Comment reaction sync error:', e);
-        showToast('Could not save that: ' + (e.code || e.message || 'unknown error'), 4000);
+        showToast(t('toast_save_failed') + ': ' + (e.code || e.message || 'unknown error'), 4000);
       }
     };
 
@@ -7273,7 +8077,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     window.submitCommentReply = async function(commentId) {
       if (!currentUser) {
-        showToast('Sign in to reply');
+        showToast(t('toast_signin_reply'));
         return;
       }
       if (!currentCommentsVideoId) return;
@@ -7318,7 +8122,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         maybeApplyAgeSafetyDowngrade(text);
       } catch (e) {
         console.warn('Reply save error:', e);
-        showToast('Could not save reply: ' + (e.code || e.message || 'unknown error'), 5000);
+        showToast(t('toast_reply_save_failed') + ': ' + (e.code || e.message || 'unknown error'), 5000);
       }
     };
 
@@ -7332,7 +8136,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     window.submitComment = async function() {
       if (currentVideoIndex < 0) return;
       if (!currentUser) {
-        showToast('Sign in to comment');
+        showToast(t('toast_signin_comment'));
         return;
       }
       const input = document.getElementById('comment-input');
@@ -7385,13 +8189,13 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         maybeApplyAgeSafetyDowngrade(text);
       } catch (e) {
         console.warn('Comment save error:', e);
-        showToast('Could not save comment');
+        showToast(t('toast_comment_save_failed'));
       }
     };
 
     document.getElementById('comment-image-input').addEventListener('change', function(e) {
       pendingCommentImageFile = e.target.files[0] || null;
-      if (pendingCommentImageFile) showToast('Image attached — tap Post to send it with your comment');
+      if (pendingCommentImageFile) showToast(t('toast_image_attached'));
     });
 
     // ---- Share ----
@@ -7456,12 +8260,12 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (navigator.clipboard) {
         try {
           await navigator.clipboard.writeText(shareUrl);
-          showToast('Link copied to clipboard');
+          showToast(t('toast_link_copied'));
         } catch (e) {
-          showToast('Could not copy link');
+          showToast(t('toast_link_copy_failed'));
         }
       } else {
-        showToast('Copying not supported on this device');
+        showToast(t('toast_copy_unsupported'));
       }
     };
 
@@ -7510,7 +8314,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         });
       } catch (e) {
         console.error('Send video to DM error:', e);
-        showToast('Could not send video');
+        showToast(t('toast_video_send_failed'));
       }
     };
 
@@ -7804,7 +8608,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       } catch (e) {
         console.error("Error sending DM:", e);
-        showToast("Failed to send message");
+        showToast(t('toast_message_send_failed'));
       }
     };
 
@@ -7940,7 +8744,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     window.switchToVideoCall = async function() {
       if (!peerConnection || !localCallStream || !currentCallId) return;
       if (currentCallType === 'video') return;
-      if (videoUpgradeRequested) { showToast('Already switching to video...'); return; }
+      if (videoUpgradeRequested) { showToast(t('toast_already_switching_video')); return; }
 
       triggerHaptic('light');
 
@@ -7950,7 +8754,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         videoTrack = camStream.getVideoTracks()[0];
       } catch (e) {
         console.warn('getUserMedia video error:', e);
-        showToast('Camera permission denied');
+        showToast(t('toast_camera_denied'));
         return;
       }
 
@@ -7969,7 +8773,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         });
       } catch (e) {
         console.warn('Video upgrade offer error:', e);
-        showToast('Could not switch to video');
+        showToast(t('toast_switch_video_failed'));
       }
     };
 
@@ -8002,7 +8806,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
           applyVideoModeUI();
           currentCallType = 'video';
-          showToast('Switched to video call');
+          showToast(t('toast_switched_video'));
           triggerHaptic('light');
         } catch (e) {
           console.warn('Video upgrade answer error:', e);
@@ -8014,7 +8818,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         videoUpgradeRequested = false;
         try {
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.videoUpgradeAnswer));
-          showToast('Switched to video call');
+          showToast(t('toast_switched_video'));
         } catch (e) {
           console.warn('Video upgrade remote answer error:', e);
         }
@@ -8039,7 +8843,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     window.startCall = async function(type) {
       if (!currentUser || !activeChatFriendUid) return;
-      if (currentCallId) { showToast('Already in a call'); return; }
+      if (currentCallId) { showToast(t('toast_already_in_call')); return; }
       toggleChatMenu(true);
 
       const calleeUid = activeChatFriendUid;
@@ -8053,7 +8857,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         });
       } catch (e) {
         console.warn('getUserMedia error:', e);
-        showToast('Camera/mic permission denied');
+        showToast(t('toast_cam_mic_denied'));
         return;
       }
 
@@ -8108,7 +8912,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         });
       } catch (e) {
         console.error('Call setup error:', e);
-        showToast('Could not start call: ' + (e.code || e.message || 'unknown error'), 5000);
+        showToast(t('toast_call_start_failed') + ': ' + (e.code || e.message || 'unknown error'), 5000);
         endCallLocally();
         return;
       }
@@ -8131,7 +8935,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
             startCallTimer();
           }).catch(e => console.warn('setRemoteDescription error:', e));
         } else if (['declined', 'ended', 'missed'].includes(data.status)) {
-          if (data.status === 'declined') showToast('Call declined');
+          if (data.status === 'declined') showToast(t('toast_call_declined'));
           endCallLocally();
         }
         handleVideoUpgradeSignaling(data);
@@ -8140,7 +8944,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       callTimeoutHandle = setTimeout(async () => {
         if (currentCallId === callRef.id && document.getElementById('call-status-text').innerText === 'Calling...') {
           try { await updateDoc(callRef, { status: 'missed' }); } catch (e) {}
-          showToast('No answer');
+          showToast(t('toast_no_answer'));
           endCallLocally();
         }
       }, 30000);
@@ -8157,7 +8961,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         });
       } catch (e) {
         console.warn('getUserMedia error:', e);
-        showToast('Camera/mic permission denied');
+        showToast(t('toast_cam_mic_denied'));
         try { await updateDoc(doc(db, 'calls', callId), { status: 'declined' }); } catch (err) {}
         currentCallId = null;
         currentCallType = null;
@@ -8197,7 +9001,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         });
       } catch (e) {
         console.error('Call answer error:', e);
-        showToast('Could not join call: ' + (e.code || e.message || 'unknown error'), 5000);
+        showToast(t('toast_call_join_failed') + ': ' + (e.code || e.message || 'unknown error'), 5000);
         endCallLocally();
         return;
       }
@@ -8451,6 +9255,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     syncChromeTheme(currentScreenId);
     const initialActiveNavItem = document.querySelector('.nav-item.active');
     if (initialActiveNavItem) positionNavActiveDot(initialActiveNavItem);
+
+    // Apply the saved language (defaults to English — never derived from
+    // the device's locale, per Settings > Language).
+    applyTranslations();
 
     // Liquid glass: wire up the frosted menus/modals and render the pill nav
     setupLiquidGlassObservers();
