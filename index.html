@@ -59,6 +59,7 @@
       margin: 0;
       padding: 0;
       font-family: var(--font-main);
+      font-weight: var(--font-weight-normal, 400);
       -webkit-tap-highlight-color: transparent;
       letter-spacing: -0.01em;
     }
@@ -1279,6 +1280,14 @@
     .plus-tier-card.featured {
       border-color: var(--accent-pink);
       background: linear-gradient(135deg, rgba(255,45,85,0.06) 0%, rgba(255,45,85,0.02) 100%);
+    }
+
+    /* Small "card row" used for lists inside modals (report reasons,
+       invite codes, banned-user rows) — a shared class instead of inline
+       backgrounds so dark mode has one place to override it. */
+    .dm-adaptive-card {
+      background: #f7f7f7;
+      color: #111;
     }
 
     .plus-tier-top {
@@ -2669,6 +2678,15 @@
        than just stretching the phone UI wider. */
     @media (min-width: 1000px) {
       #app-container {
+        /* At many common window widths (roughly 1000-1400px), the app was
+           landing at exactly 100% of the viewport with no margin — so the
+           border-radius below had nothing to round against (no backdrop
+           visible in the corners) and the "floating card" just looked like
+           a plain full-bleed rectangle with square corners. Reserving a
+           fixed margin on every side guarantees the black page backdrop
+           always peeks through, so the rounding actually reads. */
+        width: calc(100% - 48px);
+        height: calc(100dvh - 48px);
         max-width: 1400px;
         border-radius: 20px;
         overflow: hidden;
@@ -2842,6 +2860,13 @@
         min-width: 0;
         display: flex;
         justify-content: center;
+        /* .video-viewport is pure black by default (right, full-bleed
+           video on mobile) — but on desktop the video is a constrained
+           9:16 card centered in a much wider column, so that same black
+           fill showed as stark black bars either side of the card instead
+           of a neutral backdrop. Matching #feed-screen's own light gray
+           here makes that space read as intentional page background. */
+        background: #f5f5f5;
       }
 
       /* True 9:16 portrait box: height drives the size (capped at 94% of
@@ -2862,6 +2887,25 @@
         margin: auto;
         border-radius: 16px;
         overflow: hidden;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      }
+
+      /* Mobile relies on object-fit: contain because the viewport itself is
+         already close to 9:16, so bars are rare. Desktop forces every video
+         into a fixed 9:16 card regardless of its real aspect ratio — with
+         "contain" that shows black letterbox bars inside the rounded card,
+         which reads as broken rather than intentional. "cover" fills the
+         card completely (cropping instead of bar-ing), matching how
+         TikTok/Reels-style players behave on wider layouts. */
+      #feed-video-player {
+        object-fit: cover;
+      }
+
+      /* Matches #feed-video-player's cover fit above — otherwise the poster
+         thumbnail shows letterbox bars while buffering, then visibly pops
+         to a cropped fill the instant the video itself is ready. */
+      .video-poster-overlay {
+        object-fit: cover;
       }
 
       /* On mobile the like/comment/share/privacy/delete icons overlay the
@@ -3033,6 +3077,7 @@
       .plus-tier-tagline { color: #9a9a9e; }
       .btn-notify-plus.notified { background: #2c2c2e; color: #fff; }
       .admin-report-card { background: #1c1c1e; border-color: #262628; }
+      .dm-adaptive-card { background: #2c2c2e; color: #eee; }
 
       .comments-sheet { background: #0d0d0e; }
       .comments-sheet-header { color: #fff; border-bottom-color: #232325; }
@@ -3574,7 +3619,7 @@
     <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.1 ALPHA (260823R3A)
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.2 BETA (260824R2B)
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -5460,6 +5505,25 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         || window.matchMedia('(display-mode: standalone)').matches;
     }
 
+    // Urbanist renders visibly heavier on Android's font rasterizer than
+    // on iOS/macOS at the same numeric weight, so the same CSS weight
+    // reads as "bold-ish" on Android and "normal" on iOS. Nudge the base
+    // weight down a step on Android so text reads the same heft on both.
+    function isAndroidDevice() {
+      return /Android/i.test(navigator.userAgent || '');
+    }
+    function applyPlatformFontWeight() {
+      document.documentElement.style.setProperty(
+        '--font-weight-normal',
+        isAndroidDevice() ? '350' : '400'
+      );
+      document.documentElement.style.setProperty(
+        '--font-weight-semibold',
+        isAndroidDevice() ? '550' : '600'
+      );
+    }
+    applyPlatformFontWeight();
+
     // Replace with the value printed by the key-generation step at deploy
     // time (see functions/README.md) — this exact key must match the
     // private key the Cloud Function signs pushes with, or subscriptions
@@ -5684,7 +5748,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     window.openReportReasonModal = function(targetType, targetId, extra) {
       pendingReportInfo = { targetType, targetId, extra: extra || {} };
       const list = REPORT_REASONS.map(r => `
-        <div class="profile-menu-item" style="border-radius:10px; background:#f7f7f7; margin-bottom:6px;" onclick="submitReportWithReason('${r.replace(/'/g, "\\'")}')">${r}</div>
+        <div class="profile-menu-item dm-adaptive-card" style="border-radius:10px; margin-bottom:6px;" onclick="submitReportWithReason('${r.replace(/'/g, "\\'")}')">${r}</div>
       `).join('');
       openConfirmModal('Why are you reporting this?', '', 'Cancel', () => { pendingReportInfo = null; });
       // Repurpose the confirm modal body to hold the reason list instead of plain text
@@ -5882,7 +5946,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         }
 
         list.innerHTML = banned.map(u => `
-          <div id="admin-banned-${u.uid}" style="display:flex; align-items:center; gap:10px; padding:8px; background:#fafafa; border-radius:10px;">
+          <div id="admin-banned-${u.uid}" class="dm-adaptive-card" style="display:flex; align-items:center; gap:10px; padding:8px; border-radius:10px;">
             <img src="${u.pfp || DEFAULT_AVATAR_SVG}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">
             <div style="flex:1; min-width:0;">
               <div style="font-size:13px; font-weight:600;">${escapeHtml(u.name || 'User')}</div>
@@ -5942,7 +6006,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         list.innerHTML = `<div class="comments-empty">No invite codes yet</div>`;
       } else {
         list.innerHTML = codes.map(c => `
-          <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#f7f7f7; border-radius:10px;">
+          <div class="dm-adaptive-card" style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:10px;">
             <span style="font-family:monospace; font-size:15px; font-weight:600; letter-spacing:0.05em;">${escapeHtml(c)}</span>
             <button class="modal-btn modal-btn-cancel" style="padding:6px 12px; font-size:12px;" onclick="copyInviteCode('${c}')">Copy</button>
           </div>
@@ -6121,6 +6185,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       if (currentUser) {
         localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
+        localStorage.setItem(`riven_age_verified_${currentUser.uid}`, '1');
         try {
           await setDoc(doc(db, 'users', currentUser.uid), { birthdate: dobStr, age, ageGroup }, { merge: true });
         } catch (e) {
@@ -6221,6 +6286,59 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       } catch(e) {
         console.warn("Firestore save error:", e);
       }
+    }
+
+    // ---- Live author name/avatar resolution ----
+    // Videos and comments store a snapshot of the poster's name/handle/pfp
+    // at the moment they were created — fast to render, but goes stale the
+    // instant that person edits their profile. To fix that without a
+    // costly re-fetch of every video/comment, every author-facing element
+    // is tagged with data-author-uid (+ data-author-name/-handle/-avatar)
+    // when first rendered from the snapshot, then patchLiveAuthors() looks
+    // up each unique uid's CURRENT profile once (cached) and updates the
+    // DOM in place — so old content self-heals to the latest name/avatar.
+    const liveUserCache = new Map(); // uid -> Promise<userData|null>
+    function fetchLiveUser(uid) {
+      if (!uid) return Promise.resolve(null);
+      if (liveUserCache.has(uid)) return liveUserCache.get(uid);
+      const p = (async () => {
+        try {
+          const snap = await getDoc(doc(db, 'users', uid));
+          return snap.exists() ? snap.data() : null;
+        } catch (e) {
+          console.warn('Live author lookup failed:', e);
+          return null;
+        }
+      })();
+      liveUserCache.set(uid, p);
+      return p;
+    }
+    // Called right after someone edits their own profile, so their own
+    // already-rendered content updates immediately instead of waiting on
+    // the per-uid cache to naturally expire (it never does otherwise).
+    function invalidateLiveUser(uid, freshData) {
+      if (!uid) return;
+      liveUserCache.set(uid, Promise.resolve(freshData || null));
+      patchLiveAuthors(document);
+    }
+    async function patchLiveAuthors(root) {
+      const scope = root || document;
+      const nodes = scope.querySelectorAll('[data-author-uid]');
+      const uids = [...new Set(Array.from(nodes).map(n => n.getAttribute('data-author-uid')).filter(Boolean))];
+      await Promise.all(uids.map(async (uid) => {
+        const data = await fetchLiveUser(uid);
+        if (!data) return;
+        scope.querySelectorAll(`[data-author-uid="${uid}"]`).forEach(el => {
+          const badgeSize = parseInt(el.getAttribute('data-badge-size') || '12', 10);
+          if (el.hasAttribute('data-author-avatar')) {
+            if (data.pfp) el.src = data.pfp;
+          } else if (el.hasAttribute('data-author-name')) {
+            el.innerHTML = withVerifiedBadge(data.name || data.handle || el.getAttribute('data-fallback') || 'User', data.handle, badgeSize);
+          } else if (el.hasAttribute('data-author-handle')) {
+            el.innerHTML = withVerifiedBadge('@' + (data.handle || el.getAttribute('data-fallback') || 'user'), data.handle, badgeSize);
+          }
+        });
+      }));
     }
 
     function setProfileUrl(handle) {
@@ -6424,7 +6542,13 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         if (adminMenuItem) adminMenuItem.style.display = isAdmin() ? 'block' : 'none';
 
         applyAgeGroupUI();
-        if (typeof myProfileData.age !== 'number') {
+        // Prefer the age already known from Firestore/cache. Only if that's
+        // genuinely absent do we also check the local "already verified on
+        // this device" flag — this stops a transient Firestore read hiccup
+        // (offline, rules propagation, etc.) from re-triggering the gate
+        // for someone who has already answered it before.
+        const alreadyVerifiedLocally = localStorage.getItem(`riven_age_verified_${user.uid}`) === '1';
+        if (typeof myProfileData.age !== 'number' && !alreadyVerifiedLocally) {
           showAgeGateModal();
         }
 
@@ -6576,9 +6700,23 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
 
       desktopPanelUid = video.uid;
-      document.getElementById('desktop-panel-avatar').src = video.authorPfp || DEFAULT_AVATAR_SVG;
-      document.getElementById('desktop-panel-name').innerHTML = withVerifiedBadge(video.authorName || video.authorHandle || 'User', video.authorHandle, 15);
-      document.getElementById('desktop-panel-handle').innerHTML = withVerifiedBadge('@' + (video.authorHandle || 'user'), video.authorHandle, 13);
+      const panelAvatarEl = document.getElementById('desktop-panel-avatar');
+      const panelNameEl = document.getElementById('desktop-panel-name');
+      const panelHandleEl = document.getElementById('desktop-panel-handle');
+      panelAvatarEl.src = video.authorPfp || DEFAULT_AVATAR_SVG;
+      panelNameEl.innerHTML = withVerifiedBadge(video.authorName || video.authorHandle || 'User', video.authorHandle, 15);
+      panelHandleEl.innerHTML = withVerifiedBadge('@' + (video.authorHandle || 'user'), video.authorHandle, 13);
+      panelAvatarEl.setAttribute('data-author-uid', video.uid || '');
+      panelAvatarEl.setAttribute('data-author-avatar', '');
+      panelNameEl.setAttribute('data-author-uid', video.uid || '');
+      panelNameEl.setAttribute('data-author-name', '');
+      panelNameEl.setAttribute('data-fallback', video.authorName || video.authorHandle || 'User');
+      panelNameEl.setAttribute('data-badge-size', '15');
+      panelHandleEl.setAttribute('data-author-uid', video.uid || '');
+      panelHandleEl.setAttribute('data-author-handle', '');
+      panelHandleEl.setAttribute('data-fallback', video.authorHandle || 'user');
+      panelHandleEl.setAttribute('data-badge-size', '13');
+      patchLiveAuthors(panel);
 
       const followBtn = document.getElementById('desktop-panel-follow-btn');
       const isOwn = currentUser && video.uid === currentUser.uid;
@@ -7058,6 +7196,9 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       pendingBannerType = null;
       closeEditModal();
       showToast(t('toast_profile_updated'));
+      // Any already-rendered video/comment showing this user's old
+      // snapshot name/avatar self-heals immediately (see patchLiveAuthors).
+      if (currentUser) invalidateLiveUser(currentUser.uid, myProfileData);
     };
 
     window.openMyProfile = function(navElement) {
@@ -7361,9 +7502,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       preloadAdjacentVideos();
 
       authorBar.style.display = 'flex';
-      document.getElementById('video-author-handle').innerHTML = withVerifiedBadge('@' + (v.authorHandle || 'user'), v.authorHandle, 13);
+      const authorHandleEl = document.getElementById('video-author-handle');
+      const authorAvatarEl = document.getElementById('video-author-avatar');
+      authorHandleEl.innerHTML = withVerifiedBadge('@' + (v.authorHandle || 'user'), v.authorHandle, 13);
+      authorHandleEl.setAttribute('data-author-uid', v.uid || '');
+      authorHandleEl.setAttribute('data-author-handle', '');
+      authorHandleEl.setAttribute('data-fallback', v.authorHandle || 'user');
+      authorHandleEl.setAttribute('data-badge-size', '13');
       document.getElementById('video-author-date').innerText = formatUploadDate(v.createdAt);
-      document.getElementById('video-author-avatar').src = v.authorPfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23333\'/></svg>';
+      authorAvatarEl.src = v.authorPfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23333\'/></svg>';
+      authorAvatarEl.setAttribute('data-author-uid', v.uid || '');
+      authorAvatarEl.setAttribute('data-author-avatar', '');
+      patchLiveAuthors(document);
     }
 
     // Refreshes just the reactive bits — like/comment counts, privacy
@@ -7960,14 +8110,15 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         return;
       }
       list.innerHTML = currentComments.map(c => renderCommentRow(c)).join('');
+      patchLiveAuthors(list);
     }
 
     function renderReplyRow(r) {
       const avatar = r.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\'><circle cx=\'12\' cy=\'12\' r=\'12\' fill=\'%23eee\'/></svg>';
       return `<div class="comment-reply-row">
-        <img class="comment-avatar" loading="lazy" src="${avatar}">
+        <img class="comment-avatar" loading="lazy" src="${avatar}" data-author-uid="${r.uid || ''}" data-author-avatar>
         <div class="comment-body">
-          <div class="handle">${withVerifiedBadge('@' + (r.handle || 'user'), r.handle, 11)}</div>
+          <div class="handle" data-author-uid="${r.uid || ''}" data-author-handle data-fallback="${escapeHtml(r.handle || 'user')}" data-badge-size="11">${withVerifiedBadge('@' + (r.handle || 'user'), r.handle, 11)}</div>
           <div class="text">${filterTextForViewer(escapeHtml(r.text || ''))}</div>
         </div>
       </div>`;
@@ -7987,9 +8138,9 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const imageHtml = c.imageUrl ? `<img class="comment-image" src="${c.imageUrl}" loading="lazy">` : '';
 
       return `<div class="comment-row">
-        <img class="comment-avatar" loading="lazy" src="${avatar}">
+        <img class="comment-avatar" loading="lazy" src="${avatar}" data-author-uid="${c.uid || ''}" data-author-avatar>
         <div class="comment-body">
-          <div class="handle">${withVerifiedBadge('@' + (c.handle || 'user'), c.handle, 12)}</div>
+          <div class="handle" data-author-uid="${c.uid || ''}" data-author-handle data-fallback="${escapeHtml(c.handle || 'user')}" data-badge-size="12">${withVerifiedBadge('@' + (c.handle || 'user'), c.handle, 12)}</div>
           <div class="text">${safeText}</div>
           ${imageHtml}
           <div class="comment-actions">
