@@ -424,12 +424,14 @@
       background: #000;
       z-index: 3;
       opacity: 1;
-      transition: opacity 0.25s ease;
+      filter: blur(0);
+      transition: opacity 0.25s ease, filter 0.25s ease;
       pointer-events: none;
     }
 
     .video-poster-overlay.hidden {
       opacity: 0;
+      filter: blur(10px);
     }
 
     .buffering-spinner {
@@ -1481,9 +1483,14 @@
     /* EDIT PROFILE MODAL */
     .modal-overlay {
       display: none;
-      position: fixed;
+      /* absolute (not fixed) so this stays inside #app-container's rounded,
+         clipped boundary on desktop — fixed would blow past the floating
+         card and cover the whole square-cornered browser viewport instead. */
+      position: absolute;
       inset: 0;
       background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       z-index: 200000;
       justify-content: center;
       align-items: center;
@@ -1785,6 +1792,21 @@
       margin-top: 2px;
     }
 
+    /* Unread emphasis: bump both the name weight and darken the preview
+       text (rather than relying on weight alone, since names are already
+       semibold by default) — plus a small dot, closer to how most chat
+       apps flag an unread thread. */
+    .dm-friend-item.unread .dm-friend-name { font-weight: 800; }
+    .dm-friend-item.unread .dm-friend-preview { color: #000; font-weight: 600; }
+    .dm-unread-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff3b30;
+      flex-shrink: 0;
+      margin-left: 6px;
+    }
+
     .dm-friend-streak {
       font-size: 12px;
       font-weight: 600;
@@ -1938,6 +1960,13 @@
       background: #111;
       color: #fff;
       border-bottom-right-radius: 4px;
+    }
+
+    .dm-seen-label {
+      align-self: flex-end;
+      font-size: 11px;
+      color: #999;
+      margin: -4px 4px 4px 0;
     }
 
     .dm-bubble.theirs {
@@ -2244,8 +2273,8 @@
     }
 
     @keyframes videoFadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
+      from { opacity: 0; filter: blur(6px); }
+      to   { opacity: 1; filter: blur(0); }
     }
 
     .video-fade-in {
@@ -2425,7 +2454,8 @@
 
     /* ---- CALL OVERLAYS ---- */
     #incoming-call-overlay, #active-call-overlay {
-      position: fixed;
+      /* absolute, not fixed — same reasoning as .modal-overlay above */
+      position: absolute;
       inset: 0;
       z-index: 500000;
       display: flex;
@@ -2678,19 +2708,22 @@
        than just stretching the phone UI wider. */
     @media (min-width: 1000px) {
       #app-container {
-        /* At many common window widths (roughly 1000-1400px), the app was
-           landing at exactly 100% of the viewport with no margin — so the
-           border-radius below had nothing to round against (no backdrop
-           visible in the corners) and the "floating card" just looked like
-           a plain full-bleed rectangle with square corners. Reserving a
-           fixed margin on every side guarantees the black page backdrop
-           always peeks through, so the rounding actually reads. */
-        width: calc(100% - 48px);
-        height: calc(100dvh - 48px);
-        max-width: 1400px;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 10px 60px rgba(0,0,0,0.35);
+        /* True fullscreen on desktop/landscape-tablet — no outer margin,
+           no max-width cap, no rounding. The floating-card look (this used
+           to reserve a margin so a black page backdrop would show through
+           on every side, with rounded corners reading against it) turned
+           out to just look like broken letterboxing on real windows rather
+           than an intentional design, so the app now fills the whole
+           browser viewport edge-to-edge like the mobile layout does. */
+        width: 100%;
+        max-width: none;
+        /* Same dvh caveat as the base rule above: on an iPad running as an
+           installed PWA in landscape (which easily crosses this width
+           breakpoint), plain dvh can misreport. Repeating the
+           dvh → -webkit-fill-available fallback here so this rule doesn't
+           quietly undo that fix for anyone who hits both at once. */
+        height: 100dvh;
+        height: -webkit-fill-available;
       }
 
       /* Nav is a normal top bar here, not a floating pill — the extra
@@ -3031,6 +3064,14 @@
 
       #app-container { background: var(--bg-light); }
 
+      /* Loading skeletons (DM list, comments, replies) default to a light
+         gray/white shimmer — needs its own dark-gray version or it flashes
+         white blocks on a black screen while content loads. */
+      .skeleton-row {
+        background: linear-gradient(100deg, #1c1c1e 30%, #2c2c2e 50%, #1c1c1e 70%);
+        background-size: 250% 100%;
+      }
+
       .logged-out-box p { color: #9a9a9e; }
 
       /* Frosted modals/menus keep the same glass technique, just tuned
@@ -3103,8 +3144,10 @@
       .dm-friend-avatar { background: #1c1c1e; }
       .dm-friend-name { color: #fff; }
       .dm-friend-preview { color: #9a9a9e; }
+      .dm-friend-item.unread .dm-friend-preview { color: #fff; }
       .dm-empty-state { color: #8e8e93; }
       .presence-dot { border-color: #0d0d0e; }
+      .dm-seen-label { color: #8e8e93; }
 
       .chat-header-bar { background: #0d0d0e; }
       .chat-header-avatar { background: #1c1c1e; }
@@ -3912,6 +3955,17 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         toast_link_copy_failed: 'Could not copy link',
         toast_video_send_failed: 'Could not send video',
         toast_message_send_failed: 'Failed to send message',
+        toast_report_success: "Reported — thanks, we'll take a look",
+        toast_report_failed: 'Could not submit report',
+        toast_video_private_set: 'Video set to private — only you can see it',
+        toast_video_public_set: 'Video set to public',
+        toast_posted_with_audio: 'Video posted with audio!',
+        toast_posted: 'Video posted!',
+        toast_upload_failed_generic: 'Upload failed. Please check preset settings.',
+        toast_sent_to: 'Sent to {name}',
+        dm_seen: 'Seen',
+        dm_sent_video_preview: '📹 Sent a video',
+        dm_say_hi: 'Say hi to {name}!',
         toast_already_switching_video: 'Already switching to video...',
         toast_camera_denied: 'Camera permission denied',
         toast_switch_video_failed: 'Could not switch to video',
@@ -4030,6 +4084,17 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         toast_link_copy_failed: 'No se pudo copiar el enlace',
         toast_video_send_failed: 'No se pudo enviar el video',
         toast_message_send_failed: 'No se pudo enviar el mensaje',
+        toast_report_success: 'Reportado — gracias, lo revisaremos',
+        toast_report_failed: 'No se pudo enviar el reporte',
+        toast_video_private_set: 'Video puesto en privado — solo tú puedes verlo',
+        toast_video_public_set: 'Video puesto en público',
+        toast_posted_with_audio: '¡Video publicado con audio!',
+        toast_posted: '¡Video publicado!',
+        toast_upload_failed_generic: 'Error al subir. Revisa la configuración del preset.',
+        toast_sent_to: 'Enviado a {name}',
+        dm_seen: 'Visto',
+        dm_sent_video_preview: '📹 Envió un video',
+        dm_say_hi: '¡Saluda a {name}!',
         toast_already_switching_video: 'Ya se está cambiando a video...',
         toast_camera_denied: 'Permiso de cámara denegado',
         toast_switch_video_failed: 'No se pudo cambiar a video',
@@ -4148,6 +4213,17 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         toast_link_copy_failed: '无法复制链接',
         toast_video_send_failed: '无法发送视频',
         toast_message_send_failed: '消息发送失败',
+        toast_report_success: '已举报 — 谢谢，我们会处理',
+        toast_report_failed: '举报提交失败',
+        toast_video_private_set: '视频已设为私密 — 只有你能看到',
+        toast_video_public_set: '视频已设为公开',
+        toast_posted_with_audio: '视频已发布，带音频！',
+        toast_posted: '视频已发布！',
+        toast_upload_failed_generic: '上传失败，请检查预设设置。',
+        toast_sent_to: '已发送给 {name}',
+        dm_seen: '已读',
+        dm_sent_video_preview: '📹 发送了一个视频',
+        dm_say_hi: '跟{name}打个招呼吧！',
         toast_already_switching_video: '正在切换到视频...',
         toast_camera_denied: '摄像头权限被拒绝',
         toast_switch_video_failed: '无法切换到视频',
@@ -4266,6 +4342,17 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         toast_link_copy_failed: 'Não foi possível copiar o link',
         toast_video_send_failed: 'Não foi possível enviar o vídeo',
         toast_message_send_failed: 'Falha ao enviar a mensagem',
+        toast_report_success: 'Denunciado — obrigado, vamos analisar',
+        toast_report_failed: 'Não foi possível enviar a denúncia',
+        toast_video_private_set: 'Vídeo definido como privado — só você pode vê-lo',
+        toast_video_public_set: 'Vídeo definido como público',
+        toast_posted_with_audio: 'Vídeo publicado com áudio!',
+        toast_posted: 'Vídeo publicado!',
+        toast_upload_failed_generic: 'Falha no upload. Verifique as configurações do preset.',
+        toast_sent_to: 'Enviado para {name}',
+        dm_seen: 'Visto',
+        dm_sent_video_preview: '📹 Enviou um vídeo',
+        dm_say_hi: 'Diga oi para {name}!',
         toast_already_switching_video: 'Já mudando para vídeo...',
         toast_camera_denied: 'Permissão de câmera negada',
         toast_switch_video_failed: 'Não foi possível mudar para vídeo',
@@ -4384,6 +4471,17 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         toast_link_copy_failed: 'Link konnte nicht kopiert werden',
         toast_video_send_failed: 'Video konnte nicht gesendet werden',
         toast_message_send_failed: 'Nachricht konnte nicht gesendet werden',
+        toast_report_success: 'Gemeldet — danke, wir schauen es uns an',
+        toast_report_failed: 'Meldung konnte nicht gesendet werden',
+        toast_video_private_set: 'Video auf privat gesetzt — nur du kannst es sehen',
+        toast_video_public_set: 'Video auf öffentlich gesetzt',
+        toast_posted_with_audio: 'Video mit Audio veröffentlicht!',
+        toast_posted: 'Video veröffentlicht!',
+        toast_upload_failed_generic: 'Upload fehlgeschlagen. Bitte Preset-Einstellungen prüfen.',
+        toast_sent_to: 'An {name} gesendet',
+        dm_seen: 'Gesehen',
+        dm_sent_video_preview: '📹 Video gesendet',
+        dm_say_hi: 'Sag {name} hallo!',
         toast_already_switching_video: 'Wechsle bereits zu Video...',
         toast_camera_denied: 'Kamerazugriff verweigert',
         toast_switch_video_failed: 'Konnte nicht zu Video wechseln',
@@ -4502,6 +4600,17 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         toast_link_copy_failed: 'リンクをコピーできませんでした',
         toast_video_send_failed: '動画を送信できませんでした',
         toast_message_send_failed: 'メッセージの送信に失敗しました',
+        toast_report_success: '報告しました — ありがとうございます、確認します',
+        toast_report_failed: '報告を送信できませんでした',
+        toast_video_private_set: '動画を非公開にしました — 自分だけが見られます',
+        toast_video_public_set: '動画を公開にしました',
+        toast_posted_with_audio: '音声付きで動画を投稿しました！',
+        toast_posted: '動画を投稿しました！',
+        toast_upload_failed_generic: 'アップロードに失敗しました。プリセット設定を確認してください。',
+        toast_sent_to: '{name}に送信しました',
+        dm_seen: '既読',
+        dm_sent_video_preview: '📹 動画を送信しました',
+        dm_say_hi: '{name}に挨拶しよう！',
         toast_already_switching_video: 'すでにビデオに切り替え中...',
         toast_camera_denied: 'カメラの権限が拒否されました',
         toast_switch_video_failed: 'ビデオに切り替えられませんでした',
@@ -4878,6 +4987,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     let isLiked = false;
     let activeChatFriendUid = null;
     let activeChatUnsubscribe = null;
+    let activeChatDocUnsubscribe = null;
+    let theirLastReadMs = 0;
     let pendingVideoFile = null;
     let pendingAudioFile = null;
     let pendingBannerFile = null;
@@ -4969,6 +5080,25 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     function invalidateUsersCache() {
       usersCache = null;
+    }
+
+    // Same pattern as getAllUsersCached, for video search (§ handleSearch
+    // below) — videos have no caption/description field to match against,
+    // so search matches on the author snapshot fields already stored on
+    // each video (authorName/authorHandle) rather than needing a second
+    // cross-reference against users.
+    let videosCache = null;
+    let videosCacheAt = 0;
+    const VIDEOS_CACHE_TTL_MS = 60000;
+
+    async function getAllVideosCached(forceRefresh) {
+      const isFresh = videosCache && (Date.now() - videosCacheAt) < VIDEOS_CACHE_TTL_MS;
+      if (isFresh && !forceRefresh) return videosCache;
+      const snap = await getDocs(collection(db, "videos"));
+      videosCache = [];
+      snap.forEach(d => videosCache.push({ id: d.id, ...d.data() }));
+      videosCacheAt = Date.now();
+      return videosCache;
     }
 
     function generateRandomUserHandle() {
@@ -5104,7 +5234,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // Simple client-side allowlist (case-insensitive, no leading @) of
     // handles that get a verified checkmark wherever their handle/name is
     // shown. Not a security feature — just a cosmetic badge.
-    const VERIFIED_HANDLES = new Set(['habib', 'okayy95', 'user6', 'unhingedej', 'piki']);
+    const VERIFIED_HANDLES = new Set(['habib', 'okayy95', 'user6', 'unhingedej']);
 
     function isVerifiedHandle(handle) {
       if (!handle) return false;
@@ -5582,56 +5712,48 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // Each device/install gets its own subscription doc, keyed by a hash
     // of its endpoint, so someone signed in on two devices gets pushes on
     // both rather than one overwriting the other.
-    // TEMPORARY DIAGNOSTIC MODE: without a computer, there's no way to see
-    // console errors on iOS, so this shows each step as an on-screen toast
-    // instead. Once push is confirmed working, these showToast(...) calls
-    // can be deleted (they're all clearly marked below) — they're not
-    // harmful to leave, just noisy on every sign-in.
+    // Diagnostic mode retired now that push is confirmed working — every
+    // step below used to also show as an on-screen toast (useful without
+    // computer access to read the console on iOS). Logging to console
+    // only now, so setup no longer pops visible toasts on every sign-in.
     async function setupPushNotifications() {
       if (!currentUser) return;
-      showToast('[Push] Starting setup...', 2500); // DIAGNOSTIC
+      console.log('[Push] Starting setup...');
 
       if (!isStandalonePWA()) {
-        showToast('[Push] Not installed as home screen app — stopping here', 4000); // DIAGNOSTIC
+        console.log('[Push] Not installed as home screen app — stopping here');
         return;
       }
-      showToast('[Push] Running as installed app ✓', 2000); // DIAGNOSTIC
+      console.log('[Push] Running as installed app');
 
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        showToast('[Push] This iOS version doesn\'t support Push — need 16.4+', 4000); // DIAGNOSTIC
+        console.log('[Push] This iOS version doesn\'t support Push — need 16.4+');
         return;
       }
-      showToast('[Push] Push API supported ✓', 2000); // DIAGNOSTIC
 
       if (!swRegistration) swRegistration = await registerServiceWorker();
       if (!swRegistration) {
-        showToast('[Push] Service worker registration FAILED — check sw.js is uploaded', 5000); // DIAGNOSTIC
+        console.warn('[Push] Service worker registration FAILED — check sw.js is uploaded');
         return;
       }
-      showToast('[Push] Service worker registered ✓', 2000); // DIAGNOSTIC
 
       try {
         let permission = Notification.permission;
-        showToast('[Push] Current permission: ' + permission, 3000); // DIAGNOSTIC
         if (permission === 'default') {
-          showToast('[Push] Requesting permission now...', 2500); // DIAGNOSTIC
           permission = await Notification.requestPermission();
-          showToast('[Push] Permission result: ' + permission, 3000); // DIAGNOSTIC
         }
         if (permission !== 'granted') {
-          showToast('[Push] Not granted — stopping here', 4000); // DIAGNOSTIC
+          console.log('[Push] Not granted — stopping here');
           return;
         }
 
         let subscription = await swRegistration.pushManager.getSubscription();
         if (!subscription) {
-          showToast('[Push] Subscribing to push service...', 2500); // DIAGNOSTIC
           subscription = await swRegistration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           });
         }
-        showToast('[Push] Subscribed ✓ saving to Firestore...', 2500); // DIAGNOSTIC
 
         const subJson = subscription.toJSON();
         const subId = btoa(subJson.endpoint).replace(/[^a-zA-Z0-9]/g, '').slice(0, 120);
@@ -5640,9 +5762,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           keys: subJson.keys,
           updatedAt: serverTimestamp()
         });
-        showToast('[Push] All done! Notifications should work now ✓', 4000); // DIAGNOSTIC
+        console.log('[Push] All done! Notifications should work now');
       } catch (e) {
-        showToast('[Push] ERROR: ' + (e.message || e), 6000); // DIAGNOSTIC
         console.warn('Push subscription setup error:', e);
       }
     }
@@ -5775,7 +5896,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
 
       const ok = await submitReport(targetType, targetId, payload);
-      showToast(ok ? 'Reported — thanks, we\'ll take a look' : 'Could not submit report');
+      showToast(ok ? t('toast_report_success') : t('toast_report_failed'));
     };
 
     window.reportChatUser = function() {
@@ -6767,16 +6888,19 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (v) updateDesktopProfilePanel(v);
 
       try {
-        await Promise.all([
-          updateDoc(doc(db, "users", currentUser.uid), {
-            following: isFollowing ? arrayRemove(targetUid) : arrayUnion(targetUid)
-          }),
-          updateDoc(doc(db, "users", targetUid), {
-            followersCount: increment(isFollowing ? -1 : 1)
-          })
-        ]);
+        // Same class of bug as comments: your own following-list update
+        // and the target's followersCount bump are independent writes.
+        // Bundling them meant a rules rejection on the *other* person's
+        // doc could make your own follow action look like it failed.
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          following: isFollowing ? arrayRemove(targetUid) : arrayUnion(targetUid)
+        });
         invalidateUsersCache();
         loadFriendsAndDms();
+
+        updateDoc(doc(db, "users", targetUid), {
+          followersCount: increment(isFollowing ? -1 : 1)
+        }).catch(e => console.warn('followersCount bump failed (follow itself still saved):', e));
       } catch (e) {
         console.error('Follow error (desktop panel):', e);
         showToast(t('toast_follow_error'));
@@ -6892,7 +7016,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const newVal = !v.isPrivate;
       v.isPrivate = newVal;
       renderProfileVideosGrid(profileVideosIsOwn);
-      showToast(newVal ? 'Video set to private' : 'Video set to public');
+      showToast(newVal ? t('toast_video_private_set') : t('toast_video_public_set'));
 
       try {
         await updateDoc(doc(db, 'videos', id), { isPrivate: newVal });
@@ -6938,14 +7062,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       localStorage.setItem(`riven_user_${currentUser.uid}`, JSON.stringify(myProfileData));
 
       try {
-        await Promise.all([
-          updateDoc(doc(db, "users", currentUser.uid), {
-            following: isFollowing ? arrayRemove(viewedProfileUid) : arrayUnion(viewedProfileUid)
-          }),
-          updateDoc(doc(db, "users", viewedProfileUid), {
-            followersCount: increment(isFollowing ? -1 : 1)
-          })
-        ]);
+        // Same fix as the desktop-panel follow toggle above.
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          following: isFollowing ? arrayRemove(viewedProfileUid) : arrayUnion(viewedProfileUid)
+        });
         invalidateUsersCache();
         updateProfileDisplay(
           document.getElementById('user-display-name').innerText,
@@ -6955,6 +7075,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           viewedProfileUid
         );
         loadFriendsAndDms();
+
+        updateDoc(doc(db, "users", viewedProfileUid), {
+          followersCount: increment(isFollowing ? -1 : 1)
+        }).catch(e => console.warn('followersCount bump failed (follow itself still saved):', e));
       } catch (e) {
         console.error("Follow error:", e);
         showToast(t('toast_follow_error'));
@@ -6984,22 +7108,31 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
 
       let matches = [];
+      let videoMatches = [];
 
       try {
-        const allUsers = await getAllUsersCached();
+        const [allUsers, allVideos] = await Promise.all([getAllUsersCached(), getAllVideosCached()]);
         matches = allUsers.filter(userData =>
           userData.name?.toLowerCase().includes(q) || userData.handle?.toLowerCase().includes(q)
         );
+        // No caption/description field exists on videos, so this matches
+        // by the author snapshot stored on the video itself. Public only —
+        // search shouldn't be a way to discover a private video exists,
+        // except your own.
+        videoMatches = allVideos.filter(v =>
+          (!v.isPrivate || (currentUser && v.uid === currentUser.uid)) &&
+          (v.authorName?.toLowerCase().includes(q) || v.authorHandle?.toLowerCase().includes(q))
+        ).slice(0, 12);
       } catch(e) {
         console.warn("Firestore search warning:", e);
       }
 
-      if (matches.length === 0) {
+      if (matches.length === 0 && videoMatches.length === 0) {
         resultsContainer.innerHTML = `<div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">${t('no_results_for')} "${query_}"</div>`;
         return;
       }
 
-      resultsContainer.innerHTML = matches.map(m => `
+      const accountsHtml = matches.map(m => `
         <div class="search-result-card" onclick="selectSearchResult('${m.handle}', '${(m.name || 'User').replace(/'/g, "\\'")}', '${m.pfp || ''}', '${m.uid || ''}')">
           <img class="search-avatar" loading="lazy" src="${m.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 44 44\'><circle cx=\'22\' cy=\'22\' r=\'22\' fill=\'%23333\'/></svg>'}" />
           <div class="search-info">
@@ -7008,6 +7141,20 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           </div>
         </div>
       `).join('');
+
+      const videosHtml = videoMatches.length ? `
+        <div class="search-section-label">${t('search_videos_label')}</div>
+        <div class="search-video-grid">
+          ${videoMatches.map(v => `
+            <div class="search-video-cell" onclick="openSharedVideo('${v.id}')">
+              <img class="search-video-thumb" loading="lazy" src="${getVideoThumbnail(v.videoUrl)}" onerror="this.style.background='#2c2c2e'; this.removeAttribute('src');">
+              <span class="search-video-author">@${escapeHtml(v.authorHandle || 'user')}</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : '';
+
+      resultsContainer.innerHTML = accountsHtml + videosHtml;
     };
 
     let searchDebounceTimer = null;
@@ -7322,6 +7469,45 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // but tapping it did nothing beyond a visual underline change.
     let activeFeedFilter = 'foryou';
 
+    // ---- Watched-video tracking (per-device, localStorage) — powers the
+    // Friends tab's "unseen only" filter. Deliberately not synced to
+    // Firestore: it's just a rolling recency list, not something worth a
+    // read/write per video watched, and per-device is a fine trade-off
+    // for what this is used for.
+    const WATCHED_VIDEOS_CAP = 500;
+    function getWatchedVideoIds() {
+      if (!currentUser) return [];
+      try {
+        return JSON.parse(localStorage.getItem(`riven_watched_videos_${currentUser.uid}`)) || [];
+      } catch (e) {
+        return [];
+      }
+    }
+    function markVideoWatched(videoId) {
+      if (!currentUser || !videoId) return;
+      const key = `riven_watched_videos_${currentUser.uid}`;
+      let watched = getWatchedVideoIds();
+      watched = watched.filter(id => id !== videoId);
+      watched.push(videoId);
+      if (watched.length > WATCHED_VIDEOS_CAP) watched = watched.slice(watched.length - WATCHED_VIDEOS_CAP);
+      try {
+        localStorage.setItem(key, JSON.stringify(watched));
+      } catch (e) { /* storage full/unavailable — not worth surfacing to the user */ }
+    }
+
+    // Lightweight ranking for the For You tab — no ML, just recency decay
+    // plus an engagement bump, so a fresh video with no likes yet still
+    // has a fair shot (pure engagement-sort would bury everything new),
+    // while videos actually getting likes/comments float up over pure
+    // chronological order.
+    function scoreVideoForFeed(v) {
+      const createdMs = v.createdAt?.toMillis ? v.createdAt.toMillis() : (v.createdAt || Date.now());
+      const hoursOld = Math.max(0, (Date.now() - createdMs) / 3600000);
+      const recencyScore = 100 / (1 + hoursOld / 12);
+      const engagementScore = ((v.likesBy?.length || 0) * 2) + ((v.commentsCount || 0) * 3);
+      return recencyScore + engagementScore;
+    }
+
     async function loadFeed() {
       try {
         // Fetch a wider pool than we'll necessarily show — the Friends
@@ -7340,7 +7526,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
         if (activeFeedFilter === 'friends') {
           const following = myProfileData?.following || [];
-          fetched = fetched.filter(v => following.includes(v.uid));
+          const watched = new Set(getWatchedVideoIds());
+          fetched = fetched.filter(v => following.includes(v.uid) && !watched.has(v.id));
+        } else {
+          fetched.sort((a, b) => scoreVideoForFeed(b) - scoreVideoForFeed(a));
         }
 
         videoQueue = fetched.slice(0, 30);
@@ -7428,6 +7617,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (v.id !== currentlyLoadedVideoId) {
         loadVideoMedia(v, direction, feedAudio, audioDiscItem, audioDisc);
         currentlyLoadedVideoId = v.id;
+        markVideoWatched(v.id);
       }
 
       updateVideoStatsUI(v);
@@ -7781,7 +7971,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       v.isPrivate = !v.isPrivate;
       renderCurrentVideo();
-      showToast(v.isPrivate ? 'Video set to private — only you can see it' : 'Video set to public');
+      showToast(v.isPrivate ? t('toast_video_private_set') : t('toast_video_public_set'));
 
       try {
         await updateDoc(doc(db, 'videos', v.id), { isPrivate: v.isPrivate });
@@ -7991,10 +8181,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         videoQueue.unshift({ id: newDocRef.id, ...baseFields });
         currentVideoIndex = 0;
         renderCurrentVideo();
-        showToast(audioUrl ? 'Video posted with audio!' : 'Video posted!');
+        showToast(audioUrl ? t('toast_posted_with_audio') : t('toast_posted'));
       } catch (err) {
         console.error('Upload error:', err);
-        showToast(err.message || 'Upload failed. Please check preset settings.');
+        showToast(err.message || t('toast_upload_failed_generic'));
       }
     }
 
@@ -8113,13 +8303,37 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       patchLiveAuthors(list);
     }
 
-    function renderReplyRow(r) {
+    // Replies are stored as a plain array field on the comment doc (no
+    // subcollection, no doc id per reply), so there's nothing to key a
+    // like/dislike toggle on. uid+createdAt is unique in practice (same
+    // user, same millisecond is effectively impossible) and works
+    // retroactively for replies posted before this existed.
+    function replyKey(r) {
+      return `${r.uid || ''}_${r.createdAt || ''}`;
+    }
+
+    function renderReplyRow(r, commentId) {
       const avatar = r.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\'><circle cx=\'12\' cy=\'12\' r=\'12\' fill=\'%23eee\'/></svg>';
+      const likesBy = r.likesBy || [];
+      const dislikesBy = r.dislikesBy || [];
+      const liked = !!(currentUser && likesBy.includes(currentUser.uid));
+      const disliked = !!(currentUser && dislikesBy.includes(currentUser.uid));
+      const key = replyKey(r);
       return `<div class="comment-reply-row">
         <img class="comment-avatar" loading="lazy" src="${avatar}" data-author-uid="${r.uid || ''}" data-author-avatar>
         <div class="comment-body">
           <div class="handle" data-author-uid="${r.uid || ''}" data-author-handle data-fallback="${escapeHtml(r.handle || 'user')}" data-badge-size="11">${withVerifiedBadge('@' + (r.handle || 'user'), r.handle, 11)}</div>
           <div class="text">${filterTextForViewer(escapeHtml(r.text || ''))}</div>
+          <div class="comment-actions">
+            <span class="comment-action-btn ${liked ? 'active-like' : ''}" onclick="toggleReplyReaction('${commentId}', '${key}', 'like')">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              ${likesBy.length}
+            </span>
+            <span class="comment-action-btn ${disliked ? 'active-dislike' : ''}" onclick="toggleReplyReaction('${commentId}', '${key}', 'dislike')">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23 15.41 17.41c.36-.36.59-.86.59-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+              ${dislikesBy.length}
+            </span>
+          </div>
         </div>
       </div>`;
     }
@@ -8154,7 +8368,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
             </span>
             <span class="comment-reply-link" onclick="toggleReplyInput('${c.id}')">Reply</span>
           </div>
-          ${replies.length ? `<div class="comment-replies">${replies.map(r => renderReplyRow(r)).join('')}</div>` : ''}
+          ${replies.length ? `<div class="comment-replies">${replies.map(r => renderReplyRow(r, c.id)).join('')}</div>` : ''}
           <div class="comment-reply-input-wrapper" id="reply-input-${c.id}">
             <input type="text" id="reply-text-${c.id}" placeholder="Write a reply..." onkeydown="if(event.key==='Enter'){submitCommentReply('${c.id}');}">
             <button class="comment-reply-send-btn" onclick="submitCommentReply('${c.id}')">Reply</button>
@@ -8214,6 +8428,89 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
     };
 
+    window.toggleReplyReaction = async function(commentId, replyKeyStr, type) {
+      if (!currentUser) {
+        showToast(t('toast_signin_react'));
+        return;
+      }
+      if (!currentCommentsVideoId) return;
+      const c = currentComments.find(cm => cm.id === commentId);
+      if (!c || !c.replies) return;
+      const idx = c.replies.findIndex(r => replyKey(r) === replyKeyStr);
+      if (idx === -1) return;
+
+      const r = c.replies[idx];
+      r.likesBy = r.likesBy || [];
+      r.dislikesBy = r.dislikesBy || [];
+      const uid = currentUser.uid;
+      const likedNow = r.likesBy.includes(uid);
+      const dislikedNow = r.dislikesBy.includes(uid);
+
+      if (type === 'like') {
+        if (likedNow) {
+          r.likesBy = r.likesBy.filter(id => id !== uid);
+        } else {
+          r.likesBy = [...r.likesBy, uid];
+          if (dislikedNow) r.dislikesBy = r.dislikesBy.filter(id => id !== uid);
+        }
+      } else {
+        if (dislikedNow) {
+          r.dislikesBy = r.dislikesBy.filter(id => id !== uid);
+        } else {
+          r.dislikesBy = [...r.dislikesBy, uid];
+          if (likedNow) r.likesBy = r.likesBy.filter(id => id !== uid);
+        }
+      }
+
+      renderCommentsList();
+
+      // Replies are a plain array field on the comment doc — no
+      // subcollection, no per-reply id — so arrayUnion/arrayRemove can't
+      // safely patch just one reply's reaction without racing a
+      // concurrent edit to the same array. A transaction reads the
+      // latest array, patches only this reply by its key, and writes the
+      // whole array back.
+      try {
+        await runTransaction(db, async (tx) => {
+          const ref = doc(db, 'videos', currentCommentsVideoId, 'comments', commentId);
+          const snap = await tx.get(ref);
+          if (!snap.exists()) return;
+          const freshReplies = snap.data().replies || [];
+          const freshIdx = freshReplies.findIndex(fr => replyKey(fr) === replyKeyStr);
+          if (freshIdx === -1) return;
+
+          const freshReply = { ...freshReplies[freshIdx] };
+          freshReply.likesBy = freshReply.likesBy || [];
+          freshReply.dislikesBy = freshReply.dislikesBy || [];
+          const fLiked = freshReply.likesBy.includes(uid);
+          const fDisliked = freshReply.dislikesBy.includes(uid);
+
+          if (type === 'like') {
+            if (fLiked) {
+              freshReply.likesBy = freshReply.likesBy.filter(id => id !== uid);
+            } else {
+              freshReply.likesBy = [...freshReply.likesBy, uid];
+              if (fDisliked) freshReply.dislikesBy = freshReply.dislikesBy.filter(id => id !== uid);
+            }
+          } else {
+            if (fDisliked) {
+              freshReply.dislikesBy = freshReply.dislikesBy.filter(id => id !== uid);
+            } else {
+              freshReply.dislikesBy = [...freshReply.dislikesBy, uid];
+              if (fLiked) freshReply.likesBy = freshReply.likesBy.filter(id => id !== uid);
+            }
+          }
+
+          const newReplies = freshReplies.slice();
+          newReplies[freshIdx] = freshReply;
+          tx.update(ref, { replies: newReplies });
+        });
+      } catch (e) {
+        console.warn('Reply reaction sync error:', e);
+        showToast(t('toast_save_failed') + ': ' + (e.code || e.message || 'unknown error'), 4000);
+      }
+    };
+
     window.toggleReplyInput = function(commentId) {
       const el = document.getElementById(`reply-input-${commentId}`);
       if (!el) return;
@@ -8249,6 +8546,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         handle: myProfileData?.handle || 'user',
         pfp: myProfileData?.pfp || '',
         text,
+        likesBy: [],
+        dislikesBy: [],
         createdAt: Date.now()
       };
 
@@ -8264,13 +8563,16 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
 
       try {
-        await Promise.all([
-          updateDoc(doc(db, 'videos', currentCommentsVideoId, 'comments', commentId), {
-            replies: arrayUnion(replyData)
-          }),
-          updateDoc(doc(db, 'videos', currentCommentsVideoId), { commentsCount: increment(1) })
-        ]);
+        // Same fix as submitComment: don't let a rejected commentsCount
+        // bump (on a video doc you likely don't own) make a saved reply
+        // look like it failed.
+        await updateDoc(doc(db, 'videos', currentCommentsVideoId, 'comments', commentId), {
+          replies: arrayUnion(replyData)
+        });
         maybeApplyAgeSafetyDowngrade(text);
+
+        updateDoc(doc(db, 'videos', currentCommentsVideoId), { commentsCount: increment(1) })
+          .catch(e => console.warn('commentsCount bump failed (reply itself still saved):', e));
       } catch (e) {
         console.warn('Reply save error:', e);
         showToast(t('toast_reply_save_failed') + ': ' + (e.code || e.message || 'unknown error'), 5000);
@@ -8329,15 +8631,22 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       document.querySelectorAll('#comment-count').forEach(el => { el.innerText = v.commentsCount; });
 
       try {
-        const [newDocRef] = await Promise.all([
-          addDoc(collection(db, 'videos', v.id, 'comments'), commentData),
-          updateDoc(doc(db, 'videos', v.id), { commentsCount: increment(1) })
-        ]);
+        // The comment write and the video's commentsCount bump are
+        // independent — bundling them in one Promise.all meant that if
+        // *only* the counter update got rejected (e.g. you don't own the
+        // video doc, so a security rule blocks that half), the whole
+        // thing looked like a failure even though the comment itself had
+        // already saved. Awaiting the comment first means success/failure
+        // now actually reflects whether the comment saved.
+        const newDocRef = await addDoc(collection(db, 'videos', v.id, 'comments'), commentData);
         currentComments.push({ id: newDocRef.id, ...commentData, createdAt: Date.now() });
         renderCommentsList();
         const list = document.getElementById('comments-list');
         list.scrollTop = list.scrollHeight;
         maybeApplyAgeSafetyDowngrade(text);
+
+        updateDoc(doc(db, 'videos', v.id), { commentsCount: increment(1) })
+          .catch(e => console.warn('commentsCount bump failed (comment itself still saved):', e));
       } catch (e) {
         console.warn('Comment save error:', e);
         showToast(t('toast_comment_save_failed'));
@@ -8450,12 +8759,13 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           }),
           setDoc(doc(db, "chats", chatId), {
             participants: [uidA, uidB],
-            lastMessage: '📹 Sent a video',
+            lastMessage: t('dm_sent_video_preview'),
+            lastMessageSenderUid: currentUser.uid,
             updatedAt: serverTimestamp()
           }, { merge: true })
         ]);
 
-        showToast(`Sent to ${friendName}`);
+        showToast(t('toast_sent_to').replace('{name}', friendName));
         triggerPushNotification(friendUid, {
           title: myProfileData?.name || 'Someone',
           body: 'Sent you a video',
@@ -8563,12 +8873,17 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           const chatId = getChatId(currentUser.uid, uData.uid);
           let lastMessage = null;
           let streak = 0;
+          let unread = false;
           try {
             const chatSnap = await getDoc(doc(db, "chats", chatId));
             if (chatSnap.exists()) {
               const cData = chatSnap.data();
               lastMessage = cData.lastMessage || null;
               streak = cData.streak || 0;
+              const myLastRead = cData[`lastRead_${currentUser.uid}`];
+              const myLastReadMs = myLastRead?.toMillis ? myLastRead.toMillis() : 0;
+              const updatedMs = cData.updatedAt?.toMillis ? cData.updatedAt.toMillis() : 0;
+              unread = cData.lastMessageSenderUid === uData.uid && updatedMs > myLastReadMs;
             }
           } catch (e) {
             console.warn('Chat lookup error for', chatId, e);
@@ -8580,6 +8895,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
             pfp: uData.pfp || '',
             lastMessage,
             streak,
+            unread,
             lastActive: uData.lastActive || null
           };
         }));
@@ -8597,12 +8913,12 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         friendsListEl.innerHTML = friends.map(f => {
           const previewText = f.lastMessage
             ? f.lastMessage
-            : `<span class="dm-active-prompt">Say hi to ${f.name}!</span>`;
+            : `<span class="dm-active-prompt">${t('dm_say_hi').replace('{name}', f.name)}</span>`;
           const streakBadge = f.streak > 0 ? `<span class="dm-friend-streak">🔥 ${f.streak}</span>` : '';
           const status = getActivityStatus(f.lastActive);
 
           return `
-            <div class="dm-friend-item" data-uid="${f.uid}" onclick="openActiveChat('${f.uid}', '${(f.name).replace(/'/g, "\\'")}', '${(f.pfp || '').replace(/'/g, "\\'")}', '${(f.handle || '').replace(/'/g, "\\'")}')">
+            <div class="dm-friend-item ${f.unread ? 'unread' : ''}" data-uid="${f.uid}" onclick="openActiveChat('${f.uid}', '${(f.name).replace(/'/g, "\\'")}', '${(f.pfp || '').replace(/'/g, "\\'")}', '${(f.handle || '').replace(/'/g, "\\'")}')">
               <div class="avatar-with-status">
                 <img class="dm-friend-avatar" loading="lazy" src="${f.pfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><circle cx=\'24\' cy=\'24\' r=\'24\' fill=\'%23eee\'/></svg>'}" />
                 <span class="presence-dot ${status.online ? 'online' : ''}"></span>
@@ -8612,6 +8928,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
                 <span class="dm-friend-preview">${previewText}</span>
                 <span class="activity-status ${status.online ? 'online' : ''}" style="margin-top:2px;">${status.text}</span>
               </div>
+              ${f.unread ? '<span class="dm-unread-dot"></span>' : ''}
               ${streakBadge}
             </div>
           `;
@@ -8663,9 +8980,27 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       chatBody.innerHTML = '';
 
       if (activeChatUnsubscribe) activeChatUnsubscribe();
+      if (activeChatDocUnsubscribe) activeChatDocUnsubscribe();
+      theirLastReadMs = 0;
 
       const chatId = getChatId(currentUser.uid, friendUid);
       refreshChatHeaderStreak(chatId);
+
+      // Mark read the moment the chat is opened, and merge (not update) —
+      // there may be no chat doc yet if neither side has sent a message.
+      const markReadNow = () => setDoc(doc(db, "chats", chatId), {
+        [`lastRead_${currentUser.uid}`]: serverTimestamp()
+      }, { merge: true }).catch(e => console.warn('Mark-read failed:', e));
+      markReadNow();
+
+      // Live-tracks the FRIEND's lastRead so "Seen" can appear under my
+      // last message the instant they open the chat on their end.
+      activeChatDocUnsubscribe = onSnapshot(doc(db, "chats", chatId), (snap) => {
+        if (!snap.exists()) return;
+        const theirRead = snap.data()[`lastRead_${friendUid}`];
+        theirLastReadMs = theirRead?.toMillis ? theirRead.toMillis() : 0;
+        updateSeenIndicator();
+      });
 
       const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
 
@@ -8680,6 +9015,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
             recentChatMessagesCache.push(msg);
             const isMine = msg.senderUid === currentUser.uid;
             const bubble = document.createElement('div');
+            const createdMs = msg.createdAt?.toMillis ? msg.createdAt.toMillis() : 0;
 
             if (msg.type === 'video-share') {
               bubble.className = `dm-bubble dm-bubble-video ${isMine ? 'mine' : 'theirs'}`;
@@ -8696,15 +9032,44 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
               bubble.textContent = msg.text;
             }
 
+            if (isMine) bubble.dataset.createdMs = createdMs;
             chatBody.appendChild(bubble);
           });
           chatBody.scrollTop = chatBody.scrollHeight;
         }
+        updateSeenIndicator();
+        // Any messages that arrived while the chat is already open count
+        // as read too, not just the read at open time.
+        markReadNow();
       });
     };
 
+    // Shows a small "Seen" label under my OWN last message once the
+    // friend's lastRead timestamp catches up to it. Re-run whenever
+    // either the message list or their read-receipt updates.
+    function updateSeenIndicator() {
+      const chatBody = document.getElementById('chat-body');
+      if (!chatBody) return;
+      const old = document.getElementById('dm-seen-label');
+      if (old) old.remove();
+
+      const mineBubbles = chatBody.querySelectorAll('.dm-bubble.mine');
+      if (!mineBubbles.length || !theirLastReadMs) return;
+      const lastMine = mineBubbles[mineBubbles.length - 1];
+      const createdMs = Number(lastMine.dataset.createdMs || 0);
+      if (createdMs && theirLastReadMs >= createdMs) {
+        const label = document.createElement('div');
+        label.id = 'dm-seen-label';
+        label.className = 'dm-seen-label';
+        label.textContent = t('dm_seen');
+        lastMine.insertAdjacentElement('afterend', label);
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }
+    }
+
     window.closeActiveChat = function() {
       if (activeChatUnsubscribe) activeChatUnsubscribe();
+      if (activeChatDocUnsubscribe) activeChatDocUnsubscribe();
       unsubscribeChatHeaderPresence();
       activeChatFriendUid = null;
       document.body.classList.remove('in-active-chat');
@@ -8741,6 +9106,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           tx.set(chatRef, {
             participants: [uidA, uidB],
             lastMessage: text,
+            lastMessageSenderUid: currentUser.uid,
             updatedAt: serverTimestamp(),
             activeDates,
             streak,
