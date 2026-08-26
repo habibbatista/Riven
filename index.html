@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Restores the real /Riven/@handle URL that 404.html repackaged into
+       a query string — GitHub Pages has no server-side routing, so a
+       fresh hit on any path other than /Riven/ itself 404s there first.
+       Must run before anything else touches location.pathname (the
+       profile-URL logic further down reads it). See 404.html for the
+       other half of this. -->
+  <script>
+    (function() {
+      var params = new URLSearchParams(location.search);
+      var redirect = params.get('redirect');
+      if (redirect) {
+        history.replaceState(null, '', '/Riven/' + redirect);
+      }
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
   <!-- Tells Safari (and Chrome/PWA installs) what color to tint the status
@@ -192,6 +207,19 @@
       fill: currentColor;
       display: inline-block;
       vertical-align: middle;
+    }
+
+    .nav-profile-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    /* The other nav icons signal "active" via opacity/scale (already
+       applied to the whole .nav-item), which reads fine on a line icon
+       but is subtle on a photo — an accent ring makes it unambiguous. */
+    .nav-item.active .nav-profile-avatar {
+      box-shadow: 0 0 0 2px var(--accent-pink);
     }
 
     /* Scoped opt-in variant for the redesigned line-style icons (nav,
@@ -519,6 +547,7 @@
       gap: 8px;
       color: #fff;
       max-width: 70%;
+      cursor: pointer;
     }
 
     .video-author-avatar {
@@ -1004,6 +1033,26 @@
       backdrop-filter: blur(4px);
       -webkit-backdrop-filter: blur(4px);
     }
+
+    .profile-back-btn {
+      position: absolute;
+      top: max(10px, var(--safe-top));
+      left: 16px;
+      z-index: 5;
+      background: rgba(0,0,0,0.35);
+      border: none;
+      cursor: pointer;
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .profile-back-btn .icon-svg { width: 18px; height: 18px; fill: currentColor; }
 
     .profile-menu-dropdown {
       display: none;
@@ -1699,6 +1748,19 @@
       font-weight: 600;
     }
 
+    .dm-header-icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+    .dm-header-icon-btn:active { background: rgba(0,0,0,0.06); }
+    .dm-header-icon-btn .icon-svg { width: 22px; height: 22px; }
+
     .dm-friends-list {
       display: flex;
       flex-direction: column;
@@ -2008,6 +2070,10 @@
       position: sticky;
       bottom: 0;
       z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
     }
 
     .dm-input-bubble {
@@ -2018,19 +2084,102 @@
       padding: 10px 16px;
       gap: 10px;
       background: #fff;
+      flex: 1;
+      min-width: 0;
     }
 
     .dm-input-bubble input {
       flex: 1;
+      min-width: 0;
       border: none;
       outline: none;
       font-size: 14px;
       background: transparent;
     }
 
-    .dm-send-icon {
+    .dm-input-icon-btn {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #111;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+    }
+    .dm-input-icon-btn:active { background: rgba(0,0,0,0.08); transform: scale(0.9); }
+    .dm-input-icon-btn .icon-svg { fill: currentColor; }
+
+    .dm-send-btn { display: none; }
+    .dm-mic-btn.recording { color: #ff3b30; }
+
+    .dm-recording-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      position: absolute;
+      right: 16px;
+      bottom: calc(100% + 8px);
+      background: #1c1c1e;
+      color: #fff;
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .dm-recording-indicator.active { display: flex; }
+    .dm-recording-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff3b30;
+      animation: recordingPulse 1s ease-in-out infinite;
+    }
+    @keyframes recordingPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Attachment/voice-note message bubbles */
+    .dm-bubble-image img {
+      display: block;
+      max-width: 200px;
+      max-height: 260px;
+      border-radius: 14px;
+      object-fit: cover;
       cursor: pointer;
     }
+    .dm-bubble-voice {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 160px;
+    }
+    .dm-voice-play-btn {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .dm-bubble.mine .dm-voice-play-btn { background: rgba(255,255,255,0.25); }
+    .dm-voice-play-btn .icon-svg { width: 16px; height: 16px; fill: currentColor; }
+    .dm-voice-waveform {
+      flex: 1;
+      height: 2px;
+      background: currentColor;
+      opacity: 0.3;
+      border-radius: 1px;
+    }
+    .dm-voice-duration { font-size: 11px; opacity: 0.7; flex-shrink: 0; }
+    .dm-voice-play-btn.playing .play-icon { display: none; }
+    .dm-voice-play-btn.playing .pause-icon { display: block !important; }
 
     /* BOTTOM NAV FIX */
     .bottom-nav {
@@ -3064,6 +3213,16 @@
 
       #app-container { background: var(--bg-light); }
 
+      /* The desktop 3-column layout's left profile panel was never given
+         a dark-mode pass at all — it kept its hardcoded white background
+         while --text-dark above flips to near-white, so the display name
+         (which has no color of its own and just inherits --text-dark)
+         became near-white text on a white panel: invisible. The handle
+         stayed visible only because it has its own explicit gray color. */
+      #desktop-profile-panel { background: #0d0d0e; border-right-color: #262628; }
+      .desktop-panel-name { color: #fff; }
+      .desktop-panel-avatar { background: #1c1c1e; border-color: #2c2c2e; }
+
       /* Loading skeletons (DM list, comments, replies) default to a light
          gray/white shimmer — needs its own dark-gray version or it flashes
          white blocks on a black screen while content loads. */
@@ -3160,6 +3319,10 @@
       .dm-input-bubble { background: #0d0d0e; border-color: #3a3a3c; }
       .dm-input-bubble input { color: #fff; }
       .dm-input-bubble svg { fill: #eee !important; }
+      .dm-input-icon-btn { color: #eee; }
+      .dm-input-icon-btn:active { background: rgba(255,255,255,0.12); }
+      .dm-header-icon-btn svg { fill: #eee !important; }
+      .dm-header-icon-btn:active { background: rgba(255,255,255,0.1); }
 
       .switch-account-row { background: #1c1c1e; }
       .switch-account-row:active { background: #262628; }
@@ -3350,7 +3513,9 @@
       <div id="dm-list-container" style="display: flex; flex-direction: column; height: 100%;">
         <header class="dm-header">
           <span class="dm-title" data-i18n="dm_title">Messages</span>
-          <svg class="icon-svg" style="fill:#111;" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          <div class="dm-header-icon-btn" onclick="openSearchOverlay()" data-i18n-title="dm_find_people" title="Find people">
+            <svg class="icon-svg" style="fill:#111;" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          </div>
         </header>
 
         <div class="dm-friends-list" id="dm-friends-list">
@@ -3383,9 +3548,6 @@
             <div class="chat-icon-btn" onclick="startCall('voice')" data-i18n-title="voice_call" title="Voice call">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
             </div>
-            <div class="chat-icon-btn" onclick="reportChatUser()" data-i18n-title="report" title="Report">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>
-            </div>
             <div class="chat-icon-btn" onclick="toggleChatMenu()" data-i18n-title="more" title="More">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
             </div>
@@ -3399,9 +3561,22 @@
         <div class="chat-body" id="chat-body"></div>
 
         <div class="dm-input-wrapper">
+          <input type="file" id="dm-image-input" accept="image/*" style="display:none;" onchange="handleDmImageSelected(event)">
+          <div class="dm-input-icon-btn" id="dm-attach-btn" onclick="document.getElementById('dm-image-input').click()" data-i18n-title="dm_attach_photo" title="Attach photo">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 20H4V6h9V4H4c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-9h-2v9zM13 9.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5S15.33 8 14.5 8 13 8.67 13 9.5zM6 18h12l-3.75-5-3 4L9 14l-3 4z"/></svg>
+          </div>
           <div class="dm-input-bubble">
-            <input type="text" id="dm-text-input" data-i18n-placeholder="dm_message_placeholder" placeholder="Message..." onkeydown="if(event.key==='Enter'){sendDmMessage();}">
-            <svg class="icon-svg dm-send-icon" style="fill:#111;" viewBox="0 0 24 24" onclick="sendDmMessage()"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            <input type="text" id="dm-text-input" data-i18n-placeholder="dm_message_placeholder" placeholder="Message..." oninput="updateDmSendIcon()" onkeydown="if(event.key==='Enter'){sendDmMessage();}">
+          </div>
+          <div class="dm-input-icon-btn dm-send-btn" id="dm-send-btn" onclick="sendDmMessage()">
+            <svg class="icon-svg" style="fill:#111;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </div>
+          <div class="dm-input-icon-btn dm-mic-btn" id="dm-mic-btn" onmousedown="startVoiceNote()" ontouchstart="startVoiceNote(); event.preventDefault();" onmouseup="stopVoiceNote()" ontouchend="stopVoiceNote()" data-i18n-title="dm_hold_to_record" title="Hold to record">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+          </div>
+          <div class="dm-recording-indicator" id="dm-recording-indicator">
+            <span class="dm-recording-dot"></span>
+            <span data-i18n="dm_recording">Recording… release to send</span>
           </div>
         </div>
       </div>
@@ -3447,6 +3622,14 @@
             <div class="profile-menu-item danger" data-i18n="log_out" onclick="logoutUser()">Log Out</div>
           </div>
         </div>
+
+        <!-- Shown only on someone ELSE's profile (see updateProfileDisplay) —
+             the "..." menu above only ever makes sense on your own profile,
+             so someone else's needs its own way back rather than nothing at
+             all in that top-left corner. -->
+        <button class="profile-back-btn" id="profile-back-btn" style="display:none;" onclick="switchTab('feed-screen', document.getElementById('nav-feed-btn'))">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M15.5 19a1 1 0 01-.7-.29l-6-6a1 1 0 010-1.42l6-6a1 1 0 111.4 1.42L10.91 12l5.29 5.29A1 1 0 0115.5 19z"/></svg>
+        </button>
 
         <div class="profile-card">
           <div class="profile-meta">
@@ -3662,7 +3845,7 @@
     <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.0 BETA (260825R1B)
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.2 BETA (260824R2B)
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -3799,7 +3982,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         </svg>
       </div>
       <div class="nav-item" id="nav-profile-btn" onclick="openMyProfile(this)">
-        <svg class="icon-svg icon-line" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <img class="nav-profile-avatar" id="nav-profile-avatar" style="display:none;" src="" alt="">
+        <svg class="icon-svg icon-line" id="nav-profile-fallback-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </div>
       <!-- Desktop-only "..." account menu (Edit Profile / Switch Account /
            Log Out) — reuses the profile screen's dropdown so there's one
@@ -3966,6 +4150,15 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         dm_seen: 'Seen',
         dm_sent_video_preview: '📹 Sent a video',
         dm_say_hi: 'Say hi to {name}!',
+        dm_sent_photo_preview: '📷 Photo',
+        dm_sent_voice_preview: '🎤 Voice message',
+        dm_find_people: 'Find people',
+        dm_attach_photo: 'Attach photo',
+        dm_hold_to_record: 'Hold to record',
+        dm_recording: 'Recording… release to send',
+        toast_uploading_image: 'Uploading photo…',
+        toast_uploading_voice: 'Uploading voice message…',
+        toast_mic_permission_denied: "Couldn't access the microphone",
         toast_already_switching_video: 'Already switching to video...',
         toast_camera_denied: 'Camera permission denied',
         toast_switch_video_failed: 'Could not switch to video',
@@ -4095,6 +4288,15 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         dm_seen: 'Visto',
         dm_sent_video_preview: '📹 Envió un video',
         dm_say_hi: '¡Saluda a {name}!',
+        dm_sent_photo_preview: '📷 Foto',
+        dm_sent_voice_preview: '🎤 Mensaje de voz',
+        dm_find_people: 'Buscar personas',
+        dm_attach_photo: 'Adjuntar foto',
+        dm_hold_to_record: 'Mantén presionado para grabar',
+        dm_recording: 'Grabando… suelta para enviar',
+        toast_uploading_image: 'Subiendo foto…',
+        toast_uploading_voice: 'Subiendo mensaje de voz…',
+        toast_mic_permission_denied: 'No se pudo acceder al micrófono',
         toast_already_switching_video: 'Ya se está cambiando a video...',
         toast_camera_denied: 'Permiso de cámara denegado',
         toast_switch_video_failed: 'No se pudo cambiar a video',
@@ -4224,6 +4426,15 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         dm_seen: '已读',
         dm_sent_video_preview: '📹 发送了一个视频',
         dm_say_hi: '跟{name}打个招呼吧！',
+        dm_sent_photo_preview: '📷 照片',
+        dm_sent_voice_preview: '🎤 语音消息',
+        dm_find_people: '查找用户',
+        dm_attach_photo: '添加照片',
+        dm_hold_to_record: '按住录音',
+        dm_recording: '正在录音…松开发送',
+        toast_uploading_image: '正在上传照片…',
+        toast_uploading_voice: '正在上传语音消息…',
+        toast_mic_permission_denied: '无法访问麦克风',
         toast_already_switching_video: '正在切换到视频...',
         toast_camera_denied: '摄像头权限被拒绝',
         toast_switch_video_failed: '无法切换到视频',
@@ -4353,6 +4564,15 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         dm_seen: 'Visto',
         dm_sent_video_preview: '📹 Enviou um vídeo',
         dm_say_hi: 'Diga oi para {name}!',
+        dm_sent_photo_preview: '📷 Foto',
+        dm_sent_voice_preview: '🎤 Mensagem de voz',
+        dm_find_people: 'Encontrar pessoas',
+        dm_attach_photo: 'Anexar foto',
+        dm_hold_to_record: 'Segure para gravar',
+        dm_recording: 'Gravando… solte para enviar',
+        toast_uploading_image: 'Enviando foto…',
+        toast_uploading_voice: 'Enviando mensagem de voz…',
+        toast_mic_permission_denied: 'Não foi possível acessar o microfone',
         toast_already_switching_video: 'Já mudando para vídeo...',
         toast_camera_denied: 'Permissão de câmera negada',
         toast_switch_video_failed: 'Não foi possível mudar para vídeo',
@@ -4482,6 +4702,15 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         dm_seen: 'Gesehen',
         dm_sent_video_preview: '📹 Video gesendet',
         dm_say_hi: 'Sag {name} hallo!',
+        dm_sent_photo_preview: '📷 Foto',
+        dm_sent_voice_preview: '🎤 Sprachnachricht',
+        dm_find_people: 'Personen finden',
+        dm_attach_photo: 'Foto anhängen',
+        dm_hold_to_record: 'Halten zum Aufnehmen',
+        dm_recording: 'Aufnahme läuft… loslassen zum Senden',
+        toast_uploading_image: 'Foto wird hochgeladen…',
+        toast_uploading_voice: 'Sprachnachricht wird hochgeladen…',
+        toast_mic_permission_denied: 'Zugriff auf das Mikrofon nicht möglich',
         toast_already_switching_video: 'Wechsle bereits zu Video...',
         toast_camera_denied: 'Kamerazugriff verweigert',
         toast_switch_video_failed: 'Konnte nicht zu Video wechseln',
@@ -4611,6 +4840,15 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         dm_seen: '既読',
         dm_sent_video_preview: '📹 動画を送信しました',
         dm_say_hi: '{name}に挨拶しよう！',
+        dm_sent_photo_preview: '📷 写真',
+        dm_sent_voice_preview: '🎤 音声メッセージ',
+        dm_find_people: 'ユーザーを探す',
+        dm_attach_photo: '写真を添付',
+        dm_hold_to_record: '長押しで録音',
+        dm_recording: '録音中…離すと送信されます',
+        toast_uploading_image: '写真をアップロード中…',
+        toast_uploading_voice: '音声メッセージをアップロード中…',
+        toast_mic_permission_denied: 'マイクにアクセスできませんでした',
         toast_already_switching_video: 'すでにビデオに切り替え中...',
         toast_camera_denied: 'カメラの権限が拒否されました',
         toast_switch_video_failed: 'ビデオに切り替えられませんでした',
@@ -6462,13 +6700,59 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }));
     }
 
+    // GitHub Pages project-page base — this repo is served at
+    // habibbatista.github.io/Riven/, so that's the root every profile
+    // path needs to stay under.
+    const APP_BASE_PATH = '/Riven/';
+
     function setProfileUrl(handle) {
       const cleanHandle = handle.replace('@', '').toLowerCase();
-      const newHash = `#/@${cleanHandle}`;
-      if (window.location.hash !== newHash) {
-        history.pushState(null, '', newHash);
+      const newPath = `${APP_BASE_PATH}@${cleanHandle}`;
+      if (window.location.pathname !== newPath) {
+        history.pushState(null, '', newPath);
       }
     }
+
+    function clearProfileUrl() {
+      if (window.location.pathname !== APP_BASE_PATH) {
+        history.pushState(null, '', APP_BASE_PATH);
+      }
+    }
+
+    // Runs once on load (and can be re-run on popstate) — if the URL
+    // already points at someone's profile (a shared link, a refresh, or
+    // hitting Back), open straight to it instead of always landing on the
+    // feed. Requires the 404.html redirect trick for a truly fresh load,
+    // since GitHub Pages has no server-side routing of its own; without
+    // it this still works for in-app navigation and the Back/Forward
+    // buttons, just not a cold hit on the URL.
+    async function openProfileFromUrlIfPresent() {
+      const path = window.location.pathname;
+      if (!path.startsWith(APP_BASE_PATH)) return false;
+      const rest = path.slice(APP_BASE_PATH.length);
+      if (!rest.startsWith('@') || rest.length < 2) return false;
+      const handle = rest.slice(1).toLowerCase();
+
+      try {
+        const allUsers = await getAllUsersCached();
+        const match = allUsers.find(u => (u.handle || '').toLowerCase() === handle);
+        if (match) {
+          openUserProfile(match.uid, match.name, match.handle, match.pfp);
+          return true;
+        }
+      } catch (e) {
+        console.warn('Profile-from-URL lookup failed:', e);
+      }
+      return false;
+    }
+
+    window.addEventListener('popstate', () => {
+      if (!window.location.pathname.startsWith(APP_BASE_PATH) || window.location.pathname === APP_BASE_PATH) {
+        switchTab('feed-screen', document.getElementById('nav-feed-btn'));
+      } else {
+        openProfileFromUrlIfPresent();
+      }
+    });
 
     // ---- Switch Account ----
     // We keep a small local (this-device-only) list of accounts that have
@@ -6728,7 +7012,30 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         topBar.style.visibility = isOwnProfile ? 'visible' : 'hidden';
         topBar.style.pointerEvents = isOwnProfile ? 'auto' : 'none';
       }
+      // The back button is the other-profile counterpart to that "..."
+      // menu — exactly one of the two is ever shown.
+      const backBtn = document.getElementById('profile-back-btn');
+      if (backBtn) backBtn.style.display = isOwnProfile ? 'none' : 'flex';
       toggleProfileMenu(true);
+
+      // Bottom-nav Profile icon shows your own current avatar instead of
+      // the generic silhouette, once one is known. updateProfileDisplay
+      // already runs on login and after every edit, so this is the one
+      // place that needs to know about it.
+      if (isOwnProfile) {
+        const navImg = document.getElementById('nav-profile-avatar');
+        const navFallback = document.getElementById('nav-profile-fallback-icon');
+        if (navImg && navFallback) {
+          if (pfp) {
+            navImg.src = pfp;
+            navImg.style.display = 'block';
+            navFallback.style.display = 'none';
+          } else {
+            navImg.style.display = 'none';
+            navFallback.style.display = 'block';
+          }
+        }
+      }
 
       if (isOwnProfile) {
         followBtn.style.display = 'none';
@@ -7163,11 +7470,20 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       searchDebounceTimer = setTimeout(() => handleSearch(value), 220);
     };
 
+    // Single entry point for "go view this person's profile" — used by
+    // search results, tapping an author's handle/avatar on a video, and
+    // tapping a commenter's handle/avatar. Doesn't highlight the Profile
+    // nav tab when it's someone else's profile (see updateProfileDisplay),
+    // since that implied "this is you" even when it wasn't.
+    window.openUserProfile = function(uid, name, handle, pfp) {
+      const isOwnProfile = !!(currentUser && uid === currentUser.uid);
+      switchTab('profile-screen', isOwnProfile ? document.getElementById('nav-profile-btn') : null);
+      updateProfileDisplay(name, handle, pfp, isOwnProfile, uid);
+    };
+
     window.selectSearchResult = function(handle, name, pfp, uid) {
       closeSearchOverlay();
-      switchTab('profile-screen', document.getElementById('nav-profile-btn'));
-      const isOwnProfile = (currentUser && uid === currentUser.uid) || (myProfileData && handle === myProfileData.handle);
-      updateProfileDisplay(name, handle, pfp, isOwnProfile, uid);
+      openUserProfile(uid, name, handle, pfp);
     };
 
     // EDIT PROFILE
@@ -7703,6 +8019,9 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       authorAvatarEl.src = v.authorPfp || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\'><circle cx=\'16\' cy=\'16\' r=\'16\' fill=\'%23333\'/></svg>';
       authorAvatarEl.setAttribute('data-author-uid', v.uid || '');
       authorAvatarEl.setAttribute('data-author-avatar', '');
+      // Tapping either the avatar or the handle opens that person's
+      // profile — previously neither did anything at all.
+      authorBar.onclick = () => openUserProfile(v.uid, v.authorName, v.authorHandle, v.authorPfp);
       patchLiveAuthors(document);
     }
 
@@ -9027,6 +9346,21 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
                 </div>
               `;
               bubble.onclick = () => openSharedVideo(msg.videoId);
+            } else if (msg.type === 'image') {
+              bubble.className = `dm-bubble dm-bubble-image ${isMine ? 'mine' : 'theirs'}`;
+              bubble.innerHTML = `<img src="${msg.mediaUrl}" loading="lazy" onclick="window.open('${msg.mediaUrl}', '_blank')">`;
+            } else if (msg.type === 'voice') {
+              bubble.className = `dm-bubble dm-bubble-voice ${isMine ? 'mine' : 'theirs'}`;
+              const mins = Math.floor((msg.duration || 0) / 60);
+              const secs = String((msg.duration || 0) % 60).padStart(2, '0');
+              bubble.innerHTML = `
+                <div class="dm-voice-play-btn" onclick="toggleVoiceNotePlayback(this, '${msg.mediaUrl}')">
+                  <svg class="icon-svg play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  <svg class="icon-svg pause-icon" style="display:none;" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </div>
+                <span class="dm-voice-waveform"></span>
+                <span class="dm-voice-duration">${mins}:${secs}</span>
+              `;
             } else {
               bubble.className = `dm-bubble ${isMine ? 'mine' : 'theirs'}`;
               bubble.textContent = msg.text;
@@ -9078,22 +9412,21 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       loadFriendsAndDms();
     };
 
-    window.sendDmMessage = async function() {
+    // Shared by text, image, and voice-note sends — everything past "what
+    // are the message-specific fields and what should the DM list preview
+    // say" is identical (streak transaction, push notification, etc.), so
+    // this is the one place that logic lives instead of copy-pasted three
+    // times over.
+    async function sendDmPayload(messageFields, previewText) {
       if (!currentUser || !activeChatFriendUid) return;
-
-      const input = document.getElementById('dm-text-input');
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
-
       const chatId = getChatId(currentUser.uid, activeChatFriendUid);
       const [uidA, uidB] = chatId.split('_');
 
       try {
         await addDoc(collection(db, "chats", chatId, "messages"), {
           senderUid: currentUser.uid,
-          text: text,
-          createdAt: serverTimestamp()
+          createdAt: serverTimestamp(),
+          ...messageFields
         });
 
         // Transaction keeps the daily streak accurate even with concurrent sends
@@ -9105,7 +9438,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
           tx.set(chatRef, {
             participants: [uidA, uidB],
-            lastMessage: text,
+            lastMessage: previewText,
             lastMessageSenderUid: currentUser.uid,
             updatedAt: serverTimestamp(),
             activeDates,
@@ -9117,16 +9450,150 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         refreshChatHeaderStreak(chatId);
         triggerPushNotification(activeChatFriendUid, {
           title: myProfileData?.name || 'Someone',
-          body: text,
+          body: previewText,
           type: 'message',
           tag: `chat-${chatId}`,
           url: './#/dm'
         });
-
       } catch (e) {
         console.error("Error sending DM:", e);
         showToast(t('toast_message_send_failed'));
       }
+    }
+
+    window.sendDmMessage = async function() {
+      const input = document.getElementById('dm-text-input');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      updateDmSendIcon();
+      await sendDmPayload({ type: 'text', text }, text);
+    };
+
+    // Toggles between the mic (nothing typed yet) and send button (once
+    // there's text) — holding the mic down to record only makes sense
+    // when there isn't already a typed message waiting to be sent.
+    window.updateDmSendIcon = function() {
+      const hasText = document.getElementById('dm-text-input').value.trim().length > 0;
+      document.getElementById('dm-send-btn').style.display = hasText ? 'flex' : 'none';
+      document.getElementById('dm-mic-btn').style.display = hasText ? 'none' : 'flex';
+    };
+
+    // ---- DM image attachments ----
+    window.handleDmImageSelected = async function(event) {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file || !currentUser || !activeChatFriendUid) return;
+
+      showToast(t('toast_uploading_image'));
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (!data.secure_url) throw new Error(data.error?.message || 'Upload failed');
+        await sendDmPayload({ type: 'image', mediaUrl: data.secure_url }, t('dm_sent_photo_preview'));
+      } catch (e) {
+        console.error('DM image upload error:', e);
+        showToast(t('toast_upload_failed_generic'));
+      }
+    };
+
+    // ---- DM voice notes ----
+    // Held-button-to-record, like the platforms this is modeled on. A tap
+    // too short to be an intentional recording (under ~400ms — likely a
+    // misfire or the user just tapping to see what the button does)
+    // discards instead of sending a near-silent blip.
+    let dmVoiceRecorder = null;
+    let dmVoiceChunks = [];
+    let dmVoiceStartedAt = 0;
+    const DM_VOICE_MIN_MS = 400;
+
+    window.startVoiceNote = async function() {
+      if (!currentUser || !activeChatFriendUid || dmVoiceRecorder) return;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        dmVoiceChunks = [];
+        dmVoiceRecorder = new MediaRecorder(stream);
+        dmVoiceRecorder.ondataavailable = (e) => { if (e.data.size > 0) dmVoiceChunks.push(e.data); };
+        dmVoiceRecorder.start();
+        dmVoiceStartedAt = Date.now();
+        document.getElementById('dm-mic-btn').classList.add('recording');
+        document.getElementById('dm-recording-indicator').classList.add('active');
+      } catch (e) {
+        console.warn('Mic access error:', e);
+        showToast(t('toast_mic_permission_denied'));
+      }
+    };
+
+    window.stopVoiceNote = async function() {
+      if (!dmVoiceRecorder) return;
+      const recorder = dmVoiceRecorder;
+      const durationMs = Date.now() - dmVoiceStartedAt;
+      dmVoiceRecorder = null;
+      document.getElementById('dm-mic-btn').classList.remove('recording');
+      document.getElementById('dm-recording-indicator').classList.remove('active');
+
+      const stopped = new Promise(resolve => { recorder.onstop = resolve; });
+      recorder.stop();
+      recorder.stream.getTracks().forEach(t => t.stop());
+      await stopped;
+
+      if (durationMs < DM_VOICE_MIN_MS) return; // too short — treat as an accidental press
+
+      const blob = new Blob(dmVoiceChunks, { type: 'audio/webm' });
+      showToast(t('toast_uploading_voice'));
+      try {
+        const formData = new FormData();
+        formData.append('file', blob);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (!data.secure_url) throw new Error(data.error?.message || 'Upload failed');
+        await sendDmPayload({
+          type: 'voice',
+          mediaUrl: data.secure_url,
+          duration: Math.round(durationMs / 1000)
+        }, t('dm_sent_voice_preview'));
+      } catch (e) {
+        console.error('DM voice upload error:', e);
+        showToast(t('toast_upload_failed_generic'));
+      }
+    };
+
+    // Custom play/pause for voice-note bubbles instead of the native
+    // <audio> widget, which renders wildly inconsistently across browsers
+    // (and looks pretty rough on most of them) — one shared <audio>
+    // element reused for whichever bubble is currently playing, so
+    // starting a new one always stops whatever was playing before it.
+    let dmVoicePlayerEl = null;
+    let dmVoicePlayingBtn = null;
+    window.toggleVoiceNotePlayback = function(btn, url) {
+      if (!dmVoicePlayerEl) {
+        dmVoicePlayerEl = new Audio();
+        dmVoicePlayerEl.addEventListener('ended', () => {
+          if (dmVoicePlayingBtn) dmVoicePlayingBtn.classList.remove('playing');
+          dmVoicePlayingBtn = null;
+        });
+      }
+      if (dmVoicePlayingBtn === btn) {
+        dmVoicePlayerEl.pause();
+        btn.classList.remove('playing');
+        dmVoicePlayingBtn = null;
+        return;
+      }
+      if (dmVoicePlayingBtn) dmVoicePlayingBtn.classList.remove('playing');
+      dmVoicePlayerEl.src = url;
+      dmVoicePlayerEl.play().catch(() => {});
+      btn.classList.add('playing');
+      dmVoicePlayingBtn = btn;
     };
 
     // ---------------- CALLS (WebRTC + Firestore signaling) ----------------
@@ -9696,6 +10163,13 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         closeActiveChat();
       }
 
+      // The URL only ever reflects a profile — leaving the profile screen
+      // for anything else should drop back to the plain /Riven/ root
+      // rather than leaving a stale @handle in the address bar.
+      if (screenId !== 'profile-screen') {
+        clearProfileUrl();
+      }
+
       if (screenId === currentScreenId) {
         // Re-tapping the current tab: no slide, just make sure state (nav
         // highlight, video playback) is consistent.
@@ -9783,6 +10257,12 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     // Initial feed load
     loadFeed();
+
+    // If the page loaded directly on a /Riven/@handle URL (shared link,
+    // refresh, browser history), open that profile instead of only ever
+    // landing on the feed. Fails silently and just stays on the feed if
+    // the lookup doesn't resolve (deleted account, typo'd handle, etc).
+    openProfileFromUrlIfPresent();
   </script>
 
 </body>
