@@ -3223,6 +3223,18 @@
       .desktop-panel-name { color: #fff; }
       .desktop-panel-avatar { background: #1c1c1e; border-color: #2c2c2e; }
 
+      /* The rest of the desktop 3-column layout had the exact same gap —
+         only the left profile panel got a dark pass before, so the gray
+         feed backdrop, the action-bar strip, and the whole comments
+         column were still stuck on their light-mode colors. */
+      #feed-screen { background: #000; }
+      .video-viewport { background: #000; }
+      #desktop-action-bar { background: #0d0d0e; }
+      #desktop-action-bar .action-item,
+      #desktop-action-bar .action-count { color: #fff; }
+      #desktop-action-bar .audio-disc { border-color: rgba(255,255,255,0.15); }
+      #comments-overlay { background: #0d0d0e; border-left-color: #262628; }
+
       /* Loading skeletons (DM list, comments, replies) default to a light
          gray/white shimmer — needs its own dark-gray version or it flashes
          white blocks on a black screen while content loads. */
