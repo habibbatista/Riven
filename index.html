@@ -144,7 +144,7 @@
       justify-content: center;
       background: #000000;
       opacity: 1;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.4s var(--ease-smooth);
       pointer-events: none;
     }
 
@@ -294,14 +294,90 @@
       right: 0;
       z-index: 20;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: calc(var(--safe-top) + 12px) 20px 10px 20px;
+      flex-direction: column;
+      gap: 8px;
+      padding: calc(var(--safe-top) + 12px) 0 10px 0;
       background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
       pointer-events: none;
     }
 
     .feed-header * { pointer-events: auto; }
+
+    .feed-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+    }
+
+    .stories-tray {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 0 20px;
+      scrollbar-width: none;
+    }
+    .stories-tray::-webkit-scrollbar { display: none; }
+    .stories-tray:empty { display: none; }
+
+    .story-bubble {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 60px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .story-bubble-ring {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      padding: 2.5px;
+      background: linear-gradient(45deg, #ff2d55, #ff9500, #ffcc00);
+    }
+    .story-bubble.seen .story-bubble-ring {
+      background: rgba(255,255,255,0.3);
+    }
+    .story-bubble.add-story .story-bubble-ring {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .story-bubble-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #000;
+      background: #333;
+    }
+
+    .story-bubble-add-icon {
+      position: absolute;
+      bottom: 14px;
+      right: 0;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-pink);
+      border: 2px solid #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .story-bubble-add-icon svg { width: 10px; height: 10px; fill: #fff; }
+
+    .story-bubble-label {
+      font-size: 11px;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 60px;
+    }
 
     .feed-tabs {
       display: flex;
@@ -413,7 +489,7 @@
       pointer-events: none;
       z-index: 5;
       opacity: 0;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.2s var(--ease-smooth);
     }
 
     .custom-play-overlay.visible {
@@ -471,7 +547,7 @@
       pointer-events: none;
       z-index: 4;
       opacity: 0;
-      transition: opacity 0.15s ease;
+      transition: opacity 0.2s var(--ease-smooth);
     }
 
     .buffering-spinner.visible {
@@ -577,6 +653,22 @@
       font-size: 12px;
       font-weight: 400;
       color: rgba(255, 255, 255, 0.55);
+    }
+
+    .video-caption-bar {
+      position: absolute;
+      left: 16px;
+      right: 76px;
+      bottom: max(126px, calc(118px + var(--safe-bottom)));
+      z-index: 15;
+      color: #fff;
+      font-size: 14px;
+      line-height: 1.35;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
     }
 
     /* ACTION BAR FIX */
@@ -727,6 +819,45 @@
       border-radius: 50%;
       background: #333;
       object-fit: cover;
+    }
+
+    .search-section-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #999;
+      margin: 16px 4px 8px;
+    }
+
+    .search-video-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+    }
+
+    .search-video-cell {
+      position: relative;
+      aspect-ratio: 9 / 16;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #222;
+      cursor: pointer;
+    }
+
+    .search-video-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .search-video-author {
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
     }
 
     .search-info {
@@ -1593,6 +1724,20 @@
       border: 1px dashed #bbb;
     }
 
+    .post-caption-textarea {
+      width: 100%;
+      min-height: 60px;
+      max-height: 120px;
+      resize: vertical;
+      padding: 10px 12px;
+      background-color: #f2f2f7;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      margin-bottom: 12px;
+    }
+
     #pfp-file-input {
       display: none;
     }
@@ -2142,6 +2287,89 @@
       50% { opacity: 0.3; }
     }
 
+    /* ---- Story viewer ---- */
+    .story-viewer-overlay {
+      flex-direction: column;
+      justify-content: flex-start !important;
+      align-items: stretch !important;
+      background: #000;
+      z-index: 400000;
+    }
+    .story-viewer-overlay.active { display: flex; }
+
+    .story-progress-bars {
+      display: flex;
+      gap: 4px;
+      padding: max(10px, var(--safe-top)) 12px 0 12px;
+      z-index: 2;
+    }
+    .story-progress-track {
+      flex: 1;
+      height: 2.5px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .story-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: #fff;
+    }
+
+    .story-viewer-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      z-index: 2;
+    }
+    .story-viewer-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #333;
+    }
+    .story-viewer-handle {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      flex: 1;
+    }
+    .story-viewer-close {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+    }
+    .story-viewer-close svg { width: 20px; height: 20px; fill: currentColor; }
+
+    .story-viewer-media {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      position: relative;
+    }
+    .story-viewer-media-el {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .story-viewer-tap-zone {
+      position: absolute;
+      top: 60px;
+      bottom: 0;
+      width: 35%;
+    }
+    .story-viewer-tap-left { left: 0; }
+    .story-viewer-tap-right { right: 0; }
+
     /* Attachment/voice-note message bubbles */
     .dm-bubble-image img {
       display: block;
@@ -2274,7 +2502,11 @@
 
     .nav-item:active {
       transform: scale(0.82);
-      transition: transform 0.1s ease;
+      /* Deliberately NOT the spring curve used everywhere else here —
+         press-down needs to register instantly under your thumb; the
+         bounce happens on release instead, via .nav-item's own
+         transition above. A springy press-in would feel laggy on a tap. */
+      transition: transform 0.1s ease-out;
     }
 
     /* The floating pill keeps the same frosted-glass technique on every
@@ -2375,7 +2607,7 @@
       z-index: 999999;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.2s var(--ease-smooth);
       max-width: 80%;
       text-align: center;
     }
@@ -2457,7 +2689,7 @@
     }
 
     .dm-bubble {
-      animation: dmBubbleIn 0.2s ease;
+      animation: dmBubbleIn 0.32s var(--ease-spring);
     }
 
     @keyframes commentRowIn {
@@ -2466,7 +2698,7 @@
     }
 
     .comment-row {
-      animation: commentRowIn 0.2s ease;
+      animation: commentRowIn 0.32s var(--ease-spring);
     }
 
     @keyframes streakPop {
@@ -2511,7 +2743,7 @@
       display: flex;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.2s var(--ease-smooth);
     }
 
     #comments-overlay.active, #share-sheet-overlay.active {
@@ -2532,7 +2764,7 @@
       display: flex;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.2s var(--ease-smooth);
     }
 
     .modal-overlay.active {
@@ -2610,7 +2842,7 @@
       display: flex;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.25s var(--ease-smooth);
       background: #0a0a0a;
     }
 
@@ -2698,7 +2930,7 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: transform 0.12s ease;
+      transition: transform 0.28s var(--ease-spring);
     }
 
     .call-action-btn:active {
@@ -2808,7 +3040,7 @@
       justify-content: center;
       cursor: pointer;
       color: #fff;
-      transition: transform 0.12s ease;
+      transition: transform 0.28s var(--ease-spring);
     }
 
     .call-control-btn:active {
@@ -3267,6 +3499,7 @@
       .modal-btn-cancel { background: #2c2c2e; color: #eee; }
       .modal-btn-save { background: #fff; color: #000; }
       .pfp-upload-label { background: #1c1c1e; border-color: #48484a; color: #eee; }
+      .post-caption-textarea { background-color: #1c1c1e; border-color: #3a3a3c; color: #fff; }
 
       .profile-name, #user-display-name { color: #fff; }
       .profile-handle { color: #9a9a9e; }
@@ -3415,12 +3648,15 @@
                swipe — the header must stay put while the video underneath
                it slides, not scroll/slide along with the gesture. -->
           <div class="feed-header">
-            <div class="feed-tabs">
-              <span class="feed-tab" id="tab-friends" data-i18n="tab_friends" onclick="setActiveFeedTab(this)">Friends</span>
-              <span class="feed-tab active" id="tab-foryou" data-i18n="tab_foryou" onclick="setActiveFeedTab(this)">For you</span>
-            </div>
-            <div class="header-icon" onclick="openSearchOverlay()">
-              <svg class="icon-svg icon-line" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <div class="stories-tray" id="stories-tray"></div>
+            <div class="feed-header-row">
+              <div class="feed-tabs">
+                <span class="feed-tab" id="tab-friends" data-i18n="tab_friends" onclick="setActiveFeedTab(this)">Friends</span>
+                <span class="feed-tab active" id="tab-foryou" data-i18n="tab_foryou" onclick="setActiveFeedTab(this)">For you</span>
+              </div>
+              <div class="header-icon" onclick="openSearchOverlay()">
+                <svg class="icon-svg icon-line" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
             </div>
           </div>
           <div class="video-frame" id="video-frame">
@@ -3452,6 +3688,7 @@
                 <span class="video-author-date" id="video-author-date"></span>
               </div>
             </div>
+            <div class="video-caption-bar" id="video-caption-bar" style="display:none;"></div>
 
             <div class="right-action-bar" id="right-action-bar">
             </div>
@@ -3484,6 +3721,7 @@
             <span data-i18n="upload_label">Upload or Record Video</span>
           </label>
           <input type="file" id="video-file-input" accept="video/*">
+          <input type="file" id="story-file-input" accept="image/*,video/*" style="display:none;" onchange="handleStoryFileSelected(event)">
           <input type="file" id="audio-file-input" accept="audio/*">
         </div>
       </div>
@@ -3755,6 +3993,7 @@
     <div class="modal-overlay" id="audio-prompt-modal">
       <div class="modal-content">
         <h3 data-i18n="audio_prompt_title">Add sound to your video?</h3>
+        <textarea id="post-caption-input" class="post-caption-textarea" data-i18n-placeholder="caption_placeholder" placeholder="Write a caption..." maxlength="150"></textarea>
         <p data-i18n="audio_prompt_body" style="font-size:14px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.4;">Choose an audio file from your device to play with this video, or skip to keep the video's original sound.</p>
         <label for="audio-file-input" class="pfp-upload-label">
           <svg class="icon-svg" style="width:16px; height:16px; fill:#333;" viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1014 17V7h4V3h-6z"/></svg>
@@ -3857,7 +4096,7 @@
     <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.2 BETA (260824R2B)
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.26 Beta
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -3917,6 +4156,21 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- STORY VIEWER -->
+    <div class="modal-overlay story-viewer-overlay" id="story-viewer-overlay">
+      <div class="story-progress-bars" id="story-viewer-bars"></div>
+      <div class="story-viewer-header">
+        <img class="story-viewer-avatar" id="story-viewer-avatar" src="">
+        <span class="story-viewer-handle" id="story-viewer-handle"></span>
+        <div class="story-viewer-close" onclick="closeStoryViewer()">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </div>
+      </div>
+      <div class="story-viewer-media" id="story-viewer-media"></div>
+      <div class="story-viewer-tap-zone story-viewer-tap-left" onclick="storyViewerPrev()"></div>
+      <div class="story-viewer-tap-zone story-viewer-tap-right" onclick="storyViewerNext()"></div>
     </div>
 
     <!-- INCOMING CALL OVERLAY -->
@@ -4084,7 +4338,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         audio_prompt_title: 'Add sound to your video?',
         audio_prompt_body: "Choose an audio file from your device to play with this video, or skip to keep the video's original sound.",
         choose_audio: 'Choose Audio from Device', skip: 'Skip',
+        caption_placeholder: 'Write a caption...',
+        story_your_story: 'Your Story',
+        toast_uploading_story: 'Posting your story…',
+        toast_story_posted: 'Story posted! It disappears in 24h',
         make_private: 'Make Private', delete: 'Delete',
+        make_public: 'Make Public', label_public: 'Public', label_private: 'Private',
+        presence_offline: 'Offline', presence_active_now: 'Active now',
+        presence_active_secs: 'Active {n}s ago', presence_active_mins: 'Active {n}m ago',
+        presence_active_hours: 'Active {n}h ago', presence_active_days: 'Active {n}d ago',
+        dm_signin_to_send: 'Sign in to send videos to friends in RIVEN DMs',
+        dm_no_mutuals_share: 'No mutual friends yet — follow each other to send videos in DMs',
+        dm_load_friends_error: 'Could not load friends',
         confirm_title: 'Are you sure?',
         plus_coming_soon: 'Coming soon',
         plus_body: "A few extra perks for people who live on RIVEN. Pricing below is what's planned at launch — nothing to pay yet.",
@@ -4222,7 +4487,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         audio_prompt_title: '¿Añadir sonido a tu video?',
         audio_prompt_body: 'Elige un archivo de audio de tu dispositivo para reproducir con este video, u omite para conservar el sonido original.',
         choose_audio: 'Elegir audio del dispositivo', skip: 'Omitir',
+        caption_placeholder: 'Escribe una descripción...',
+        story_your_story: 'Tu historia',
+        toast_uploading_story: 'Publicando tu historia…',
+        toast_story_posted: '¡Historia publicada! Desaparece en 24h',
         make_private: 'Hacer privado', delete: 'Eliminar',
+        make_public: 'Hacer público', label_public: 'Público', label_private: 'Privado',
+        presence_offline: 'Desconectado', presence_active_now: 'Activo ahora',
+        presence_active_secs: 'Activo hace {n}s', presence_active_mins: 'Activo hace {n}m',
+        presence_active_hours: 'Activo hace {n}h', presence_active_days: 'Activo hace {n}d',
+        dm_signin_to_send: 'Inicia sesión para enviar videos a amigos en los DMs de RIVEN',
+        dm_no_mutuals_share: 'Aún no hay amigos mutuos — síganse para enviar videos por DM',
+        dm_load_friends_error: 'No se pudieron cargar los amigos',
         confirm_title: '¿Estás seguro?',
         plus_coming_soon: 'Próximamente',
         plus_body: 'Algunas ventajas extra para quienes viven en RIVEN. Los precios de abajo son los planeados para el lanzamiento — todavía no hay que pagar nada.',
@@ -4360,7 +4636,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         audio_prompt_title: '为你的视频添加声音？',
         audio_prompt_body: '从设备中选择一个音频文件与此视频一起播放，或跳过以保留视频原声。',
         choose_audio: '从设备选择音频', skip: '跳过',
+        caption_placeholder: '写一段说明...',
+        story_your_story: '你的动态',
+        toast_uploading_story: '正在发布动态…',
+        toast_story_posted: '动态已发布！24小时后消失',
         make_private: '设为私密', delete: '删除',
+        make_public: '设为公开', label_public: '公开', label_private: '私密',
+        presence_offline: '离线', presence_active_now: '刚刚活跃',
+        presence_active_secs: '{n}秒前活跃', presence_active_mins: '{n}分钟前活跃',
+        presence_active_hours: '{n}小时前活跃', presence_active_days: '{n}天前活跃',
+        dm_signin_to_send: '登录后即可在 RIVEN 私信中给好友发送视频',
+        dm_no_mutuals_share: '还没有互相关注的好友 — 互相关注后才能通过私信发送视频',
+        dm_load_friends_error: '无法加载好友列表',
         confirm_title: '确定吗？',
         plus_coming_soon: '即将推出',
         plus_body: '为常驻 RIVEN 的用户提供的一些额外福利。以下价格为发布时的计划价格——目前无需付费。',
@@ -4498,7 +4785,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         audio_prompt_title: 'Adicionar som ao seu vídeo?',
         audio_prompt_body: 'Escolha um arquivo de áudio do seu dispositivo para tocar com este vídeo, ou pule para manter o som original do vídeo.',
         choose_audio: 'Escolher áudio do dispositivo', skip: 'Pular',
+        caption_placeholder: 'Escreva uma legenda...',
+        story_your_story: 'Seu story',
+        toast_uploading_story: 'Publicando seu story…',
+        toast_story_posted: 'Story publicado! Some em 24h',
         make_private: 'Tornar privado', delete: 'Excluir',
+        make_public: 'Tornar público', label_public: 'Público', label_private: 'Privado',
+        presence_offline: 'Offline', presence_active_now: 'Ativo agora',
+        presence_active_secs: 'Ativo há {n}s', presence_active_mins: 'Ativo há {n}m',
+        presence_active_hours: 'Ativo há {n}h', presence_active_days: 'Ativo há {n}d',
+        dm_signin_to_send: 'Faça login para enviar vídeos para amigos nas DMs do RIVEN',
+        dm_no_mutuals_share: 'Ainda sem amigos mútuos — sigam-se para enviar vídeos por DM',
+        dm_load_friends_error: 'Não foi possível carregar os amigos',
         confirm_title: 'Tem certeza?',
         plus_coming_soon: 'Em breve',
         plus_body: 'Alguns benefícios extras para quem vive no RIVEN. Os preços abaixo são os planejados para o lançamento — nada a pagar ainda.',
@@ -4636,7 +4934,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         audio_prompt_title: 'Ton zu deinem Video hinzufügen?',
         audio_prompt_body: 'Wähle eine Audiodatei von deinem Gerät, die mit diesem Video abgespielt wird, oder überspringe, um den Originalton zu behalten.',
         choose_audio: 'Audio vom Gerät wählen', skip: 'Überspringen',
+        caption_placeholder: 'Beschreibung schreiben...',
+        story_your_story: 'Deine Story',
+        toast_uploading_story: 'Story wird veröffentlicht…',
+        toast_story_posted: 'Story veröffentlicht! Verschwindet in 24 Std.',
         make_private: 'Privat machen', delete: 'Löschen',
+        make_public: 'Öffentlich machen', label_public: 'Öffentlich', label_private: 'Privat',
+        presence_offline: 'Offline', presence_active_now: 'Gerade aktiv',
+        presence_active_secs: 'Aktiv vor {n}s', presence_active_mins: 'Aktiv vor {n}m',
+        presence_active_hours: 'Aktiv vor {n}h', presence_active_days: 'Aktiv vor {n}d',
+        dm_signin_to_send: 'Melde dich an, um Freunden Videos per RIVEN-DM zu senden',
+        dm_no_mutuals_share: 'Noch keine gegenseitigen Freunde — folgt euch gegenseitig, um Videos per DM zu senden',
+        dm_load_friends_error: 'Freunde konnten nicht geladen werden',
         confirm_title: 'Bist du sicher?',
         plus_coming_soon: 'Demnächst',
         plus_body: 'Ein paar zusätzliche Vorteile für alle, die RIVEN lieben. Die Preise unten sind für den Start geplant — noch ist nichts zu zahlen.',
@@ -4774,7 +5083,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         audio_prompt_title: '動画にサウンドを追加しますか？',
         audio_prompt_body: 'デバイスからこの動画と一緒に再生する音声ファイルを選ぶか、スキップして動画の元の音声を保持します。',
         choose_audio: 'デバイスから音声を選択', skip: 'スキップ',
+        caption_placeholder: 'キャプションを書く...',
+        story_your_story: 'あなたのストーリー',
+        toast_uploading_story: 'ストーリーを投稿中…',
+        toast_story_posted: 'ストーリーを投稿しました！24時間で消えます',
         make_private: '非公開にする', delete: '削除',
+        make_public: '公開にする', label_public: '公開', label_private: '非公開',
+        presence_offline: 'オフライン', presence_active_now: '現在アクティブ',
+        presence_active_secs: '{n}秒前にアクティブ', presence_active_mins: '{n}分前にアクティブ',
+        presence_active_hours: '{n}時間前にアクティブ', presence_active_days: '{n}日前にアクティブ',
+        dm_signin_to_send: 'ログインするとRIVENのDMで友達に動画を送れます',
+        dm_no_mutuals_share: '相互フォローの友達がまだいません — お互いフォローするとDMで動画を送れます',
+        dm_load_friends_error: '友達を読み込めませんでした',
         confirm_title: 'よろしいですか？',
         plus_coming_soon: '近日公開',
         plus_body: 'RIVENを使い込んでいる人向けの追加特典です。以下の価格はローンチ時の予定価格で、今はまだ支払いは発生しません。',
@@ -5573,18 +5893,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     const dmListPresenceUnsubs = {}; // uid -> unsubscribe fn
 
     function getActivityStatus(lastActiveTimestamp) {
-      if (!lastActiveTimestamp) return { online: false, text: 'Offline' };
+      if (!lastActiveTimestamp) return { online: false, text: t('presence_offline') };
       const date = lastActiveTimestamp.toDate ? lastActiveTimestamp.toDate() : new Date(lastActiveTimestamp);
       const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
-      if (diffSec < 0) return { online: true, text: 'Active now' };
-      if (diffSec < PRESENCE_ONLINE_THRESHOLD_SEC) return { online: true, text: 'Active now' };
-      if (diffSec < 60) return { online: false, text: `Active ${diffSec}s ago` };
+      if (diffSec < 0) return { online: true, text: t('presence_active_now') };
+      if (diffSec < PRESENCE_ONLINE_THRESHOLD_SEC) return { online: true, text: t('presence_active_now') };
+      if (diffSec < 60) return { online: false, text: t('presence_active_secs').replace('{n}', diffSec) };
       const diffMin = Math.floor(diffSec / 60);
-      if (diffMin < 60) return { online: false, text: `Active ${diffMin} minute${diffMin === 1 ? '' : 's'} ago` };
+      if (diffMin < 60) return { online: false, text: t('presence_active_mins').replace('{n}', diffMin) };
       const diffHr = Math.floor(diffMin / 60);
-      if (diffHr < 24) return { online: false, text: `Active ${diffHr} hour${diffHr === 1 ? '' : 's'} ago` };
+      if (diffHr < 24) return { online: false, text: t('presence_active_hours').replace('{n}', diffHr) };
       const diffDay = Math.floor(diffHr / 24);
-      return { online: false, text: `Active ${diffDay} day${diffDay === 1 ? '' : 's'} ago` };
+      return { online: false, text: t('presence_active_days').replace('{n}', diffDay) };
     }
 
     // Updates an already-rendered .activity-status element in place (text +
@@ -6970,6 +7290,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         }
 
         loadFriendsAndDms();
+        loadStoriesTray();
       } else {
         loggedOutBox.style.display = 'flex';
         loggedInBox.style.display = 'none';
@@ -7308,7 +7629,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       event.stopPropagation();
       videoCellMenuTargetId = videoId;
       const menu = document.getElementById('video-cell-menu');
-      document.getElementById('video-cell-menu-privacy').innerText = isPrivate ? 'Make Public' : 'Make Private';
+      document.getElementById('video-cell-menu-privacy').innerText = isPrivate ? t('make_public') : t('make_private');
 
       const btn = event.currentTarget;
       const rect = btn.getBoundingClientRect();
@@ -7434,13 +7755,14 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         matches = allUsers.filter(userData =>
           userData.name?.toLowerCase().includes(q) || userData.handle?.toLowerCase().includes(q)
         );
-        // No caption/description field exists on videos, so this matches
-        // by the author snapshot stored on the video itself. Public only —
-        // search shouldn't be a way to discover a private video exists,
-        // except your own.
+        // Now that videos actually have a caption field, match on that
+        // instead of the author snapshot — searching "beach" should find
+        // beach videos, not just accounts with "beach" in their name.
+        // Public only — search shouldn't be a way to discover a private
+        // video exists, except your own.
         videoMatches = allVideos.filter(v =>
           (!v.isPrivate || (currentUser && v.uid === currentUser.uid)) &&
-          (v.authorName?.toLowerCase().includes(q) || v.authorHandle?.toLowerCase().includes(q))
+          v.caption?.toLowerCase().includes(q)
         ).slice(0, 12);
       } catch(e) {
         console.warn("Firestore search warning:", e);
@@ -7755,19 +8077,19 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         </div>
         <div class="action-item" onclick="openShareSheet()">
           <svg class="icon-svg icon-line" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          <span class="action-count">Share</span>
+          <span class="action-count" data-i18n="share">Share</span>
         </div>
         <div class="action-item" id="privacy-action-item" style="display:none;" onclick="toggleVideoPrivacy()">
           <svg class="icon-svg" id="privacy-icon" viewBox="0 0 24 24"><path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 016 0v3H9z"/></svg>
-          <span class="action-count" id="privacy-label">Public</span>
+          <span class="action-count" id="privacy-label" data-i18n="label_public">Public</span>
         </div>
         <div class="action-item" id="delete-action-item" style="display:none;" onclick="confirmDeleteCurrentVideo()">
           <svg class="icon-svg icon-line" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-          <span class="action-count">Delete</span>
+          <span class="action-count" data-i18n="delete">Delete</span>
         </div>
         <div class="action-item" id="report-action-item" style="display:none;" onclick="reportCurrentVideo()">
           <svg class="icon-svg icon-line" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-          <span class="action-count">Report</span>
+          <span class="action-count" data-i18n="report">Report</span>
         </div>
         <div class="action-item audio-disc-item" id="audio-disc-item" style="display:none;">
           <div class="audio-disc" id="audio-disc">
@@ -7835,6 +8157,216 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const engagementScore = ((v.likesBy?.length || 0) * 2) + ((v.commentsCount || 0) * 3);
       return recencyScore + engagementScore;
     }
+
+    // ---------------- STORIES (24h-expiring uploads) ----------------
+    const STORY_LIFETIME_MS = 24 * 60 * 60 * 1000;
+    let storiesData = []; // grouped by author: [{uid, name, handle, pfp, stories: [...]}]
+
+    function getSeenStoryIds() {
+      if (!currentUser) return [];
+      try {
+        return JSON.parse(localStorage.getItem(`riven_seen_stories_${currentUser.uid}`)) || [];
+      } catch (e) { return []; }
+    }
+    function markStorySeen(storyId) {
+      if (!currentUser) return;
+      const key = `riven_seen_stories_${currentUser.uid}`;
+      const seen = getSeenStoryIds();
+      if (!seen.includes(storyId)) {
+        seen.push(storyId);
+        try { localStorage.setItem(key, JSON.stringify(seen.slice(-500))); } catch (e) {}
+      }
+    }
+
+    async function loadStoriesTray() {
+      const tray = document.getElementById('stories-tray');
+      if (!tray || !currentUser) return;
+
+      try {
+        const cutoff = Date.now() - STORY_LIFETIME_MS;
+        const snap = await getDocs(query(collection(db, 'stories'), orderBy('createdAt', 'desc'), limit(200)));
+        const following = new Set(myProfileData?.following || []);
+        const byUid = new Map();
+
+        snap.forEach(d => {
+          const s = { id: d.id, ...d.data() };
+          const createdMs = s.createdAt?.toMillis ? s.createdAt.toMillis() : 0;
+          if (createdMs < cutoff) return; // expired — Firestore doesn't auto-delete, so this filter is what actually makes them "disappear"
+          const isOwn = s.uid === currentUser.uid;
+          if (!isOwn && !following.has(s.uid)) return; // only people you follow, same scope as the Friends feed tab
+          if (!byUid.has(s.uid)) {
+            byUid.set(s.uid, { uid: s.uid, name: s.authorName, handle: s.authorHandle, pfp: s.authorPfp, stories: [] });
+          }
+          byUid.get(s.uid).stories.push(s);
+        });
+
+        // Own bubble always first (even with zero stories, so the add
+        // button has somewhere to live), then everyone else oldest-story-first
+        const others = [...byUid.values()].filter(g => g.uid !== currentUser.uid);
+        others.forEach(g => g.stories.reverse());
+        let own = byUid.get(currentUser.uid);
+        if (own) own.stories.reverse();
+        storiesData = own ? [own, ...others] : [
+          { uid: currentUser.uid, name: myProfileData?.name, handle: myProfileData?.handle, pfp: myProfileData?.pfp, stories: [] },
+          ...others
+        ];
+
+        const seenIds = new Set(getSeenStoryIds());
+        tray.innerHTML = storiesData.map(g => {
+          const isOwn = g.uid === currentUser.uid;
+          const hasStories = g.stories.length > 0;
+          const allSeen = hasStories && g.stories.every(s => seenIds.has(s.id));
+          const avatarSrc = g.pfp || DEFAULT_AVATAR_SVG;
+          if (isOwn) {
+            return `
+              <div class="story-bubble add-story" onclick="${hasStories ? `openStoryViewer('${g.uid}')` : `document.getElementById('story-file-input').click()`}">
+                <div class="story-bubble-ring ${allSeen ? 'seen' : ''}">
+                  <img class="story-bubble-avatar" src="${avatarSrc}">
+                </div>
+                <div class="story-bubble-add-icon" onclick="event.stopPropagation(); document.getElementById('story-file-input').click();">
+                  <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                </div>
+                <span class="story-bubble-label">${t('story_your_story')}</span>
+              </div>
+            `;
+          }
+          return `
+            <div class="story-bubble ${allSeen ? 'seen' : ''}" onclick="openStoryViewer('${g.uid}')">
+              <div class="story-bubble-ring ${allSeen ? 'seen' : ''}">
+                <img class="story-bubble-avatar" src="${avatarSrc}">
+              </div>
+              <span class="story-bubble-label">${escapeHtml(g.handle || 'user')}</span>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        console.warn('Stories load error:', e);
+      }
+    }
+
+    window.handleStoryFileSelected = async function(event) {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file || !currentUser) return;
+
+      const isVideo = file.type.startsWith('video/');
+      showToast(t('toast_uploading_story'), 30000);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${isVideo ? 'video' : 'image'}/upload`,
+          { method: 'POST', body: formData }
+        );
+        const data = await res.json();
+        if (!data.secure_url) throw new Error(data.error?.message || 'Upload failed');
+
+        await addDoc(collection(db, 'stories'), {
+          uid: currentUser.uid,
+          authorName: myProfileData?.name || 'User',
+          authorHandle: myProfileData?.handle || 'user',
+          authorPfp: myProfileData?.pfp || '',
+          mediaUrl: data.secure_url,
+          mediaType: isVideo ? 'video' : 'image',
+          createdAt: serverTimestamp()
+        });
+        showToast(t('toast_story_posted'));
+        loadStoriesTray();
+      } catch (e) {
+        console.error('Story upload error:', e);
+        showToast(t('toast_upload_failed_generic'));
+      }
+    };
+
+    // ---- Story viewer ----
+    let storyViewerGroupIndex = 0;
+    let storyViewerStoryIndex = 0;
+    let storyViewerTimer = null;
+    const STORY_IMAGE_DURATION_MS = 5000;
+
+    window.openStoryViewer = function(uid) {
+      const idx = storiesData.findIndex(g => g.uid === uid && g.stories.length > 0);
+      if (idx === -1) return;
+      storyViewerGroupIndex = idx;
+      storyViewerStoryIndex = 0;
+      document.getElementById('story-viewer-overlay').classList.add('active');
+      renderStoryViewerCurrent();
+    };
+
+    function renderStoryViewerCurrent() {
+      clearTimeout(storyViewerTimer);
+      const group = storiesData[storyViewerGroupIndex];
+      if (!group || !group.stories.length) { closeStoryViewer(); return; }
+      if (storyViewerStoryIndex >= group.stories.length) { advanceStoryGroup(1); return; }
+      if (storyViewerStoryIndex < 0) { advanceStoryGroup(-1); return; }
+
+      const story = group.stories[storyViewerStoryIndex];
+      markStorySeen(story.id);
+
+      document.getElementById('story-viewer-avatar').src = group.pfp || DEFAULT_AVATAR_SVG;
+      document.getElementById('story-viewer-handle').textContent = '@' + (group.handle || 'user');
+
+      const mediaEl = document.getElementById('story-viewer-media');
+      mediaEl.innerHTML = story.mediaType === 'video'
+        ? `<video src="${story.mediaUrl}" autoplay playsinline muted class="story-viewer-media-el" onended="advanceStoryGroup(1)"></video>`
+        : `<img src="${story.mediaUrl}" class="story-viewer-media-el">`;
+
+      // Progress bar segments — one per story in this person's group,
+      // filling left-to-right as each one plays, already-full for ones
+      // already viewed this session.
+      const barsEl = document.getElementById('story-viewer-bars');
+      barsEl.innerHTML = group.stories.map((s, i) => `
+        <div class="story-progress-track">
+          <div class="story-progress-fill" id="story-progress-fill-${i}" style="width:${i < storyViewerStoryIndex ? '100' : '0'}%;"></div>
+        </div>
+      `).join('');
+
+      if (story.mediaType === 'image') {
+        const fill = document.getElementById(`story-progress-fill-${storyViewerStoryIndex}`);
+        requestAnimationFrame(() => {
+          fill.style.transition = `width ${STORY_IMAGE_DURATION_MS}ms linear`;
+          fill.style.width = '100%';
+        });
+        storyViewerTimer = setTimeout(() => advanceStoryGroup(1), STORY_IMAGE_DURATION_MS);
+      } else {
+        const fill = document.getElementById(`story-progress-fill-${storyViewerStoryIndex}`);
+        mediaEl.querySelector('video').addEventListener('loadedmetadata', function() {
+          fill.style.transition = `width ${this.duration * 1000}ms linear`;
+          fill.style.width = '100%';
+        }, { once: true });
+      }
+    }
+
+    window.storyViewerNext = function() { advanceStoryGroup(1); };
+    window.storyViewerPrev = function() { advanceStoryGroup(-1); };
+
+    function advanceStoryGroup(dir) {
+      storyViewerStoryIndex += dir;
+      const group = storiesData[storyViewerGroupIndex];
+      if (group && storyViewerStoryIndex >= 0 && storyViewerStoryIndex < group.stories.length) {
+        renderStoryViewerCurrent();
+        return;
+      }
+      // Ran off the end of this person's stories — move to the next/prev
+      // person who actually has any, same as Instagram's story-chain behavior.
+      let nextGroupIndex = storyViewerGroupIndex;
+      do {
+        nextGroupIndex += dir;
+      } while (storiesData[nextGroupIndex] && storiesData[nextGroupIndex].stories.length === 0);
+
+      if (!storiesData[nextGroupIndex]) { closeStoryViewer(); return; }
+      storyViewerGroupIndex = nextGroupIndex;
+      storyViewerStoryIndex = dir > 0 ? 0 : storiesData[nextGroupIndex].stories.length - 1;
+      renderStoryViewerCurrent();
+    }
+
+    window.closeStoryViewer = function() {
+      clearTimeout(storyViewerTimer);
+      document.getElementById('story-viewer-overlay').classList.remove('active');
+      document.getElementById('story-viewer-media').innerHTML = '';
+      loadStoriesTray(); // refreshes seen-state rings
+    };
 
     async function loadFeed() {
       try {
@@ -8035,6 +8567,14 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       // profile — previously neither did anything at all.
       authorBar.onclick = () => openUserProfile(v.uid, v.authorName, v.authorHandle, v.authorPfp);
       patchLiveAuthors(document);
+
+      const captionBar = document.getElementById('video-caption-bar');
+      if (v.caption) {
+        captionBar.textContent = v.caption;
+        captionBar.style.display = 'block';
+      } else {
+        captionBar.style.display = 'none';
+      }
     }
 
     // Refreshes just the reactive bits — like/comment counts, privacy
@@ -8055,7 +8595,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       document.querySelectorAll('#delete-action-item').forEach(el => { el.style.display = isOwner ? 'flex' : 'none'; });
       document.querySelectorAll('#report-action-item').forEach(el => { el.style.display = (currentUser && !isOwner) ? 'flex' : 'none'; });
       if (isOwner) {
-        document.querySelectorAll('#privacy-label').forEach(el => { el.innerText = v.isPrivate ? 'Private' : 'Public'; });
+        document.querySelectorAll('#privacy-label').forEach(el => { el.innerText = v.isPrivate ? t('label_private') : t('label_public'); });
         document.querySelectorAll('#privacy-icon').forEach(el => { el.style.fill = v.isPrivate ? '#ff2d55' : 'currentColor'; });
       }
     }
@@ -8427,7 +8967,9 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       document.getElementById('audio-prompt-modal').classList.remove('active');
       const file = pendingVideoFile;
       pendingVideoFile = null;
-      uploadVideoWithAudio(file, null);
+      const caption = document.getElementById('post-caption-input').value.trim();
+      document.getElementById('post-caption-input').value = '';
+      uploadVideoWithAudio(file, null, caption);
     };
 
     document.getElementById('audio-file-input').addEventListener('change', function(event) {
@@ -8438,10 +8980,12 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const videoFile = pendingVideoFile;
       pendingVideoFile = null;
       pendingAudioFile = null;
-      uploadVideoWithAudio(videoFile, audioFile || null);
+      const caption = document.getElementById('post-caption-input').value.trim();
+      document.getElementById('post-caption-input').value = '';
+      uploadVideoWithAudio(videoFile, audioFile || null, caption);
     });
 
-    async function uploadVideoWithAudio(file, audioFile) {
+    async function uploadVideoWithAudio(file, audioFile, caption) {
       if (!file) return;
       try {
         showToast(t('toast_uploading_video'), 60000);
@@ -8494,6 +9038,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           authorHandle: myProfileData?.handle || 'user',
           authorPfp: myProfileData?.pfp || currentUser.photoURL || '',
           videoUrl,
+          caption: (caption || '').slice(0, 150),
           likesBy: [],
           commentsCount: 0,
           isPrivate: defaultsToPrivate(myProfileData?.ageGroup)
@@ -8602,7 +9147,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         renderCommentsList();
       } catch (e) {
         console.warn('Comments load error:', e);
-        list.innerHTML = `<div class="comments-empty">No comments yet</div>`;
+        list.innerHTML = `<div class="comments-empty">${t('comments_empty')}</div>`;
       }
     };
 
@@ -8627,7 +9172,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     function renderCommentsList() {
       const list = document.getElementById('comments-list');
       if (!currentComments.length) {
-        list.innerHTML = `<div class="comments-empty">No comments yet</div>`;
+        list.innerHTML = `<div class="comments-empty">${t('comments_empty')}</div>`;
         return;
       }
       list.innerHTML = currentComments.map(c => renderCommentRow(c)).join('');
@@ -9002,12 +9547,12 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       updateSheetOpenBodyClass();
 
       if (!currentUser) {
-        listEl.innerHTML = `<div class="comments-empty">Sign in to send videos to friends in RIVEN DMs</div>`;
+        listEl.innerHTML = `<div class="comments-empty">${t('dm_signin_to_send')}</div>`;
         return;
       }
 
       if (myProfileData?.ageGroup && !canUseDMs(myProfileData.ageGroup)) {
-        listEl.innerHTML = `<div class="comments-empty">DMs aren't available for accounts under 13</div>`;
+        listEl.innerHTML = `<div class="comments-empty">${t('toast_dm_age_13')}</div>`;
         return;
       }
 
@@ -9020,7 +9565,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       try {
         const friends = await getMutualFriendsBasic();
         if (friends.length === 0) {
-          listEl.innerHTML = `<div class="comments-empty">No mutual friends yet — follow each other to send videos in DMs</div>`;
+          listEl.innerHTML = `<div class="comments-empty">${t('dm_no_mutuals_share')}</div>`;
           return;
         }
         listEl.innerHTML = friends.map(f => `
@@ -9034,7 +9579,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         `).join('');
       } catch (e) {
         console.warn('Load share targets error:', e);
-        listEl.innerHTML = `<div class="comments-empty">Could not load friends</div>`;
+        listEl.innerHTML = `<div class="comments-empty">${t('dm_load_friends_error')}</div>`;
       }
     };
 
@@ -10269,6 +10814,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     // Initial feed load
     loadFeed();
+    loadStoriesTray();
 
     // If the page loaded directly on a /Riven/@handle URL (shared link,
     // refresh, browser history), open that profile instead of only ever
