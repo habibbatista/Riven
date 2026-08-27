@@ -2183,6 +2183,33 @@
       border-bottom-left-radius: 4px;
     }
 
+    .dm-typing-indicator {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      align-self: flex-start;
+      background: #f2f2f7;
+      border-radius: 18px;
+      border-bottom-left-radius: 4px;
+      padding: 10px 14px;
+      margin: 0 16px 8px 16px;
+      width: fit-content;
+    }
+    .dm-typing-indicator.active { display: flex; }
+    .dm-typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #999;
+      animation: typingBounce 1.2s ease-in-out infinite;
+    }
+    .dm-typing-dot:nth-child(2) { animation-delay: 0.15s; }
+    .dm-typing-dot:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
     .dm-bubble-video {
       padding: 6px;
       cursor: pointer;
@@ -3559,6 +3586,8 @@
       .chat-icon-btn { color: #eee; }
       .chat-back-btn svg { fill: #eee; }
       .dm-bubble.theirs { background: #1c1c1e; color: #fff; }
+      .dm-typing-indicator { background: #1c1c1e; }
+      .dm-typing-dot { background: #888; }
       .dm-shared-video-thumb { background: #1c1c1e; }
       .dm-input-wrapper { background: #0d0d0e; }
       .dm-input-bubble { background: #0d0d0e; border-color: #3a3a3c; }
@@ -3809,6 +3838,11 @@
         </header>
 
         <div class="chat-body" id="chat-body"></div>
+        <div class="dm-typing-indicator" id="dm-typing-indicator">
+          <span class="dm-typing-dot"></span>
+          <span class="dm-typing-dot"></span>
+          <span class="dm-typing-dot"></span>
+        </div>
 
         <div class="dm-input-wrapper">
           <input type="file" id="dm-image-input" accept="image/*" style="display:none;" onchange="handleDmImageSelected(event)">
@@ -3816,7 +3850,7 @@
             <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 20H4V6h9V4H4c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-9h-2v9zM13 9.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5S15.33 8 14.5 8 13 8.67 13 9.5zM6 18h12l-3.75-5-3 4L9 14l-3 4z"/></svg>
           </div>
           <div class="dm-input-bubble">
-            <input type="text" id="dm-text-input" data-i18n-placeholder="dm_message_placeholder" placeholder="Message..." oninput="updateDmSendIcon()" onkeydown="if(event.key==='Enter'){sendDmMessage();}">
+            <input type="text" id="dm-text-input" data-i18n-placeholder="dm_message_placeholder" placeholder="Message..." oninput="updateDmSendIcon(); notifyTyping();" onkeydown="if(event.key==='Enter'){sendDmMessage();}">
           </div>
           <div class="dm-input-icon-btn dm-send-btn" id="dm-send-btn" onclick="sendDmMessage()">
             <svg class="icon-svg" style="fill:#111;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -4096,7 +4130,7 @@
     <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.26 Beta
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.27 Beta
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -5559,6 +5593,22 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     let activeChatUnsubscribe = null;
     let activeChatDocUnsubscribe = null;
     let theirLastReadMs = 0;
+    let dmTypingThrottleAt = 0;
+    const DM_TYPING_THROTTLE_MS = 2000; // don't write on every keystroke — at most once per 2s
+    const DM_TYPING_STALE_MS = 4000;    // hide the indicator if no update in this long (covers closed tabs, lost connection, etc.)
+
+    window.notifyTyping = function() {
+      if (!currentUser || !activeChatFriendUid) return;
+      const now = Date.now();
+      if (now - dmTypingThrottleAt < DM_TYPING_THROTTLE_MS) return;
+      dmTypingThrottleAt = now;
+      const chatId = getChatId(currentUser.uid, activeChatFriendUid);
+      const [uidA, uidB] = chatId.split('_');
+      setDoc(doc(db, "chats", chatId), {
+        participants: [uidA, uidB],
+        [`typing_${currentUser.uid}`]: serverTimestamp()
+      }, { merge: true }).catch(e => console.warn('Typing update failed:', e));
+    };
     let pendingVideoFile = null;
     let pendingAudioFile = null;
     let pendingBannerFile = null;
@@ -9864,18 +9914,41 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       // Mark read the moment the chat is opened, and merge (not update) —
       // there may be no chat doc yet if neither side has sent a message.
+      // Always including participants here (not just lastRead) matters:
+      // if this fires before either side has ever sent a message, it's
+      // the doc's first write — and the chat rules gate every later
+      // read/write on request.auth.uid being in participants, so a doc
+      // created without that field would lock both of you out of it.
+      const [urA, urB] = chatId.split('_');
       const markReadNow = () => setDoc(doc(db, "chats", chatId), {
+        participants: [urA, urB],
         [`lastRead_${currentUser.uid}`]: serverTimestamp()
       }, { merge: true }).catch(e => console.warn('Mark-read failed:', e));
       markReadNow();
 
-      // Live-tracks the FRIEND's lastRead so "Seen" can appear under my
-      // last message the instant they open the chat on their end.
+      // Live-tracks the FRIEND's lastRead (for "Seen") and typing status —
+      // same doc, same listener, since both are just fields on it.
+      let dmTypingHideTimer = null;
       activeChatDocUnsubscribe = onSnapshot(doc(db, "chats", chatId), (snap) => {
         if (!snap.exists()) return;
-        const theirRead = snap.data()[`lastRead_${friendUid}`];
+        const data = snap.data();
+
+        const theirRead = data[`lastRead_${friendUid}`];
         theirLastReadMs = theirRead?.toMillis ? theirRead.toMillis() : 0;
         updateSeenIndicator();
+
+        const theirTyping = data[`typing_${friendUid}`];
+        const theirTypingMs = theirTyping?.toMillis ? theirTyping.toMillis() : 0;
+        const msSinceTyping = Date.now() - theirTypingMs;
+        clearTimeout(dmTypingHideTimer);
+        const indicator = document.getElementById('dm-typing-indicator');
+        if (theirTypingMs && msSinceTyping < DM_TYPING_STALE_MS) {
+          indicator.classList.add('active');
+          document.getElementById('chat-body').scrollTop = document.getElementById('chat-body').scrollHeight;
+          dmTypingHideTimer = setTimeout(() => indicator.classList.remove('active'), DM_TYPING_STALE_MS - msSinceTyping);
+        } else {
+          indicator.classList.remove('active');
+        }
       });
 
       const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"));
@@ -9962,6 +10035,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (activeChatUnsubscribe) activeChatUnsubscribe();
       if (activeChatDocUnsubscribe) activeChatDocUnsubscribe();
       unsubscribeChatHeaderPresence();
+      document.getElementById('dm-typing-indicator').classList.remove('active');
       activeChatFriendUid = null;
       document.body.classList.remove('in-active-chat');
       document.getElementById('dm-chat-container').classList.remove('active');
