@@ -294,21 +294,14 @@
       right: 0;
       z-index: 20;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: calc(var(--safe-top) + 12px) 0 10px 0;
+      justify-content: space-between;
+      align-items: center;
+      padding: calc(var(--safe-top) + 12px) 20px 10px 20px;
       background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
       pointer-events: none;
     }
 
     .feed-header * { pointer-events: auto; }
-
-    .feed-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 20px;
-    }
 
     .stories-tray {
       display: flex;
@@ -339,10 +332,10 @@
       background: linear-gradient(45deg, #ff2d55, #ff9500, #ffcc00);
     }
     .story-bubble.seen .story-bubble-ring {
-      background: rgba(255,255,255,0.3);
+      background: #d8d8dc;
     }
     .story-bubble.add-story .story-bubble-ring {
-      background: rgba(255,255,255,0.3);
+      background: #d8d8dc;
     }
 
     .story-bubble-avatar {
@@ -350,8 +343,8 @@
       height: 100%;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #000;
-      background: #333;
+      border: 2px solid #fff;
+      background: #eee;
     }
 
     .story-bubble-add-icon {
@@ -362,7 +355,7 @@
       height: 18px;
       border-radius: 50%;
       background: var(--accent-pink);
-      border: 2px solid #000;
+      border: 2px solid #fff;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -371,8 +364,7 @@
 
     .story-bubble-label {
       font-size: 11px;
-      color: #fff;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+      color: #111;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -3597,6 +3589,9 @@
       .dm-input-icon-btn:active { background: rgba(255,255,255,0.12); }
       .dm-header-icon-btn svg { fill: #eee !important; }
       .dm-header-icon-btn:active { background: rgba(255,255,255,0.1); }
+      .story-bubble-avatar, .story-bubble-add-icon { border-color: #000; }
+      .story-bubble-label { color: #f2f2f2; }
+      .story-bubble.seen .story-bubble-ring, .story-bubble.add-story .story-bubble-ring { background: #3a3a3c; }
 
       .switch-account-row { background: #1c1c1e; }
       .switch-account-row:active { background: #262628; }
@@ -3677,15 +3672,12 @@
                swipe — the header must stay put while the video underneath
                it slides, not scroll/slide along with the gesture. -->
           <div class="feed-header">
-            <div class="stories-tray" id="stories-tray"></div>
-            <div class="feed-header-row">
-              <div class="feed-tabs">
-                <span class="feed-tab" id="tab-friends" data-i18n="tab_friends" onclick="setActiveFeedTab(this)">Friends</span>
-                <span class="feed-tab active" id="tab-foryou" data-i18n="tab_foryou" onclick="setActiveFeedTab(this)">For you</span>
-              </div>
-              <div class="header-icon" onclick="openSearchOverlay()">
-                <svg class="icon-svg icon-line" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </div>
+            <div class="feed-tabs">
+              <span class="feed-tab" id="tab-friends" data-i18n="tab_friends" onclick="setActiveFeedTab(this)">Friends</span>
+              <span class="feed-tab active" id="tab-foryou" data-i18n="tab_foryou" onclick="setActiveFeedTab(this)">For you</span>
+            </div>
+            <div class="header-icon" onclick="openSearchOverlay()">
+              <svg class="icon-svg icon-line" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </div>
           </div>
           <div class="video-frame" id="video-frame">
@@ -3796,6 +3788,8 @@
             <svg class="icon-svg" style="fill:#111;" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
           </div>
         </header>
+
+        <div class="stories-tray" id="stories-tray" style="padding-top:10px; padding-bottom:6px;"></div>
 
         <div class="dm-friends-list" id="dm-friends-list">
           <div class="dm-empty-state" id="dm-empty-state">
@@ -10822,6 +10816,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       if (screenId === 'dm-screen') {
         loadFriendsAndDms();
+        loadStoriesTray();
       }
 
       if (screenId === 'feed-screen' && videoPlayer.src) {
