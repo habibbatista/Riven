@@ -305,6 +305,8 @@
 
     .stories-tray {
       display: flex;
+      flex-shrink: 0;
+      min-height: 132px;
       gap: 14px;
       overflow-x: auto;
       overflow-y: hidden;
@@ -1901,6 +1903,13 @@
     .dm-friends-list {
       display: flex;
       flex-direction: column;
+      flex: 1;
+      /* Without this, a flex child with overflow:auto content can refuse
+         to shrink below its own natural (potentially very tall) content
+         size — which forces the whole column past #dm-list-container's
+         height and squeezes .stories-tray out from under it, even with
+         flex-shrink:0 there, since the squeeze happens one level up. */
+      min-height: 0;
       overflow-y: auto;
       /* Same fix as #profile-screen — keep the last friend row from
          scrolling directly behind the floating glass nav. */
@@ -4124,7 +4133,7 @@
     <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.27 Beta
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.28 Beta
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -8262,14 +8271,15 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           const allSeen = hasStories && g.stories.every(s => seenIds.has(s.id));
           const avatarSrc = g.pfp || DEFAULT_AVATAR_SVG;
           if (isOwn) {
-            // "Seen" only means something from someone else's perspective
-            // looking at YOUR story — checking your own posted story
-            // was marking it seen-by-you and graying out your own ring,
-            // even though nobody else had viewed it yet. The ring here
-            // just reflects whether you currently have an active story.
+            // Turns out the desired behavior is simpler than my last pass
+            // assumed: treat your own story the same as anyone else's —
+            // colored while unviewed, gray once you've actually opened
+            // and watched it. Posting a new one resets it to unseen
+            // automatically, since a freshly-created story's id won't be
+            // in seenIds yet.
             return `
               <div class="story-bubble add-story" onclick="${hasStories ? `openStoryViewer('${g.uid}')` : `document.getElementById('story-file-input').click()`}">
-                <div class="story-bubble-ring ${hasStories ? '' : 'seen'}">
+                <div class="story-bubble-ring ${allSeen ? 'seen' : ''}">
                   <img class="story-bubble-avatar" src="${avatarSrc}">
                 </div>
                 <div class="story-bubble-add-icon" onclick="event.stopPropagation(); document.getElementById('story-file-input').click();">
@@ -9685,6 +9695,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           setDoc(doc(db, "chats", chatId), {
             participants: [uidA, uidB],
             lastMessage: t('dm_sent_video_preview'),
+            lastMessageKind: 'video-share',
             lastMessageSenderUid: currentUser.uid,
             updatedAt: serverTimestamp()
           }, { merge: true })
@@ -9797,6 +9808,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         const friends = await Promise.all(mutuals.map(async (uData) => {
           const chatId = getChatId(currentUser.uid, uData.uid);
           let lastMessage = null;
+          let lastMessageKind = null;
           let streak = 0;
           let unread = false;
           try {
@@ -9804,6 +9816,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
             if (chatSnap.exists()) {
               const cData = chatSnap.data();
               lastMessage = cData.lastMessage || null;
+              lastMessageKind = cData.lastMessageKind || null;
               streak = cData.streak || 0;
               const myLastRead = cData[`lastRead_${currentUser.uid}`];
               const myLastReadMs = myLastRead?.toMillis ? myLastRead.toMillis() : 0;
@@ -9819,6 +9832,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
             handle: uData.handle || 'user',
             pfp: uData.pfp || '',
             lastMessage,
+            lastMessageKind,
             streak,
             unread,
             lastActive: uData.lastActive || null
@@ -9836,9 +9850,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         }
 
         friendsListEl.innerHTML = friends.map(f => {
-          const previewText = f.lastMessage
-            ? f.lastMessage
-            : `<span class="dm-active-prompt">${t('dm_say_hi').replace('{name}', f.name)}</span>`;
+          // Re-resolve media-preview text (photo/voice/video-share) in
+          // MY current language rather than trusting the stored
+          // lastMessage, which was frozen in whatever language the
+          // sender's app happened to be in when they sent it. Plain text
+          // messages and chats from before lastMessageKind existed still
+          // fall back to the stored string, same as always.
+          const kindLabel = getDmPreviewLabel(f.lastMessageKind);
+          const previewText = kindLabel
+            ? kindLabel
+            : f.lastMessage
+              ? f.lastMessage
+              : `<span class="dm-active-prompt">${t('dm_say_hi').replace('{name}', f.name)}</span>`;
           const streakBadge = f.streak > 0 ? `<span class="dm-friend-streak">🔥 ${f.streak}</span>` : '';
           const status = getActivityStatus(f.lastActive);
 
@@ -10047,10 +10070,46 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // say" is identical (streak transaction, push notification, etc.), so
     // this is the one place that logic lives instead of copy-pasted three
     // times over.
-    async function sendDmPayload(messageFields, previewText) {
+    // Computed once t() is available at call time, not cached, so this
+    // always reflects whichever language is currently active.
+    function DM_PREVIEW_LABEL(kind) {
+      if (kind === 'image') return t('dm_sent_photo_preview');
+      if (kind === 'voice') return t('dm_sent_voice_preview');
+      if (kind === 'video-share') return t('dm_sent_video_preview');
+      return '';
+    }
+
+    // previewKind drives what shows in the DM list: 'text' means show the
+    // literal message text; anything else (image/voice) is a label that
+    // gets translated at render time in loadFriendsAndDms, using
+    // whoever's VIEWING it — not baked in as the sender's language, which
+    // is what a plain translated string stored here would do (that was
+    // the bug behind "Sent a video"/"Photo" showing in English for a
+    // Spanish-language viewer — it wasn't untranslated, it was translated
+    // once, in the wrong direction, at send time).
+    // Kind → translation key for DM previews. Deliberately a lookup by
+    // key rather than pre-resolved strings, so both the sender's push
+    // notification AND (more importantly) loadFriendsAndDms's list
+    // rendering can call t() themselves at the moment they need it —
+    // the sender's copy is necessarily frozen at their language, but the
+    // list rendering re-resolves this fresh in whoever's viewing it, so
+    // a photo you sent shows correctly whether the recipient's app is in
+    // Spanish, Japanese, or anything else.
+    const DM_PREVIEW_KIND_KEYS = {
+      image: 'dm_sent_photo_preview',
+      voice: 'dm_sent_voice_preview',
+      'video-share': 'dm_sent_video_preview'
+    };
+    function getDmPreviewLabel(kind) {
+      const key = DM_PREVIEW_KIND_KEYS[kind];
+      return key ? t(key) : null;
+    }
+
+    async function sendDmPayload(messageFields, previewKind) {
       if (!currentUser || !activeChatFriendUid) return;
       const chatId = getChatId(currentUser.uid, activeChatFriendUid);
       const [uidA, uidB] = chatId.split('_');
+      const previewText = previewKind === 'text' ? messageFields.text : getDmPreviewLabel(previewKind);
 
       try {
         await addDoc(collection(db, "chats", chatId, "messages"), {
@@ -10068,7 +10127,12 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
           tx.set(chatRef, {
             participants: [uidA, uidB],
+            // lastMessage stays as a plain-text fallback (used for chats
+            // from before lastMessageKind existed, and as the push
+            // notification body, which can't be re-translated client-side
+            // by the recipient the way the in-app list preview can).
             lastMessage: previewText,
+            lastMessageKind: previewKind,
             lastMessageSenderUid: currentUser.uid,
             updatedAt: serverTimestamp(),
             activeDates,
@@ -10097,7 +10161,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (!text) return;
       input.value = '';
       updateDmSendIcon();
-      await sendDmPayload({ type: 'text', text }, text);
+      await sendDmPayload({ type: 'text', text }, 'text');
     };
 
     // Toggles between the mic (nothing typed yet) and send button (once
@@ -10126,7 +10190,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         });
         const data = await res.json();
         if (!data.secure_url) throw new Error(data.error?.message || 'Upload failed');
-        await sendDmPayload({ type: 'image', mediaUrl: data.secure_url }, t('dm_sent_photo_preview'));
+        await sendDmPayload({ type: 'image', mediaUrl: data.secure_url }, 'image');
       } catch (e) {
         console.error('DM image upload error:', e);
         showToast(t('toast_upload_failed_generic'));
@@ -10191,7 +10255,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           type: 'voice',
           mediaUrl: data.secure_url,
           duration: Math.round(durationMs / 1000)
-        }, t('dm_sent_voice_preview'));
+        }, 'voice');
       } catch (e) {
         console.error('DM voice upload error:', e);
         showToast(t('toast_upload_failed_generic'));
