@@ -319,17 +319,19 @@
       flex-direction: column;
       align-items: center;
       gap: 4px;
-      width: 60px;
+      width: 76px;
       cursor: pointer;
       position: relative;
     }
 
     .story-bubble-ring {
-      width: 56px;
-      height: 56px;
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
-      padding: 2.5px;
-      background: linear-gradient(45deg, #ff2d55, #ff9500, #ffcc00);
+      padding: 3px;
+      /* Riven's own mark (pink-to-blue), not Instagram's orange/yellow
+         placeholder this originally borrowed. */
+      background: linear-gradient(45deg, #ff2d55, #7b2ff7, #3a7bff);
     }
     .story-bubble.seen .story-bubble-ring {
       background: #d8d8dc;
@@ -343,32 +345,32 @@
       height: 100%;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid #fff;
+      border: 2.5px solid #fff;
       background: #eee;
     }
 
     .story-bubble-add-icon {
       position: absolute;
-      bottom: 14px;
-      right: 0;
-      width: 18px;
-      height: 18px;
+      bottom: 18px;
+      right: 2px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
       background: var(--accent-pink);
-      border: 2px solid #fff;
+      border: 2.5px solid #fff;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .story-bubble-add-icon svg { width: 10px; height: 10px; fill: #fff; }
+    .story-bubble-add-icon svg { width: 12px; height: 12px; fill: #fff; }
 
     .story-bubble-label {
-      font-size: 11px;
+      font-size: 12px;
       color: #111;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 60px;
+      max-width: 76px;
     }
 
     .feed-tabs {
