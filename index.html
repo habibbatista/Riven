@@ -305,9 +305,10 @@
 
     .stories-tray {
       display: flex;
-      gap: 12px;
+      gap: 14px;
       overflow-x: auto;
-      padding: 0 20px;
+      overflow-y: hidden;
+      padding: 4px 20px 10px 20px;
       scrollbar-width: none;
     }
     .stories-tray::-webkit-scrollbar { display: none; }
@@ -318,25 +319,22 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
-      width: 76px;
+      gap: 5px;
+      width: 96px;
       cursor: pointer;
       position: relative;
     }
 
     .story-bubble-ring {
-      width: 72px;
-      height: 72px;
+      width: 92px;
+      height: 92px;
       border-radius: 50%;
-      padding: 3px;
+      padding: 3.5px;
       /* Riven's own mark (pink-to-blue), not Instagram's orange/yellow
          placeholder this originally borrowed. */
       background: linear-gradient(45deg, #ff2d55, #7b2ff7, #3a7bff);
     }
     .story-bubble.seen .story-bubble-ring {
-      background: #d8d8dc;
-    }
-    .story-bubble.add-story .story-bubble-ring {
       background: #d8d8dc;
     }
 
@@ -345,24 +343,24 @@
       height: 100%;
       border-radius: 50%;
       object-fit: cover;
-      border: 2.5px solid #fff;
+      border: 3px solid #fff;
       background: #eee;
     }
 
     .story-bubble-add-icon {
       position: absolute;
-      bottom: 18px;
+      bottom: 22px;
       right: 2px;
-      width: 22px;
-      height: 22px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
       background: var(--accent-pink);
-      border: 2.5px solid #fff;
+      border: 3px solid #fff;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .story-bubble-add-icon svg { width: 12px; height: 12px; fill: #fff; }
+    .story-bubble-add-icon svg { width: 14px; height: 14px; fill: #fff; }
 
     .story-bubble-label {
       font-size: 12px;
@@ -370,7 +368,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 76px;
+      max-width: 96px;
     }
 
     .feed-tabs {
@@ -3593,7 +3591,7 @@
       .dm-header-icon-btn:active { background: rgba(255,255,255,0.1); }
       .story-bubble-avatar, .story-bubble-add-icon { border-color: #000; }
       .story-bubble-label { color: #f2f2f2; }
-      .story-bubble.seen .story-bubble-ring, .story-bubble.add-story .story-bubble-ring { background: #3a3a3c; }
+      .story-bubble.seen .story-bubble-ring { background: #3a3a3c; }
 
       .switch-account-row { background: #1c1c1e; }
       .switch-account-row:active { background: #262628; }
@@ -3791,7 +3789,7 @@
           </div>
         </header>
 
-        <div class="stories-tray" id="stories-tray" style="padding-top:10px; padding-bottom:6px;"></div>
+        <div class="stories-tray" id="stories-tray"></div>
 
         <div class="dm-friends-list" id="dm-friends-list">
           <div class="dm-empty-state" id="dm-empty-state">
@@ -8264,9 +8262,14 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           const allSeen = hasStories && g.stories.every(s => seenIds.has(s.id));
           const avatarSrc = g.pfp || DEFAULT_AVATAR_SVG;
           if (isOwn) {
+            // "Seen" only means something from someone else's perspective
+            // looking at YOUR story — checking your own posted story
+            // was marking it seen-by-you and graying out your own ring,
+            // even though nobody else had viewed it yet. The ring here
+            // just reflects whether you currently have an active story.
             return `
               <div class="story-bubble add-story" onclick="${hasStories ? `openStoryViewer('${g.uid}')` : `document.getElementById('story-file-input').click()`}">
-                <div class="story-bubble-ring ${allSeen ? 'seen' : ''}">
+                <div class="story-bubble-ring ${hasStories ? '' : 'seen'}">
                   <img class="story-bubble-avatar" src="${avatarSrc}">
                 </div>
                 <div class="story-bubble-add-icon" onclick="event.stopPropagation(); document.getElementById('story-file-input').click();">
