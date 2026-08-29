@@ -132,11 +132,11 @@
       align-items: center;
     }
 
-    /* Hidden by default — a splash screen only makes sense for the
-       installed app (nothing to "launch into" from a regular browser tab,
-       which already has its own loading affordances like the URL bar). */
+    /* Now shown on a regular browser tab too, not just the installed PWA —
+       every launch gets the same brief intro moment rather than only
+       app-shell installs getting one. */
     #splash-screen {
-      display: none;
+      display: flex;
       position: absolute;
       inset: 0;
       z-index: 999999999;
@@ -146,12 +146,6 @@
       opacity: 1;
       transition: opacity 0.4s var(--ease-smooth);
       pointer-events: none;
-    }
-
-    @media (display-mode: standalone) {
-      #splash-screen {
-        display: flex;
-      }
     }
 
     #splash-screen.fade-out {
@@ -188,18 +182,32 @@
       width: 100%;
       height: 100%;
       overflow-y: auto;
-      transition: transform 0.4s var(--ease-smooth), opacity 0.4s var(--ease-smooth);
+      transition: transform 0.32s var(--ease-spring), opacity 0.26s var(--ease-smooth);
       will-change: transform, opacity;
     }
 
-    /* A slight scale + dim on the off-screen positions (rather than a flat
-       1:1 slide) gives the transition real depth — the outgoing screen
-       visibly recedes and dims as it slides away, the incoming one grows
-       and brightens into place, closer to how native iOS transitions
-       actually feel than a pure horizontal translate. */
-    .screen-view[data-pos="center"] { transform: translateX(0) scale(1); opacity: 1; }
-    .screen-view[data-pos="left"] { transform: translateX(-100%) scale(0.96); opacity: 0.85; }
-    .screen-view[data-pos="right"] { transform: translateX(100%) scale(0.96); opacity: 0.85; }
+    /* Reworked from a horizontal carousel-style slide (outgoing screen
+       visibly sliding off to the left) into an overlay presentation: the
+       screen you were on just stays put and fades out in place — it
+       never physically moves — while whichever screen is becoming
+       active layers on top of it (z-index) and fades/scales/lifts into
+       view, closer to how a sheet or overlay presents than a tab swipe.
+       "left" and "right" are still tracked separately in JS for its own
+       bookkeeping, but render identically now — there's no longer a
+       directional slide for either case to differ on. */
+    .screen-view[data-pos="center"] {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+      z-index: 2;
+      pointer-events: auto;
+    }
+    .screen-view[data-pos="left"],
+    .screen-view[data-pos="right"] {
+      transform: scale(0.97) translateY(10px);
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
 
     .icon-svg {
       width: 24px;
@@ -3819,14 +3827,7 @@
         <video id="preload-video-next2" style="display:none;" preload="auto" muted playsinline webkit-playsinline></video>
         <video id="preload-video-prev" style="display:none;" preload="auto" muted playsinline webkit-playsinline></video>
 
-        <div class="upload-empty-state" id="upload-prompt">
-          <svg class="icon-svg" style="width:48px; height:48px; fill:#555;" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/></svg>
-          <h3 id="empty-feed-title" data-i18n="empty_feed_title">No videos yet</h3>
-          <p id="empty-feed-text" data-i18n="empty_feed_text">Nobody has posted a video yet. Be the first — sign in and upload one.</p>
-          <label for="video-file-input" class="custom-file-upload" id="upload-label">
-            <svg class="icon-svg" style="width:18px; height:18px; fill:#000;" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
-            <span data-i18n="upload_label">Upload or Record Video</span>
-          </label>
+        <div class="upload-empty-state" id="upload-prompt" style="display:none;">
           <input type="file" id="video-file-input" accept="video/*">
           <input type="file" id="story-file-input" accept="image/*,video/*" style="display:none;" onchange="handleStoryFileSelected(event)">
           <input type="file" id="audio-file-input" accept="audio/*">
@@ -4216,7 +4217,7 @@
     <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.29 Beta
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.27 Beta
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -6502,8 +6503,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // actually finished loading — gated to a minimum display time as well
     // (not just "as soon as load fires") so a fast cached load doesn't
     // flash the splash for a barely-perceptible instant; it reads as a
-    // deliberate brief launch moment either way. A no-op outside standalone
-    // mode, since #splash-screen is display:none there to begin with.
+    // deliberate brief launch moment either way. Runs the same way in a
+    // regular browser tab as it does in the installed PWA now.
     (function initSplashScreen() {
       const splash = document.getElementById('splash-screen');
       if (!splash) return;
