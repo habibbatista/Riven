@@ -745,21 +745,26 @@
       inset: 0;
       background: #000;
       z-index: 99999;
-      display: none;
+      display: flex;
       flex-direction: column;
       padding-top: calc(var(--safe-top) + 10px);
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(1.03);
+      transition: opacity 0.22s var(--ease-smooth), transform 0.32s var(--ease-spring);
     }
 
     #search-overlay.active {
-      display: flex !important;
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
     }
 
     .search-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 10px 16px;
-      border-bottom: 1px solid #222;
+      gap: 10px;
+      padding: 10px 16px 14px 16px;
     }
 
     .search-input-box {
@@ -767,9 +772,15 @@
       display: flex;
       align-items: center;
       background: #1c1c1e;
-      border-radius: 10px;
-      padding: 8px 12px;
+      border: 1.5px solid transparent;
+      border-radius: 999px;
+      padding: 11px 14px;
       gap: 8px;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+    .search-input-box:focus-within {
+      border-color: var(--accent-pink);
+      background: #222;
     }
 
     .search-input-box input {
@@ -781,30 +792,63 @@
       width: 100%;
     }
 
-    .cancel-search-btn {
-      color: #fff;
-      font-size: 14px;
-      font-weight: 400;
+    .search-clear-btn {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
+      flex-shrink: 0;
+    }
+    .search-clear-btn.visible { display: flex; }
+    .search-clear-btn svg { width: 10px; height: 10px; fill: #fff; }
+
+    .cancel-search-btn {
+      color: var(--accent-pink);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
     }
 
     .search-results-list {
       flex: 1;
       overflow-y: auto;
-      padding: 16px;
+      padding: 8px 16px 16px 16px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
+
+    .search-state-message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: #666;
+      font-size: 14px;
+      text-align: center;
+      padding-top: 15vh;
+    }
+    .search-state-message svg { width: 36px; height: 36px; fill: #444; }
 
     .search-result-card {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 10px;
-      border-radius: 10px;
-      background: #111;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #131315;
+      border: 1px solid #232325;
       cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.1s ease;
+    }
+    .search-result-card:active {
+      background: #1c1c1e;
+      transform: scale(0.98);
     }
 
     .search-avatar {
@@ -831,11 +875,13 @@
     .search-video-cell {
       position: relative;
       aspect-ratio: 9 / 16;
-      border-radius: 4px;
+      border-radius: 6px;
       overflow: hidden;
       background: #222;
       cursor: pointer;
+      transition: transform 0.1s ease;
     }
+    .search-video-cell:active { transform: scale(0.96); }
 
     .search-video-thumb {
       width: 100%;
@@ -843,6 +889,19 @@
       object-fit: cover;
       display: block;
     }
+
+    /* A still frame alone doesn't read as "video" the way it does in a
+       feed with motion — this badge is what actually communicates that
+       at a glance in a static grid. */
+    .search-video-play-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 18px;
+      height: 18px;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+    }
+    .search-video-play-badge svg { width: 100%; height: 100%; fill: #fff; }
 
     .search-video-author {
       position: absolute;
@@ -876,18 +935,24 @@
       position: absolute;
       inset: 0;
       z-index: 99998;
-      display: none;
+      display: flex;
       align-items: flex-end;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s var(--ease-smooth);
     }
 
     #comments-overlay.active, #share-sheet-overlay.active {
-      display: flex;
+      opacity: 1;
+      pointer-events: auto;
     }
 
     .comments-backdrop {
       position: absolute;
       inset: 0;
       background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
     }
 
     .comments-sheet {
@@ -898,6 +963,12 @@
       border-radius: 20px 20px 0 0;
       display: flex;
       flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.36s var(--ease-sheet);
+    }
+
+    #comments-overlay.active .comments-sheet, #share-sheet-overlay.active .comments-sheet {
+      transform: translateY(0);
     }
 
     .comments-sheet-header {
@@ -2039,6 +2110,12 @@
 
     .active-chat-view.active {
       display: flex;
+      animation: chatViewIn 0.34s var(--ease-spring);
+    }
+
+    @keyframes chatViewIn {
+      from { opacity: 0; transform: translateX(28px); }
+      to   { opacity: 1; transform: translateX(0); }
     }
 
     /* CHAT HEADER (redesigned to match mockup) */
@@ -2187,19 +2264,19 @@
     .dm-typing-indicator {
       display: none;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       align-self: flex-start;
       background: #f2f2f7;
-      border-radius: 18px;
+      border-radius: 20px;
       border-bottom-left-radius: 4px;
-      padding: 10px 14px;
+      padding: 14px 18px;
       margin: 0 16px 8px 16px;
       width: fit-content;
     }
     .dm-typing-indicator.active { display: flex; }
     .dm-typing-dot {
-      width: 6px;
-      height: 6px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
       background: #999;
       animation: typingBounce 1.2s ease-in-out infinite;
@@ -2208,7 +2285,7 @@
     .dm-typing-dot:nth-child(3) { animation-delay: 0.3s; }
     @keyframes typingBounce {
       0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-      30% { transform: translateY(-4px); opacity: 1; }
+      30% { transform: translateY(-5px); opacity: 1; }
     }
 
     .dm-bubble-video {
@@ -3969,13 +4046,19 @@
     <div id="search-overlay">
       <div class="search-header">
         <div class="search-input-box">
-          <svg class="icon-svg" style="width:18px; height:18px; fill:#888;" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          <input type="text" id="search-input" data-i18n-placeholder="search_placeholder" placeholder="Search accounts..." oninput="debouncedHandleSearch(this.value)">
+          <svg class="icon-svg" style="width:18px; height:18px; fill:#888; flex-shrink:0;" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" id="search-input" data-i18n-placeholder="search_placeholder" placeholder="Search accounts..." oninput="debouncedHandleSearch(this.value); toggleSearchClearBtn();">
+          <div class="search-clear-btn" id="search-clear-btn" onclick="clearSearchInput()">
+            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </div>
         </div>
         <span class="cancel-search-btn" data-i18n="cancel" onclick="closeSearchOverlay()">Cancel</span>
       </div>
       <div class="search-results-list" id="search-results">
-        <div id="search-prompt-text" data-i18n="search_prompt" style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">Type to search users...</div>
+        <div class="search-state-message" id="search-prompt-text">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <span data-i18n="search_prompt">Type to search users...</span>
+        </div>
       </div>
     </div>
 
@@ -4133,7 +4216,7 @@
     <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.28 Beta
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.29 Beta
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -7784,6 +7867,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       overlay.classList.add('active');
       const input = document.getElementById('search-input');
       input.value = '';
+      toggleSearchClearBtn();
       setTimeout(() => input.focus(), 50);
     };
 
@@ -7791,12 +7875,31 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       document.getElementById('search-overlay').classList.remove('active');
     };
 
+    window.toggleSearchClearBtn = function() {
+      const hasText = document.getElementById('search-input').value.length > 0;
+      document.getElementById('search-clear-btn').classList.toggle('visible', hasText);
+    };
+
+    window.clearSearchInput = function() {
+      const input = document.getElementById('search-input');
+      input.value = '';
+      input.focus();
+      toggleSearchClearBtn();
+      handleSearch('');
+    };
+
+    const SEARCH_ICON_PATH = 'M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z';
+
     window.handleSearch = async function(query_) {
       const resultsContainer = document.getElementById('search-results');
       const q = query_.trim().toLowerCase();
 
       if (!q) {
-        resultsContainer.innerHTML = `<div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">${t('search_prompt')}</div>`;
+        resultsContainer.innerHTML = `
+          <div class="search-state-message">
+            <svg viewBox="0 0 24 24"><path d="${SEARCH_ICON_PATH}"/></svg>
+            <span>${t('search_prompt')}</span>
+          </div>`;
         return;
       }
 
@@ -7822,7 +7925,11 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
 
       if (matches.length === 0 && videoMatches.length === 0) {
-        resultsContainer.innerHTML = `<div style="color: #666; font-size: 14px; text-align: center; padding-top: 20px;">${t('no_results_for')} "${query_}"</div>`;
+        resultsContainer.innerHTML = `
+          <div class="search-state-message">
+            <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            <span>${t('no_results_for')} "${escapeHtml(query_)}"</span>
+          </div>`;
         return;
       }
 
@@ -7842,6 +7949,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           ${videoMatches.map(v => `
             <div class="search-video-cell" onclick="openSharedVideo('${v.id}')">
               <img class="search-video-thumb" loading="lazy" src="${getVideoThumbnail(v.videoUrl)}" onerror="this.style.background='#2c2c2e'; this.removeAttribute('src');">
+              <div class="search-video-play-badge"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
               <span class="search-video-author">@${escapeHtml(v.authorHandle || 'user')}</span>
             </div>
           `).join('')}
