@@ -34,6 +34,7 @@
       
       --font-main: 'Urbanist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       --bg-light: #ffffff;
+      --bg-light-transparent: rgba(255, 255, 255, 0);
       --bg-dark: #000000;
       --text-dark: #111111;
       --text-light: #ffffff;
@@ -3557,6 +3558,7 @@
     @media (prefers-color-scheme: dark) {
       :root {
         --bg-light: #000000;
+        --bg-light-transparent: rgba(0, 0, 0, 0);
         --text-dark: #f2f2f2;
         --border-gray: #262628;
       }
@@ -8299,9 +8301,11 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
 
       // Fades gradually across the whole banner/card height into the page
-      // background, instead of staying flat-solid and only fading in a short
-      // stretch right at the end.
-      const bgFadeMask = 'linear-gradient(180deg, transparent 0px, var(--bg-light) 340px)';
+      // background. Uses a transparent version of the *same* bg color (not the
+      // generic "transparent" keyword, which is transparent black) so it doesn't
+      // muddy into gray on the way to white/black — that muddy band was what
+      // looked like a big solid chunk before snapping to the page color.
+      const bgFadeMask = 'linear-gradient(180deg, var(--bg-light-transparent) 0px, var(--bg-light) 340px)';
       if (bgTarget) {
         if (c.bg === 'default') {
           bgTarget.style.background = '';
