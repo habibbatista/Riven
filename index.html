@@ -4272,7 +4272,7 @@
         <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.31 Beta
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.9.1 Beta
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -8254,15 +8254,16 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         meta.style.flexDirection = 'column';
       }
 
+      const bgFadeMask = 'linear-gradient(180deg, transparent 0px, transparent 280px, var(--bg-light) 360px)';
       if (bgTarget) {
         if (c.bg === 'default') {
           bgTarget.style.background = '';
         } else if (c.bg.startsWith('color:')) {
-          bgTarget.style.background = c.bg.slice(6);
+          bgTarget.style.background = `${bgFadeMask}, ${c.bg.slice(6)}`;
         } else if (c.bg === 'customgrad') {
-          bgTarget.style.background = `linear-gradient(160deg, ${c.bgCustom.c1}, ${c.bgCustom.c2})`;
+          bgTarget.style.background = `${bgFadeMask}, linear-gradient(160deg, ${c.bgCustom.c1}, ${c.bgCustom.c2})`;
         } else {
-          bgTarget.style.background = `linear-gradient(160deg, var(--grad-${c.bg}-1), var(--grad-${c.bg}-2))`;
+          bgTarget.style.background = `${bgFadeMask}, linear-gradient(160deg, var(--grad-${c.bg}-1), var(--grad-${c.bg}-2))`;
         }
       }
     }
