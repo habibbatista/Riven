@@ -4069,6 +4069,9 @@
           <div class="font-swatch" data-font="mono" style="font-family: ui-monospace, monospace;" onclick="pickCustomizeOption('font', 'mono', this)">Aa</div>
         </div>
 
+        <span class="customize-label" data-i18n="customize_font_weight">Font Thickness</span>
+        <input type="range" id="name-weight-slider" min="400" max="900" step="100" value="700" class="customize-slider" oninput="updateCustomizePreview()">
+
         <span class="customize-label" data-i18n="customize_gradient">Name Color</span>
         <div class="customize-swatch-row" id="gradient-swatch-row">
           <div class="gradient-swatch none-swatch active" data-gradient="none" onclick="pickCustomizeOption('gradient', 'none', this)"></div>
@@ -4078,14 +4081,25 @@
           <div class="gradient-swatch" data-gradient="mint" style="background: linear-gradient(135deg, var(--grad-mint-1), var(--grad-mint-2));" onclick="pickCustomizeOption('gradient', 'mint', this)"></div>
           <div class="gradient-swatch" data-gradient="mono" style="background: linear-gradient(135deg, var(--grad-mono-1), var(--grad-mono-2));" onclick="pickCustomizeOption('gradient', 'mono', this)"></div>
           <div class="gradient-swatch" data-gradient="flame" style="background: linear-gradient(135deg, var(--grad-flame-1), var(--grad-flame-2));" onclick="pickCustomizeOption('gradient', 'flame', this)"></div>
+          <div class="gradient-swatch custom-swatch" data-gradient="custom" onclick="pickCustomizeOption('gradient', 'custom', this)">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.19-.64-1.64-.08-.09-.13-.21-.13-.35 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9zm5.5 8c-.83 0-1.5-.67-1.5-1.5S16.67 7 17.5 7s1.5.67 1.5 1.5S18.33 10 17.5 10zM13 8.5c0 .83-.67 1.5-1.5 1.5S10 9.33 10 8.5 10.67 7 11.5 7s1.5.67 1.5 1.5zM7.5 10C6.67 10 6 9.33 6 8.5S6.67 7 7.5 7s1.5.67 1.5 1.5S8.33 10 7.5 10zm-1 4c0 .83-.67 1.5-1.5 1.5S3.5 14.83 3.5 14s.67-1.5 1.5-1.5 1.5.67 1.5 1.5z"/></svg>
+          </div>
+        </div>
+        <div class="customize-row" id="gradient-custom-pickers" style="display:none; gap:10px;">
+          <label class="gradient-swatch bg-color-swatch"><input type="color" id="gradient-custom-1" value="#ff2d55" oninput="updateCustomizePreview()"></label>
+          <label class="gradient-swatch bg-color-swatch"><input type="color" id="gradient-custom-2" value="#7b2ff7" oninput="updateCustomizePreview()"></label>
         </div>
 
         <div class="customize-row">
           <span class="customize-label" data-i18n="customize_stroke">Outline</span>
           <label class="customize-toggle">
-            <input type="checkbox" id="name-stroke-toggle" onchange="updateCustomizePreview()">
+            <input type="checkbox" id="name-stroke-toggle" onchange="toggleStrokeControls(); updateCustomizePreview();">
             <span class="customize-toggle-track"><span class="customize-toggle-thumb"></span></span>
           </label>
+        </div>
+        <div class="customize-row" id="stroke-controls" style="display:none; gap:12px;">
+          <label class="gradient-swatch bg-color-swatch" style="width:32px; height:32px; flex-shrink:0;"><input type="color" id="stroke-color-picker" value="#000000" oninput="updateCustomizePreview()"></label>
+          <input type="range" id="stroke-width-slider" min="0.3" max="3" step="0.1" value="0.6" class="customize-slider" style="flex:1;" oninput="updateCustomizePreview()">
         </div>
 
         <span class="customize-label" data-i18n="customize_spacing">Letter Spacing</span>
@@ -4126,9 +4140,16 @@
           <div class="gradient-swatch" data-bg="mint" style="background: linear-gradient(135deg, var(--grad-mint-1), var(--grad-mint-2));" onclick="pickCustomizeOption('bg', 'mint', this)"></div>
           <div class="gradient-swatch" data-bg="mono" style="background: linear-gradient(135deg, var(--grad-mono-1), var(--grad-mono-2));" onclick="pickCustomizeOption('bg', 'mono', this)"></div>
           <div class="gradient-swatch" data-bg="flame" style="background: linear-gradient(135deg, var(--grad-flame-1), var(--grad-flame-2));" onclick="pickCustomizeOption('bg', 'flame', this)"></div>
+          <div class="gradient-swatch custom-swatch" data-bg="customgrad" onclick="pickCustomizeOption('bg', 'customgrad', this)">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.19-.64-1.64-.08-.09-.13-.21-.13-.35 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9zm5.5 8c-.83 0-1.5-.67-1.5-1.5S16.67 7 17.5 7s1.5.67 1.5 1.5S18.33 10 17.5 10zM13 8.5c0 .83-.67 1.5-1.5 1.5S10 9.33 10 8.5 10.67 7 11.5 7s1.5.67 1.5 1.5zM7.5 10C6.67 10 6 9.33 6 8.5S6.67 7 7.5 7s1.5.67 1.5 1.5S8.33 10 7.5 10zm-1 4c0 .83-.67 1.5-1.5 1.5S3.5 14.83 3.5 14s.67-1.5 1.5-1.5 1.5.67 1.5 1.5z"/></svg>
+          </div>
           <label class="gradient-swatch bg-color-swatch">
             <input type="color" id="bg-color-picker" value="#111111" oninput="pickCustomizeOption('bg', 'color:' + this.value, null)">
           </label>
+        </div>
+        <div class="customize-row" id="bg-custom-pickers" style="display:none; gap:10px;">
+          <label class="gradient-swatch bg-color-swatch"><input type="color" id="bg-custom-1" value="#ff2d55" oninput="updateCustomizePreview()"></label>
+          <label class="gradient-swatch bg-color-swatch"><input type="color" id="bg-custom-2" value="#7b2ff7" oninput="updateCustomizePreview()"></label>
         </div>
 
         <div class="modal-buttons">
@@ -4251,7 +4272,7 @@
         <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.30 Beta
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.31 Beta
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -4467,6 +4488,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         customize_profile_look: 'Customize Profile Look',
         customize_profile: 'Customize Profile',
         customize_font: 'Name Font',
+        customize_font_weight: 'Font Thickness',
         customize_gradient: 'Name Color',
         customize_stroke: 'Outline',
         customize_spacing: 'Letter Spacing',
@@ -4625,6 +4647,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         customize_profile_look: 'Personalizar apariencia del perfil',
         customize_profile: 'Personalizar perfil',
         customize_font: 'Fuente del nombre',
+        customize_font_weight: 'Grosor de la fuente',
         customize_gradient: 'Color del nombre',
         customize_stroke: 'Contorno',
         customize_spacing: 'Espaciado de letras',
@@ -4783,6 +4806,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         customize_profile_look: '自定义个人主页外观',
         customize_profile: '自定义个人主页',
         customize_font: '名字字体',
+        customize_font_weight: '字体粗细',
         customize_gradient: '名字颜色',
         customize_stroke: '描边',
         customize_spacing: '字间距',
@@ -4941,6 +4965,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         customize_profile_look: 'Personalizar aparência do perfil',
         customize_profile: 'Personalizar perfil',
         customize_font: 'Fonte do nome',
+        customize_font_weight: 'Espessura da fonte',
         customize_gradient: 'Cor do nome',
         customize_stroke: 'Contorno',
         customize_spacing: 'Espaçamento de letras',
@@ -5099,6 +5124,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         customize_profile_look: 'Profil-Look anpassen',
         customize_profile: 'Profil anpassen',
         customize_font: 'Namensschrift',
+        customize_font_weight: 'Schriftstärke',
         customize_gradient: 'Namensfarbe',
         customize_stroke: 'Umriss',
         customize_spacing: 'Buchstabenabstand',
@@ -5257,6 +5283,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         customize_profile_look: 'プロフィールの外観をカスタマイズ',
         customize_profile: 'プロフィールをカスタマイズ',
         customize_font: '名前のフォント',
+        customize_font_weight: 'フォントの太さ',
         customize_gradient: '名前の色',
         customize_stroke: '縁取り',
         customize_spacing: '文字間隔',
@@ -8153,12 +8180,17 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     const DEFAULT_CUSTOMIZATION = {
       font: 'default',
+      fontWeight: 700,
       gradient: 'none',
+      gradientCustom: { c1: '#ff2d55', c2: '#7b2ff7' },
       stroke: false,
+      strokeColor: '#000000',
+      strokeWidth: 0.6,
       spacing: 0,
       nameAlign: 'left',
       avatarAlign: 'left',
-      bg: 'default'
+      bg: 'default',
+      bgCustom: { c1: '#ff2d55', c2: '#7b2ff7' }
     };
 
     const CUSTOMIZE_FONT_STACKS = {
@@ -8167,6 +8199,11 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       serif: 'ui-serif, Georgia, serif',
       mono: 'ui-monospace, monospace'
     };
+
+    function resolveGradientCss(key, custom) {
+      if (key === 'custom') return `linear-gradient(90deg, ${custom.c1}, ${custom.c2})`;
+      return `linear-gradient(90deg, var(--grad-${key}-1), var(--grad-${key}-2))`;
+    }
 
     let draftCustomization = { ...DEFAULT_CUSTOMIZATION };
 
@@ -8178,10 +8215,11 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const bgTarget = document.getElementById('logged-in-state');
 
       nameEl.style.fontFamily = CUSTOMIZE_FONT_STACKS[c.font] || CUSTOMIZE_FONT_STACKS.default;
+      nameEl.style.fontWeight = c.fontWeight;
       nameEl.style.letterSpacing = `${c.spacing}px`;
 
       if (c.gradient && c.gradient !== 'none') {
-        nameEl.style.backgroundImage = `linear-gradient(90deg, var(--grad-${c.gradient}-1), var(--grad-${c.gradient}-2))`;
+        nameEl.style.backgroundImage = resolveGradientCss(c.gradient, c.gradientCustom);
         nameEl.style.webkitBackgroundClip = 'text';
         nameEl.style.backgroundClip = 'text';
         nameEl.style.color = 'transparent';
@@ -8191,7 +8229,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         nameEl.style.backgroundClip = 'unset';
         nameEl.style.color = prefersDarkMode() ? '#ffffff' : '#000000';
       }
-      nameEl.style.webkitTextStroke = c.stroke ? `0.6px ${prefersDarkMode() ? '#000' : '#fff'}` : 'none';
+      nameEl.style.webkitTextStroke = c.stroke ? `${c.strokeWidth}px ${c.strokeColor}` : 'none';
 
       if (avatarRow) {
         avatarRow.style.left = '';
@@ -8221,6 +8259,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
           bgTarget.style.background = '';
         } else if (c.bg.startsWith('color:')) {
           bgTarget.style.background = c.bg.slice(6);
+        } else if (c.bg === 'customgrad') {
+          bgTarget.style.background = `linear-gradient(160deg, ${c.bgCustom.c1}, ${c.bgCustom.c2})`;
         } else {
           bgTarget.style.background = `linear-gradient(160deg, var(--grad-${c.bg}-1), var(--grad-${c.bg}-2))`;
         }
@@ -8241,19 +8281,42 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         row.querySelectorAll('.active').forEach(n => n.classList.remove('active'));
         if (el) el.classList.add('active');
       }
+      if (field === 'gradient') {
+        document.getElementById('gradient-custom-pickers').style.display = value === 'custom' ? 'flex' : 'none';
+      }
+      if (field === 'bg') {
+        document.getElementById('bg-custom-pickers').style.display = value === 'customgrad' ? 'flex' : 'none';
+      }
       updateCustomizePreview();
+    };
+
+    window.toggleStrokeControls = function() {
+      const on = document.getElementById('name-stroke-toggle').checked;
+      document.getElementById('stroke-controls').style.display = on ? 'flex' : 'none';
     };
 
     function updateCustomizePreview() {
       draftCustomization.stroke = document.getElementById('name-stroke-toggle').checked;
+      draftCustomization.strokeColor = document.getElementById('stroke-color-picker').value;
+      draftCustomization.strokeWidth = parseFloat(document.getElementById('stroke-width-slider').value);
       draftCustomization.spacing = parseFloat(document.getElementById('name-spacing-slider').value);
+      draftCustomization.fontWeight = parseInt(document.getElementById('name-weight-slider').value, 10);
+      draftCustomization.gradientCustom = {
+        c1: document.getElementById('gradient-custom-1').value,
+        c2: document.getElementById('gradient-custom-2').value
+      };
+      draftCustomization.bgCustom = {
+        c1: document.getElementById('bg-custom-1').value,
+        c2: document.getElementById('bg-custom-2').value
+      };
 
       const nameEl = document.getElementById('customize-preview-name');
       const c = draftCustomization;
       nameEl.style.fontFamily = CUSTOMIZE_FONT_STACKS[c.font] || CUSTOMIZE_FONT_STACKS.default;
+      nameEl.style.fontWeight = c.fontWeight;
       nameEl.style.letterSpacing = `${c.spacing}px`;
       if (c.gradient && c.gradient !== 'none') {
-        nameEl.style.backgroundImage = `linear-gradient(90deg, var(--grad-${c.gradient}-1), var(--grad-${c.gradient}-2))`;
+        nameEl.style.backgroundImage = resolveGradientCss(c.gradient, c.gradientCustom);
         nameEl.style.webkitBackgroundClip = 'text';
         nameEl.style.backgroundClip = 'text';
         nameEl.style.color = 'transparent';
@@ -8263,7 +8326,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         nameEl.style.backgroundClip = 'unset';
         nameEl.style.color = prefersDarkMode() ? '#ffffff' : '#000000';
       }
-      nameEl.style.webkitTextStroke = c.stroke ? `0.6px ${prefersDarkMode() ? '#000' : '#fff'}` : 'none';
+      nameEl.style.webkitTextStroke = c.stroke ? `${c.strokeWidth}px ${c.strokeColor}` : 'none';
 
       document.getElementById('customize-preview-avatar-row').className =
         `customize-preview-avatar-row align-${c.avatarAlign}`;
@@ -8273,12 +8336,27 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     window.openCustomizeModal = function() {
       if (!currentUser) return;
-      draftCustomization = { ...DEFAULT_CUSTOMIZATION, ...(myProfileData?.customization || {}) };
+      draftCustomization = {
+        ...DEFAULT_CUSTOMIZATION,
+        ...(myProfileData?.customization || {}),
+        gradientCustom: { ...DEFAULT_CUSTOMIZATION.gradientCustom, ...(myProfileData?.customization?.gradientCustom || {}) },
+        bgCustom: { ...DEFAULT_CUSTOMIZATION.bgCustom, ...(myProfileData?.customization?.bgCustom || {}) }
+      };
 
       document.getElementById('customize-preview-avatar').src = myProfileData?.pfp || DEFAULT_AVATAR_SVG;
       document.getElementById('customize-preview-name').textContent = myProfileData?.name || 'User';
       document.getElementById('name-stroke-toggle').checked = draftCustomization.stroke;
+      document.getElementById('stroke-color-picker').value = draftCustomization.strokeColor;
+      document.getElementById('stroke-width-slider').value = draftCustomization.strokeWidth;
+      document.getElementById('stroke-controls').style.display = draftCustomization.stroke ? 'flex' : 'none';
       document.getElementById('name-spacing-slider').value = draftCustomization.spacing;
+      document.getElementById('name-weight-slider').value = draftCustomization.fontWeight;
+      document.getElementById('gradient-custom-1').value = draftCustomization.gradientCustom.c1;
+      document.getElementById('gradient-custom-2').value = draftCustomization.gradientCustom.c2;
+      document.getElementById('gradient-custom-pickers').style.display = draftCustomization.gradient === 'custom' ? 'flex' : 'none';
+      document.getElementById('bg-custom-1').value = draftCustomization.bgCustom.c1;
+      document.getElementById('bg-custom-2').value = draftCustomization.bgCustom.c2;
+      document.getElementById('bg-custom-pickers').style.display = draftCustomization.bg === 'customgrad' ? 'flex' : 'none';
 
       const setActive = (rowId, dataAttr, value) => {
         const row = document.getElementById(rowId);
@@ -8307,8 +8385,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     window.saveProfileCustomization = async function() {
       if (!currentUser) return;
-      draftCustomization.stroke = document.getElementById('name-stroke-toggle').checked;
-      draftCustomization.spacing = parseFloat(document.getElementById('name-spacing-slider').value);
+      updateCustomizePreview();
 
       myProfileData = { ...myProfileData, customization: draftCustomization };
       applyProfileCustomization(draftCustomization);
