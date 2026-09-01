@@ -4272,7 +4272,7 @@
         <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.9.1 Beta
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.31 Beta
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -8210,9 +8210,12 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     function applyProfileCustomization(customization) {
       const c = { ...DEFAULT_CUSTOMIZATION, ...(customization || {}) };
       const nameEl = document.getElementById('user-display-name');
+      const handleEl = document.getElementById('user-display-handle');
       const bannerWrap = document.getElementById('profile-banner-wrap');
       const avatarRow = bannerWrap?.querySelector('.avatar-with-status.profile-avatar-anchored');
       const bgTarget = document.getElementById('logged-in-state');
+      const statsRow = document.querySelector('.profile-stats-and-edit-row');
+      const hasCustomBg = c.bg && c.bg !== 'default';
 
       nameEl.style.fontFamily = CUSTOMIZE_FONT_STACKS[c.font] || CUSTOMIZE_FONT_STACKS.default;
       nameEl.style.fontWeight = c.fontWeight;
@@ -8227,9 +8230,29 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         nameEl.style.backgroundImage = 'none';
         nameEl.style.webkitBackgroundClip = 'unset';
         nameEl.style.backgroundClip = 'unset';
-        nameEl.style.color = prefersDarkMode() ? '#ffffff' : '#000000';
+        nameEl.style.color = hasCustomBg ? '#ffffff' : (prefersDarkMode() ? '#ffffff' : '#000000');
       }
       nameEl.style.webkitTextStroke = c.stroke ? `${c.strokeWidth}px ${c.strokeColor}` : 'none';
+
+      if (handleEl) {
+        handleEl.style.color = hasCustomBg ? 'rgba(255,255,255,0.85)' : '';
+      }
+
+      // Stat numbers/labels and the divider line under them need to stay readable
+      // against whatever background color/gradient the person picks, instead of
+      // always using the fixed light-mode gray/black values.
+      document.querySelectorAll('.profile-stats-and-edit-row .stat-value').forEach(el => {
+        el.style.color = hasCustomBg ? '#ffffff' : '';
+      });
+      document.querySelectorAll('.profile-stats-and-edit-row .stat-label').forEach(el => {
+        el.style.color = hasCustomBg ? 'rgba(255,255,255,0.85)' : '';
+      });
+      document.querySelectorAll('.profile-stats-and-edit-row .stat-sublabel').forEach(el => {
+        el.style.color = hasCustomBg ? 'rgba(255,255,255,0.7)' : '';
+      });
+      if (statsRow) {
+        statsRow.style.borderBottom = hasCustomBg ? 'none' : '';
+      }
 
       if (avatarRow) {
         avatarRow.style.left = '';
@@ -8246,6 +8269,27 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         }
       }
 
+      // The avatar lives in the banner (absolutely positioned) while the name/handle
+      // live in .profile-card right below it, so .profile-card's own padding is what
+      // actually keeps them from overlapping. It was hard-coded to always reserve
+      // room on the left for a left-aligned avatar, so picking "center" or "right"
+      // moved the avatar but the text never moved out of its way. Also, the profile's
+      // presence dot is rendered oversized (26px) here vs. the 16px base, so it hangs
+      // further past the avatar's right edge than the old 124px reservation allowed for.
+      const profileCard = document.querySelector('.profile-card');
+      if (profileCard) {
+        if (c.avatarAlign === 'right') {
+          profileCard.style.padding = '0 140px 0 20px';
+        } else if (c.avatarAlign === 'center') {
+          // Centered avatar can sit over text on either side, so drop the name/handle
+          // below the avatar instead of trying to squeeze in beside it.
+          profileCard.style.padding = '40px 20px 0 20px';
+        } else {
+          profileCard.style.padding = '0 20px 0 140px';
+        }
+      }
+
+
       const meta = document.querySelector('.profile-meta');
       if (meta) {
         meta.style.textAlign = c.nameAlign === 'center' ? 'center' : c.nameAlign === 'right' ? 'right' : 'left';
@@ -8254,7 +8298,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         meta.style.flexDirection = 'column';
       }
 
-      const bgFadeMask = 'linear-gradient(180deg, transparent 0px, transparent 280px, var(--bg-light) 360px)';
+      // Solid color/gradient runs from the top of the banner down to roughly the
+      // bottom edge of the stats row (~296px), then fades out over a short 10px
+      // span into the page background instead of leaving a tall pale strip.
+      const bgFadeMask = 'linear-gradient(180deg, transparent 0px, transparent 296px, var(--bg-light) 306px)';
       if (bgTarget) {
         if (c.bg === 'default') {
           bgTarget.style.background = '';
@@ -8267,6 +8314,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         }
       }
     }
+
 
     window.pickCustomizeOption = function(field, value, el) {
       draftCustomization[field] = value;
