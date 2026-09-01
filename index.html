@@ -8298,10 +8298,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         meta.style.flexDirection = 'column';
       }
 
-      // Solid color/gradient runs from the top of the banner down to roughly the
-      // bottom edge of the stats row (~296px), then fades out over a short 10px
-      // span into the page background instead of leaving a tall pale strip.
-      const bgFadeMask = 'linear-gradient(180deg, transparent 0px, transparent 296px, var(--bg-light) 306px)';
+      // Fades gradually across the whole banner/card height into the page
+      // background, instead of staying flat-solid and only fading in a short
+      // stretch right at the end.
+      const bgFadeMask = 'linear-gradient(180deg, transparent 0px, var(--bg-light) 340px)';
       if (bgTarget) {
         if (c.bg === 'default') {
           bgTarget.style.background = '';
@@ -8361,6 +8361,21 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
       const nameEl = document.getElementById('customize-preview-name');
       const c = draftCustomization;
+      const hasCustomBg = c.bg && c.bg !== 'default';
+
+      const previewWrap = document.getElementById('customize-preview-wrap');
+      if (previewWrap) {
+        if (c.bg === 'default') {
+          previewWrap.style.background = '';
+        } else if (c.bg.startsWith('color:')) {
+          previewWrap.style.background = c.bg.slice(6);
+        } else if (c.bg === 'customgrad') {
+          previewWrap.style.background = `linear-gradient(160deg, ${c.bgCustom.c1}, ${c.bgCustom.c2})`;
+        } else {
+          previewWrap.style.background = `linear-gradient(160deg, var(--grad-${c.bg}-1), var(--grad-${c.bg}-2))`;
+        }
+      }
+
       nameEl.style.fontFamily = CUSTOMIZE_FONT_STACKS[c.font] || CUSTOMIZE_FONT_STACKS.default;
       nameEl.style.fontWeight = c.fontWeight;
       nameEl.style.letterSpacing = `${c.spacing}px`;
@@ -8373,7 +8388,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         nameEl.style.backgroundImage = 'none';
         nameEl.style.webkitBackgroundClip = 'unset';
         nameEl.style.backgroundClip = 'unset';
-        nameEl.style.color = prefersDarkMode() ? '#ffffff' : '#000000';
+        nameEl.style.color = hasCustomBg ? '#ffffff' : (prefersDarkMode() ? '#ffffff' : '#000000');
       }
       nameEl.style.webkitTextStroke = c.stroke ? `${c.strokeWidth}px ${c.strokeColor}` : 'none';
 
@@ -8382,6 +8397,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       document.getElementById('customize-preview-name-row').className =
         `customize-preview-name-row align-${c.nameAlign}`;
     }
+
 
     window.openCustomizeModal = function() {
       if (!currentUser) return;
