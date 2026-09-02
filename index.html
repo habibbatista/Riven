@@ -4069,6 +4069,11 @@
           <div class="font-swatch" data-font="rounded" style="font-family: ui-rounded, var(--font-main);" onclick="pickCustomizeOption('font', 'rounded', this)">Aa</div>
           <div class="font-swatch" data-font="serif" style="font-family: ui-serif, Georgia, serif;" onclick="pickCustomizeOption('font', 'serif', this)">Aa</div>
           <div class="font-swatch" data-font="mono" style="font-family: ui-monospace, monospace;" onclick="pickCustomizeOption('font', 'mono', this)">Aa</div>
+          <label class="font-swatch custom-font-swatch" id="custom-font-swatch" data-font="custom-ttf" title="Import a .ttf or .otf font" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
+            <input type="file" id="custom-font-upload" accept=".ttf,.otf,font/ttf,font/otf" style="display:none" onchange="handleCustomFontUpload(event)">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
+            <span id="custom-font-name" style="font-size:9px; max-width:44px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Import</span>
+          </label>
         </div>
 
         <span class="customize-label" data-i18n="customize_font_weight">Font Thickness</span>
@@ -4274,7 +4279,7 @@
         <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.8.31 Beta
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.9.2 Beta
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -7574,6 +7579,20 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         getAllUsersCached().then(allUsers => {
           const match = allUsers.find(u => u.uid === targetUid);
           applyProfileCustomization(match?.customization);
+          // The pfp/name/handle passed in here often come from a snapshot saved on
+          // a video or search result at some earlier point in time (e.g. a video's
+          // authorPfp captured when it was uploaded), so once we have the live
+          // user record, refresh the visible ones to the person's *current* profile
+          // picture/name/handle instead of leaving whatever stale copy was passed in.
+          if (match && viewedProfileUid === targetUid) {
+            if (match.pfp) {
+              document.getElementById('profile-avatar-img').src = match.pfp;
+            }
+            const currentName = (match.name && match.name.trim()) ? match.name.trim() : displayName;
+            document.getElementById('user-display-name').innerText = currentName;
+            const currentHandle = match.handle ? match.handle.replace('@', '').toLowerCase() : cleanHandle;
+            document.getElementById('user-display-handle').innerHTML = withVerifiedBadge(`@${currentHandle}`, currentHandle, 15);
+          }
         });
       }
 
@@ -8192,15 +8211,75 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       nameAlign: 'left',
       avatarAlign: 'left',
       bg: 'default',
-      bgCustom: { c1: '#ff2d55', c2: '#7b2ff7' }
+      bgCustom: { c1: '#ff2d55', c2: '#7b2ff7' },
+      customFontData: null,
+      customFontName: null
     };
 
     const CUSTOMIZE_FONT_STACKS = {
       default: 'var(--font-main)',
       rounded: 'ui-rounded, var(--font-main)',
       serif: 'ui-serif, Georgia, serif',
-      mono: 'ui-monospace, monospace'
+      mono: 'ui-monospace, monospace',
+      'custom-ttf': "'RivenCustomFont', var(--font-main)"
     };
+
+    // Imported .ttf/.otf files are stored as data URLs on the customization object
+    // (so they persist and travel with the profile), and registered with the
+    // FontFace API on demand. This cache avoids re-registering the same font data
+    // over and over as previews re-render.
+    const customFontLoadCache = new Map();
+    function ensureCustomFontLoaded(dataUrl) {
+      if (!dataUrl) return Promise.resolve(false);
+      if (customFontLoadCache.has(dataUrl)) return customFontLoadCache.get(dataUrl);
+      const promise = new FontFace('RivenCustomFont', `url(${dataUrl})`)
+        .load()
+        .then(face => {
+          document.fonts.add(face);
+          return true;
+        })
+        .catch(err => {
+          console.error('[CustomFont] Failed to load imported font', err);
+          return false;
+        });
+      customFontLoadCache.set(dataUrl, promise);
+      return promise;
+    }
+
+    window.handleCustomFontUpload = function(event) {
+      const file = event.target.files && event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+      const isTtf = /\.(ttf|otf)$/i.test(file.name);
+      if (!isTtf) {
+        showToast?.('Please choose a .ttf or .otf file');
+        return;
+      }
+      const MAX_FONT_BYTES = 700 * 1024;
+      if (file.size > MAX_FONT_BYTES) {
+        showToast?.('That font file is too large (max 700KB)');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        draftCustomization.font = 'custom-ttf';
+        draftCustomization.customFontData = dataUrl;
+        draftCustomization.customFontName = file.name;
+        const row = document.getElementById('font-swatch-row');
+        if (row) {
+          row.querySelectorAll('.active').forEach(n => n.classList.remove('active'));
+          document.getElementById('custom-font-swatch')?.classList.add('active');
+        }
+        const label = document.getElementById('custom-font-name');
+        if (label) label.textContent = file.name;
+        ensureCustomFontLoaded(dataUrl).then(() => updateCustomizePreview());
+        updateCustomizePreview();
+      };
+      reader.onerror = () => showToast?.('Could not read that font file');
+      reader.readAsDataURL(file);
+    };
+
 
     function resolveGradientCss(key, custom) {
       if (key === 'custom') return `linear-gradient(90deg, ${custom.c1}, ${custom.c2})`;
@@ -8220,6 +8299,12 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const hasCustomBg = c.bg && c.bg !== 'default';
 
       nameEl.style.fontFamily = CUSTOMIZE_FONT_STACKS[c.font] || CUSTOMIZE_FONT_STACKS.default;
+      if (c.font === 'custom-ttf' && c.customFontData) {
+        // The @font-face isn't registered yet on a fresh page load (or on someone
+        // else's profile), so load it now — the browser swaps the text over to it
+        // automatically once ready since font-family already points at it.
+        ensureCustomFontLoaded(c.customFontData);
+      }
       nameEl.style.fontWeight = c.fontWeight;
       nameEl.style.letterSpacing = `${c.spacing}px`;
 
@@ -8386,6 +8471,9 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
 
       nameEl.style.fontFamily = CUSTOMIZE_FONT_STACKS[c.font] || CUSTOMIZE_FONT_STACKS.default;
+      if (c.font === 'custom-ttf' && c.customFontData) {
+        ensureCustomFontLoaded(c.customFontData);
+      }
       nameEl.style.fontWeight = c.fontWeight;
       nameEl.style.letterSpacing = `${c.spacing}px`;
       if (c.gradient && c.gradient !== 'none') {
@@ -8400,6 +8488,26 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         nameEl.style.color = hasCustomBg ? '#ffffff' : (prefersDarkMode() ? '#ffffff' : '#000000');
       }
       nameEl.style.webkitTextStroke = c.stroke ? `${c.strokeWidth}px ${c.strokeColor}` : 'none';
+
+      // Apply the same weight/spacing/color/stroke settings to the little font
+      // swatch tiles themselves (each keeps its own font-family) so switching any
+      // control updates every preview on screen at once, not just the big name.
+      document.querySelectorAll('#font-swatch-row .font-swatch[data-font]').forEach(swatch => {
+        swatch.style.fontWeight = c.fontWeight;
+        swatch.style.letterSpacing = `${Math.min(c.spacing, 2)}px`;
+        if (c.gradient && c.gradient !== 'none') {
+          swatch.style.backgroundImage = resolveGradientCss(c.gradient, c.gradientCustom);
+          swatch.style.webkitBackgroundClip = 'text';
+          swatch.style.backgroundClip = 'text';
+          swatch.style.color = 'transparent';
+        } else {
+          swatch.style.backgroundImage = 'none';
+          swatch.style.webkitBackgroundClip = 'unset';
+          swatch.style.backgroundClip = 'unset';
+          swatch.style.color = '';
+        }
+        swatch.style.webkitTextStroke = c.stroke ? `${c.strokeWidth}px ${c.strokeColor}` : 'none';
+      });
 
       document.getElementById('customize-preview-avatar-row').className =
         `customize-preview-avatar-row align-${c.avatarAlign}`;
@@ -8447,6 +8555,14 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         document.getElementById('bg-color-picker').value = draftCustomization.bg.slice(6);
       } else {
         setActive('bg-swatch-row', 'data-bg', draftCustomization.bg);
+      }
+
+      const customFontLabel = document.getElementById('custom-font-name');
+      if (customFontLabel) {
+        customFontLabel.textContent = draftCustomization.customFontName || 'Import';
+      }
+      if (draftCustomization.font === 'custom-ttf' && draftCustomization.customFontData) {
+        ensureCustomFontLoaded(draftCustomization.customFontData).then(() => updateCustomizePreview());
       }
 
       updateCustomizePreview();
