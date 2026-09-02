@@ -8288,6 +8288,25 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
 
     let draftCustomization = { ...DEFAULT_CUSTOMIZATION };
 
+    // A global `* { font-family: var(--font-main); }` reset declares font-family
+    // directly on every element (not just inherited from body), so simply setting
+    // it on a parent like #profile-screen has no effect — each descendant already
+    // has its own explicit value, and an element's own declared value always wins
+    // over an ancestor's, regardless of the ancestor's specificity. Instead, this
+    // injects a real stylesheet rule scoped to `#profile-screen *`, which has
+    // higher specificity than the bare `*` selector, so it actually wins — and it
+    // keeps applying to any elements added later (e.g. more video grid tiles
+    // loading in), not just whatever exists at the moment we apply it.
+    function applyProfileScreenFont(fontFamily) {
+      let styleTag = document.getElementById('profile-screen-font-style');
+      if (!styleTag) {
+        styleTag = document.createElement('style');
+        styleTag.id = 'profile-screen-font-style';
+        document.head.appendChild(styleTag);
+      }
+      styleTag.textContent = `#profile-screen, #profile-screen * { font-family: ${fontFamily}; }`;
+    }
+
     function applyProfileCustomization(customization) {
       const c = { ...DEFAULT_CUSTOMIZATION, ...(customization || {}) };
       const nameEl = document.getElementById('user-display-name');
@@ -8312,10 +8331,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       // feed, DMs, or any other part of the app. Since this runs for whichever
       // profile is currently open (yours or someone else's), other RIVEN users
       // see it applied the same way when they visit that profile.
-      const profileScreen = document.getElementById('profile-screen');
-      if (profileScreen) {
-        profileScreen.style.fontFamily = resolvedFontFamily;
-      }
+      applyProfileScreenFont(resolvedFontFamily);
 
       nameEl.style.fontFamily = resolvedFontFamily;
       nameEl.style.fontWeight = c.fontWeight;
