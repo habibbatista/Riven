@@ -8297,14 +8297,27 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const bgTarget = document.getElementById('logged-in-state');
       const statsRow = document.querySelector('.profile-stats-and-edit-row');
       const hasCustomBg = c.bg && c.bg !== 'default';
+      const resolvedFontFamily = CUSTOMIZE_FONT_STACKS[c.font] || CUSTOMIZE_FONT_STACKS.default;
 
-      nameEl.style.fontFamily = CUSTOMIZE_FONT_STACKS[c.font] || CUSTOMIZE_FONT_STACKS.default;
       if (c.font === 'custom-ttf' && c.customFontData) {
         // The @font-face isn't registered yet on a fresh page load (or on someone
         // else's profile), so load it now — the browser swaps the text over to it
         // automatically once ready since font-family already points at it.
         ensureCustomFontLoaded(c.customFontData);
       }
+
+      // Chosen font now applies to the whole profile tab (name, handle, stats,
+      // captions, everything under #profile-screen) — not just the display name —
+      // and only while THIS profile is on screen, so it never bleeds into the
+      // feed, DMs, or any other part of the app. Since this runs for whichever
+      // profile is currently open (yours or someone else's), other RIVEN users
+      // see it applied the same way when they visit that profile.
+      const profileScreen = document.getElementById('profile-screen');
+      if (profileScreen) {
+        profileScreen.style.fontFamily = resolvedFontFamily;
+      }
+
+      nameEl.style.fontFamily = resolvedFontFamily;
       nameEl.style.fontWeight = c.fontWeight;
       nameEl.style.letterSpacing = `${c.spacing}px`;
 
