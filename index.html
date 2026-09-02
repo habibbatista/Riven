@@ -8240,17 +8240,18 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         handleEl.style.color = hasCustomBg ? 'rgba(255,255,255,0.85)' : '';
       }
 
-      // Stat numbers/labels and the divider line under them need to stay readable
-      // against whatever background color/gradient the person picks, instead of
-      // always using the fixed light-mode gray/black values.
+      // The stats row sits far enough down that the background fade (below) has
+      // already largely returned to the page's own bg-light/bg-dark color by the
+      // time it gets there, so forcing white text here made it invisible against
+      // that now-pale background. Leave these at their normal default colors.
       document.querySelectorAll('.profile-stats-and-edit-row .stat-value').forEach(el => {
-        el.style.color = hasCustomBg ? '#ffffff' : '';
+        el.style.color = '';
       });
       document.querySelectorAll('.profile-stats-and-edit-row .stat-label').forEach(el => {
-        el.style.color = hasCustomBg ? 'rgba(255,255,255,0.85)' : '';
+        el.style.color = '';
       });
       document.querySelectorAll('.profile-stats-and-edit-row .stat-sublabel').forEach(el => {
-        el.style.color = hasCustomBg ? 'rgba(255,255,255,0.7)' : '';
+        el.style.color = '';
       });
       if (statsRow) {
         statsRow.style.borderBottom = hasCustomBg ? 'none' : '';
@@ -8280,12 +8281,16 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       // further past the avatar's right edge than the old 124px reservation allowed for.
       const profileCard = document.querySelector('.profile-card');
       if (profileCard) {
-        if (c.avatarAlign === 'right') {
-          profileCard.style.padding = '0 140px 0 20px';
-        } else if (c.avatarAlign === 'center') {
-          // Centered avatar can sit over text on either side, so drop the name/handle
-          // below the avatar instead of trying to squeeze in beside it.
+        if (c.avatarAlign === 'center' && c.nameAlign === 'center') {
+          // Only this combo actually risks a collision (both centered on top of
+          // each other), so only this combo needs the name pushed below the avatar.
           profileCard.style.padding = '40px 20px 0 20px';
+        } else if (c.avatarAlign === 'right') {
+          profileCard.style.padding = '0 140px 0 20px';
+        } else if (c.avatarAlign === 'left' || c.avatarAlign === 'center') {
+          // Centered avatar with left/right-aligned text doesn't overlap
+          // horizontally, so no extra reservation is needed beyond normal.
+          profileCard.style.padding = c.avatarAlign === 'left' ? '0 20px 0 140px' : '0 20px';
         } else {
           profileCard.style.padding = '0 20px 0 140px';
         }
