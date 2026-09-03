@@ -46,6 +46,7 @@
       --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
       --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
       --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+      --ease-zoom: cubic-bezier(0.17, 0.84, 0.32, 1);
 
       --grad-sunset-1: #e8590c; --grad-sunset-2: #f76707;
       --grad-ocean-1: #1864ab;  --grad-ocean-2: #1098ad;
@@ -561,7 +562,7 @@
     .video-author-bar {
       position: absolute;
       left: 16px;
-      bottom: max(90px, calc(82px + var(--safe-bottom)));
+      bottom: max(132px, calc(124px + var(--safe-bottom)));
       z-index: 15;
       display: flex;
       align-items: center;
@@ -604,7 +605,7 @@
       position: absolute;
       left: 16px;
       right: 76px;
-      bottom: max(126px, calc(118px + var(--safe-bottom)));
+      bottom: max(90px, calc(82px + var(--safe-bottom)));
       z-index: 15;
       color: #fff;
       font-size: 14px;
@@ -1724,6 +1725,16 @@
     .customize-modal-content {
       max-height: 82vh;
       overflow-y: auto;
+    }
+
+    /* Edit Profile now zooms straight out of its pencil icon (see
+       zoomPanelFromTrigger), so the usual dark dim + blur behind it is removed —
+       a scrim fading in behind a growing icon isn't how the real animation looks;
+       the panel itself is the only thing that should be visible growing. */
+    #edit-modal {
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
     .customize-preview-wrap {
@@ -4279,7 +4290,7 @@
         <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.9.2 Beta
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.9.3 Beta
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
@@ -6638,7 +6649,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     // instantly placed/scaled to match the trigger button's exact rect (no
     // transition), then animated to its resting size/position/radius, the same
     // way an iOS app launches by growing out of its home-screen icon (and
-    // shrinks back into it on close).
+    // shrinks back into it on close). No fade and no overshoot/bounce — it's a
+    // solid surface growing out of the icon, not a card fading in on top of one.
     function zoomPanelFromTrigger(panelEl, triggerEl) {
       if (!panelEl || !triggerEl) return;
       const btnRect = triggerEl.getBoundingClientRect();
@@ -6651,19 +6663,24 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const dy = (btnRect.top + btnRect.height / 2) - (panelRect.top + panelRect.height / 2);
       const startRadius = parseFloat(getComputedStyle(triggerEl).borderRadius) || 14;
       const endRadius = parseFloat(getComputedStyle(panelEl).borderRadius) || 16;
+      // Scaling a blurred backdrop-filter live looks smeary/broken, so it's
+      // switched off for the duration of the animation and restored once the
+      // panel settles at its resting size.
+      const originalBackdrop = panelEl.style.backdropFilter;
+      const originalWebkitBackdrop = panelEl.style.webkitBackdropFilter;
 
       panelEl.style.transition = 'none';
-      panelEl.style.opacity = '0.4';
+      panelEl.style.backdropFilter = 'none';
+      panelEl.style.webkitBackdropFilter = 'none';
       panelEl.style.borderRadius = `${startRadius}px`;
       panelEl.style.transform = `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`;
       // eslint-disable-next-line no-unused-expressions
       panelEl.offsetWidth; // force reflow so the above applies before the transition below
 
       requestAnimationFrame(() => {
-        panelEl.style.transition = 'transform 0.46s var(--ease-spring), border-radius 0.4s var(--ease-spring), opacity 0.22s ease';
+        panelEl.style.transition = 'transform 0.4s var(--ease-zoom), border-radius 0.36s var(--ease-zoom)';
         panelEl.style.transform = 'translate(0px, 0px) scale(1, 1)';
         panelEl.style.borderRadius = `${endRadius}px`;
-        panelEl.style.opacity = '1';
       });
 
       panelEl.addEventListener('transitionend', function handler(e) {
@@ -6671,7 +6688,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         panelEl.style.transition = '';
         panelEl.style.transform = '';
         panelEl.style.borderRadius = '';
-        panelEl.style.opacity = '';
+        panelEl.style.backdropFilter = originalBackdrop;
+        panelEl.style.webkitBackdropFilter = originalWebkitBackdrop;
         panelEl.removeEventListener('transitionend', handler);
       });
     }
@@ -6687,11 +6705,14 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const dx = (btnRect.left + btnRect.width / 2) - (panelRect.left + panelRect.width / 2);
       const dy = (btnRect.top + btnRect.height / 2) - (panelRect.top + panelRect.height / 2);
       const startRadius = parseFloat(getComputedStyle(triggerEl).borderRadius) || 14;
+      const originalBackdrop = panelEl.style.backdropFilter;
+      const originalWebkitBackdrop = panelEl.style.webkitBackdropFilter;
 
-      panelEl.style.transition = 'transform 0.32s var(--ease-smooth), border-radius 0.3s var(--ease-smooth), opacity 0.28s ease';
+      panelEl.style.backdropFilter = 'none';
+      panelEl.style.webkitBackdropFilter = 'none';
+      panelEl.style.transition = 'transform 0.3s var(--ease-zoom), border-radius 0.28s var(--ease-zoom)';
       panelEl.style.transform = `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`;
       panelEl.style.borderRadius = `${startRadius}px`;
-      panelEl.style.opacity = '0';
 
       let done = false;
       const finish = () => {
@@ -6700,7 +6721,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         panelEl.style.transition = '';
         panelEl.style.transform = '';
         panelEl.style.borderRadius = '';
-        panelEl.style.opacity = '';
+        panelEl.style.backdropFilter = originalBackdrop;
+        panelEl.style.webkitBackdropFilter = originalWebkitBackdrop;
         onDone?.();
       };
       panelEl.addEventListener('transitionend', function handler(e) {
@@ -7671,24 +7693,27 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       if (isOwnProfile) {
         applyProfileCustomization(myProfileData?.customization);
       } else {
-        getAllUsersCached().then(allUsers => {
-          const match = allUsers.find(u => u.uid === targetUid);
-          applyProfileCustomization(match?.customization);
-          // The pfp/name/handle passed in here often come from a snapshot saved on
-          // a video or search result at some earlier point in time (e.g. a video's
-          // authorPfp captured when it was uploaded), so once we have the live
-          // user record, refresh the visible ones to the person's *current* profile
-          // picture/name/handle instead of leaving whatever stale copy was passed in.
-          if (match && viewedProfileUid === targetUid) {
-            if (match.pfp) {
-              document.getElementById('profile-avatar-img').src = match.pfp;
+        // The pfp/name/handle passed in here often come from a snapshot saved on
+        // a video or search result at some earlier point in time (e.g. a video's
+        // authorPfp captured back when it was uploaded), so refresh from the
+        // person's current profile doc once it loads. Uses fetchLiveUser (a single
+        // getDoc by uid, the same mechanism already used to keep author info fresh
+        // elsewhere) rather than reading the entire users collection — a full
+        // collection read is far more likely to be blocked outright by Firestore
+        // rules that only allow reading your own/a single document, which is the
+        // most likely reason the previous version of this fix silently never ran.
+        fetchLiveUser(targetUid).then(liveData => {
+          applyProfileCustomization(liveData?.customization);
+          if (liveData && viewedProfileUid === targetUid) {
+            if (liveData.pfp) {
+              document.getElementById('profile-avatar-img').src = liveData.pfp;
             }
-            const currentName = (match.name && match.name.trim()) ? match.name.trim() : displayName;
+            const currentName = (liveData.name && liveData.name.trim()) ? liveData.name.trim() : displayName;
             document.getElementById('user-display-name').innerText = currentName;
-            const currentHandle = match.handle ? match.handle.replace('@', '').toLowerCase() : cleanHandle;
+            const currentHandle = liveData.handle ? liveData.handle.replace('@', '').toLowerCase() : cleanHandle;
             document.getElementById('user-display-handle').innerHTML = withVerifiedBadge(`@${currentHandle}`, currentHandle, 15);
           }
-        });
+        }).catch(err => console.warn('fetchLiveUser failed in updateProfileDisplay:', err));
       }
 
       
