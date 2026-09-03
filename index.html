@@ -4017,7 +4017,7 @@
     </div>
 
             <div class="modal-overlay" id="edit-modal">
-      <div class="modal-content">
+      <div class="modal-content" id="edit-modal-content">
         <h3 data-i18n="edit_profile">Edit Profile</h3>
         <input type="text" id="edit-name-input" name="riven-display-name" class="modal-input" autocomplete="off" data-lpignore="true" data-1p-ignore data-i18n-placeholder="display_name_ph" placeholder="Display Name">
         <input type="text" id="edit-handle-input" name="riven-handle-text" class="modal-input" autocomplete="off" data-lpignore="true" data-1p-ignore data-i18n-placeholder="handle_ph" placeholder="Handle (e.g. user1270108)">
@@ -6633,17 +6633,112 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       switchTab('feed-screen', document.getElementById('nav-feed-item'));
     };
 
+    // --- Apple-style "zoom from icon" open/close, used by the Edit Profile modal
+    // and the three-dot menus. Uses a FLIP-style transform: the panel is
+    // instantly placed/scaled to match the trigger button's exact rect (no
+    // transition), then animated to its resting size/position/radius, the same
+    // way an iOS app launches by growing out of its home-screen icon (and
+    // shrinks back into it on close).
+    function zoomPanelFromTrigger(panelEl, triggerEl) {
+      if (!panelEl || !triggerEl) return;
+      const btnRect = triggerEl.getBoundingClientRect();
+      const panelRect = panelEl.getBoundingClientRect();
+      if (!panelRect.width || !panelRect.height || !btnRect.width) return;
+
+      const scaleX = btnRect.width / panelRect.width;
+      const scaleY = btnRect.height / panelRect.height;
+      const dx = (btnRect.left + btnRect.width / 2) - (panelRect.left + panelRect.width / 2);
+      const dy = (btnRect.top + btnRect.height / 2) - (panelRect.top + panelRect.height / 2);
+      const startRadius = parseFloat(getComputedStyle(triggerEl).borderRadius) || 14;
+      const endRadius = parseFloat(getComputedStyle(panelEl).borderRadius) || 16;
+
+      panelEl.style.transition = 'none';
+      panelEl.style.opacity = '0.4';
+      panelEl.style.borderRadius = `${startRadius}px`;
+      panelEl.style.transform = `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`;
+      // eslint-disable-next-line no-unused-expressions
+      panelEl.offsetWidth; // force reflow so the above applies before the transition below
+
+      requestAnimationFrame(() => {
+        panelEl.style.transition = 'transform 0.46s var(--ease-spring), border-radius 0.4s var(--ease-spring), opacity 0.22s ease';
+        panelEl.style.transform = 'translate(0px, 0px) scale(1, 1)';
+        panelEl.style.borderRadius = `${endRadius}px`;
+        panelEl.style.opacity = '1';
+      });
+
+      panelEl.addEventListener('transitionend', function handler(e) {
+        if (e.target !== panelEl) return;
+        panelEl.style.transition = '';
+        panelEl.style.transform = '';
+        panelEl.style.borderRadius = '';
+        panelEl.style.opacity = '';
+        panelEl.removeEventListener('transitionend', handler);
+      });
+    }
+
+    function zoomPanelToTrigger(panelEl, triggerEl, onDone) {
+      if (!panelEl || !triggerEl) { onDone?.(); return; }
+      const btnRect = triggerEl.getBoundingClientRect();
+      const panelRect = panelEl.getBoundingClientRect();
+      if (!panelRect.width || !panelRect.height || !btnRect.width) { onDone?.(); return; }
+
+      const scaleX = btnRect.width / panelRect.width;
+      const scaleY = btnRect.height / panelRect.height;
+      const dx = (btnRect.left + btnRect.width / 2) - (panelRect.left + panelRect.width / 2);
+      const dy = (btnRect.top + btnRect.height / 2) - (panelRect.top + panelRect.height / 2);
+      const startRadius = parseFloat(getComputedStyle(triggerEl).borderRadius) || 14;
+
+      panelEl.style.transition = 'transform 0.32s var(--ease-smooth), border-radius 0.3s var(--ease-smooth), opacity 0.28s ease';
+      panelEl.style.transform = `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`;
+      panelEl.style.borderRadius = `${startRadius}px`;
+      panelEl.style.opacity = '0';
+
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        panelEl.style.transition = '';
+        panelEl.style.transform = '';
+        panelEl.style.borderRadius = '';
+        panelEl.style.opacity = '';
+        onDone?.();
+      };
+      panelEl.addEventListener('transitionend', function handler(e) {
+        if (e.target !== panelEl) return;
+        panelEl.removeEventListener('transitionend', handler);
+        finish();
+      });
+      setTimeout(finish, 400); // safety net in case transitionend doesn't fire
+    }
+
     window.toggleProfileMenu = function(forceClose) {
       const menu = document.getElementById('profile-menu-dropdown');
-      if (forceClose) { menu.classList.remove('active'); return; }
+      const btn = document.querySelector('.menu-dots-btn');
+      if (forceClose) {
+        if (menu.classList.contains('active')) {
+          zoomPanelToTrigger(menu, btn, () => menu.classList.remove('active'));
+        }
+        return;
+      }
+      const opening = !menu.classList.contains('active');
       menu.classList.toggle('active');
+      if (opening) zoomPanelFromTrigger(menu, btn);
     };
 
     window.toggleChatMenu = function(forceClose) {
       const menu = document.getElementById('chat-menu-dropdown');
-      if (forceClose) { menu.classList.remove('active'); return; }
+      const btn = document.querySelector('.chat-icon-btn');
+      if (forceClose) {
+        if (menu.classList.contains('active')) {
+          zoomPanelToTrigger(menu, btn, () => menu.classList.remove('active'));
+        }
+        return;
+      }
+      const opening = !menu.classList.contains('active');
       menu.classList.toggle('active');
+      if (opening) zoomPanelFromTrigger(menu, btn);
     };
+
 
     window.stubChatAction = function(label) {
       toggleChatMenu(true);
@@ -7870,6 +7965,8 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
     };
 
+    let videoCellMenuTriggerBtn = null;
+
     window.openVideoCellMenu = function(event, videoId, isPrivate) {
       event.stopPropagation();
       videoCellMenuTargetId = videoId;
@@ -7877,22 +7974,30 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       document.getElementById('video-cell-menu-privacy').innerText = isPrivate ? t('make_public') : t('make_private');
 
       const btn = event.currentTarget;
+      videoCellMenuTriggerBtn = btn;
       const rect = btn.getBoundingClientRect();
       const containerRect = document.getElementById('app-container').getBoundingClientRect();
       menu.style.top = (rect.bottom - containerRect.top + 4) + 'px';
       menu.style.left = Math.max(8, Math.min(rect.left - containerRect.left, containerRect.width - 170)) + 'px';
       menu.classList.add('active');
+      zoomPanelFromTrigger(menu, btn);
     };
+
+    function closeVideoCellMenu() {
+      const menu = document.getElementById('video-cell-menu');
+      if (!menu.classList.contains('active')) return;
+      zoomPanelToTrigger(menu, videoCellMenuTriggerBtn, () => menu.classList.remove('active'));
+    }
 
     document.addEventListener('click', (e) => {
       const cellMenu = document.getElementById('video-cell-menu');
       if (cellMenu && cellMenu.classList.contains('active') && !cellMenu.contains(e.target) && !e.target.closest('.video-cell-menu-btn')) {
-        cellMenu.classList.remove('active');
+        closeVideoCellMenu();
       }
     });
 
     window.cellMenuTogglePrivacy = async function() {
-      document.getElementById('video-cell-menu').classList.remove('active');
+      closeVideoCellMenu();
       const id = videoCellMenuTargetId;
       if (!id) return;
       const v = profileVideosCache.find(pv => pv.id === id);
@@ -7915,7 +8020,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     };
 
     window.cellMenuDelete = function() {
-      document.getElementById('video-cell-menu').classList.remove('active');
+      closeVideoCellMenu();
       const id = videoCellMenuTargetId;
       if (!id) return;
       openConfirmModal('Delete video?', 'This permanently removes the video from RIVEN. This cannot be undone.', 'Delete', () => deleteVideoById(id, false));
@@ -8132,10 +8237,14 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       }
 
       document.getElementById('edit-modal').classList.add('active');
+      zoomPanelFromTrigger(document.getElementById('edit-modal-content'), document.getElementById('btn-edit-action'));
     };
 
     window.closeEditModal = function() {
-      document.getElementById('edit-modal').classList.remove('active');
+      const overlay = document.getElementById('edit-modal');
+      const content = document.getElementById('edit-modal-content');
+      const trigger = document.getElementById('btn-edit-action');
+      zoomPanelToTrigger(content, trigger, () => overlay.classList.remove('active'));
     };
 
     document.getElementById('pfp-file-input').addEventListener('change', function(e) {
