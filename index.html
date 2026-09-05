@@ -2698,17 +2698,29 @@
     }
 
     
+    .nav-glass-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      z-index: 0;
+      pointer-events: none;
+    }
+
     .glass-specular {
       position: absolute;
       inset: 0;
       border-radius: inherit;
       pointer-events: none;
       z-index: 2;
-      /* A wide, flat ellipse anchored above the box: only its lower sliver
-         grazes the rounded top edge, giving a thin curved highlight that
-         hugs the shape (like light catching the rim of a glass/plastic
-         icon) instead of a soft glowing blob. */
-      background: radial-gradient(160% 65% at var(--spec-x, 50%) var(--spec-y, -35%), rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.35) 22%, rgba(255,255,255,0) 48%);
+      /* Center sits right on the top edge with a shallow vertical radius,
+         so only the bottom half of the ellipse is ever inside the box —
+         that's what gives the thin curved sliver hugging the rounded top,
+         instead of a centered blob. (Anchoring the center further above
+         the box, like an earlier version of this did, pushed the entire
+         visible falloff outside the element — nothing rendered at all.) */
+      background: radial-gradient(170% 42% at var(--spec-x, 50%) var(--spec-y, 0%), rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 32%, rgba(255,255,255,0) 62%);
       mix-blend-mode: overlay;
     }
 
@@ -5785,6 +5797,119 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       applyLiquidGlass(nav, { strength: 150, chromaticAberration: 8, blur: 1, forceSimple: IS_LOW_END_DEVICE });
     }
 
+    // --- Experimental WebKit/Safari glass loophole -------------------------
+    // Safari's backdrop-filter simply doesn't accept a reference to an SVG
+    // <filter> — that's a real engine gap, not something a CSS trick can
+    // detect around. What Safari *does* support is the plain (non-backdrop)
+    // `filter: url(#id)` on a normal element. So instead of asking the
+    // browser to sample its own backdrop, we sample it ourselves: redraw the
+    // exact slice of the currently-playing feed video that sits behind the
+    // nav into a small canvas every frame, then run the same SVG
+    // displacement filter on that canvas directly. Visually it's the same
+    // "sees what's behind it and warps it" effect — we're just doing the
+    // "seeing" part by hand instead of relying on backdrop-filter for it.
+    //
+    // This is genuinely experimental: it only has real content to draw
+    // where the feed video sits behind the nav (elsewhere it stays empty
+    // and the plain blur fallback shows through instead), and I haven't
+    // been able to verify it on an actual iOS device — the object-fit
+    // math (contain vs. cover) is the part most likely to need a tweak
+    // once you test it on the X6b's iPhone counterpart or a simulator.
+    function isWebKitSafari() {
+      const ua = navigator.userAgent.toLowerCase();
+      return /safari/.test(ua) && !/chrome|chromium|crios|fxios|edg|android/.test(ua);
+    }
+    const IS_SAFARI_GLASS_TARGET = isWebKitSafari();
+
+    function getVideoDisplayRect(video) {
+      const rect = video.getBoundingClientRect();
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (!vw || !vh || !rect.width || !rect.height) return null;
+      const fit = getComputedStyle(video).objectFit || 'contain';
+      const scale = fit === 'cover'
+        ? Math.max(rect.width / vw, rect.height / vh)
+        : Math.min(rect.width / vw, rect.height / vh);
+      const dispW = vw * scale, dispH = vh * scale;
+      return {
+        scale,
+        left: rect.left + (rect.width - dispW) / 2,
+        top: rect.top + (rect.height - dispH) / 2,
+      };
+    }
+
+    function setupSafariNavGlass() {
+      if (!IS_SAFARI_GLASS_TARGET) return;
+      const nav = document.querySelector('.bottom-nav');
+      const video = document.getElementById('feed-video-player');
+      if (!nav || !video) return;
+
+      let canvas = nav.querySelector('.nav-glass-canvas');
+      if (!canvas) {
+        canvas = document.createElement('canvas');
+        canvas.className = 'nav-glass-canvas';
+        nav.insertBefore(canvas, nav.firstChild);
+      }
+      const ctx = canvas.getContext('2d', { alpha: true });
+      let rafId = null;
+      let lastSizeSig = '';
+
+      function tick() {
+        rafId = null;
+        if (getComputedStyle(nav).display === 'none') return;
+
+        const navRect = nav.getBoundingClientRect();
+        const w = Math.max(Math.round(navRect.width), 2);
+        const h = Math.max(Math.round(navRect.height), 2);
+        const sizeSig = `${w}x${h}`;
+        if (canvas.width !== w) canvas.width = w;
+        if (canvas.height !== h) canvas.height = h;
+
+        const videoVisible = getComputedStyle(video).display !== 'none' && video.readyState >= 2;
+        ctx.clearRect(0, 0, w, h);
+
+        if (videoVisible) {
+          const disp = getVideoDisplayRect(video);
+          if (disp) {
+            const sx = (navRect.left - disp.left) / disp.scale;
+            const sy = (navRect.top - disp.top) / disp.scale;
+            const sw = navRect.width / disp.scale;
+            const sh = navRect.height / disp.scale;
+            // Only draw if the nav actually overlaps real video pixels —
+            // with object-fit: contain there can be letterbox bars where
+            // there's nothing to sample.
+            if (sx + sw > 0 && sy + sh > 0 && sx < video.videoWidth && sy < video.videoHeight) {
+              try { ctx.drawImage(video, sx, sy, sw, sh, 0, 0, w, h); }
+              catch (e) { /* a dropped frame here just means no update this tick */ }
+            }
+          }
+        }
+
+        if (sizeSig !== lastSizeSig) {
+          const r = Math.min(w, h) / 2;
+          const depth = Math.max(r / 4, 6);
+          const url = getCachedDisplacementFilter({ width: w, height: h, radius: r, depth, strength: 150, chromaticAberration: 8 });
+          canvas.style.filter = `blur(0.5px) url('${url}') blur(1px) saturate(1.6) brightness(1.05)`;
+          lastSizeSig = sizeSig;
+        }
+
+        // Only keep redrawing while the video is actually advancing —
+        // no point burning frames on a paused/static image.
+        if (videoVisible && !video.paused) {
+          rafId = requestAnimationFrame(tick);
+        }
+      }
+
+      function schedule() {
+        if (!rafId) rafId = requestAnimationFrame(tick);
+      }
+
+      video.addEventListener('play', schedule);
+      video.addEventListener('loadeddata', schedule);
+      video.addEventListener('seeked', schedule);
+      window.addEventListener('resize', schedule, { passive: true });
+      schedule();
+    }
+
     // Dropdowns/modals are only on screen for as long as they're open, so
     // they don't carry the same continuous repaint cost as the nav — they
     // keep the full effect everywhere, just slightly lighter on low-end
@@ -5868,7 +5993,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         nav.appendChild(specular);
       }
 
-      let targetX = 50, targetY = -35, curX = 50, curY = -35;
+      let targetX = 50, targetY = 0, curX = 50, curY = 0;
       let rafId = null;
 
       function paint() {
@@ -5892,11 +6017,10 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         const gamma = e.gamma || 0; // left-right tilt, -90..90
         // x slides the highlight left/right along the curved top edge.
         targetX = Math.min(100, Math.max(0, 50 + gamma * 1.1));
-        // y stays negative (above the box) so the gradient only ever grazes
-        // the rounded edge with a thin sliver — it never drops low enough
-        // to become a centered blob. Tilting the phone back and forth just
-        // makes that sliver ride slightly higher or lower on the curve.
-        targetY = Math.min(-10, Math.max(-55, -35 + (beta - 45) * 0.3));
+        // y stays close to 0 (the top edge) — a small range so the sliver
+        // rides slightly higher or lower on the curve as the phone tilts,
+        // without ever moving far enough to look like a centered blob.
+        targetY = Math.min(15, Math.max(-15, (beta - 45) * 0.25));
         schedulePaint();
       }
 
@@ -11948,6 +12072,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     setupLiquidGlassObservers();
     refreshBottomNavGlass();
     initGlassSpecular();
+    setupSafariNavGlass();
 
     
     loadFeed();
