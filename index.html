@@ -5674,30 +5674,72 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     
     
     
+    // Cache generated displacement filters by their exact params. Building the
+    // SVG string + encodeURIComponent + having the browser decode/rasterize a
+    // brand-new data-URI on every single call was the main cost on weaker
+    // Android GPUs — most calls (resize, reopening the same menu, etc.) ask
+    // for an identical filter we already built once, so just reuse it.
+    const glassFilterCache = new Map();
+    function roundTo(n, step) { return Math.round(n / step) * step; }
+
+    function getCachedDisplacementFilter(params) {
+      const key = `${params.width}x${params.height}r${params.radius}d${params.depth}s${params.strength}c${params.chromaticAberration}`;
+      let url = glassFilterCache.get(key);
+      if (!url) {
+        url = window.DisplacementUtils.getDisplacementFilter(params);
+        glassFilterCache.set(key, url);
+      }
+      return url;
+    }
+
     function applyLiquidGlass(el, { radius, strength = 55, chromaticAberration = 1.5, blur = 4 } = {}) {
       if (!el || !window.DisplacementUtils) return;
       const rect = el.getBoundingClientRect();
-      const width = Math.max(Math.ceil(rect.width), 2);
-      const height = Math.max(Math.ceil(rect.height), 2);
+      // Round to the nearest 4px: visually identical, but lets near-identical
+      // sizes during a resize/reflow reuse the same cached filter instead of
+      // rebuilding + re-rasterizing on every tiny sub-pixel change.
+      const width = Math.max(roundTo(rect.width, 4), 4);
+      const height = Math.max(roundTo(rect.height, 4), 4);
       if (width < 4 || height < 4) return;
-      const r = radius != null ? radius : Math.min(width, height) / 2;
+      const r = radius != null ? roundTo(radius, 2) : Math.min(width, height) / 2;
+
+      // If nothing actually changed since the last time we applied glass to
+      // this exact element, skip re-touching backdrop-filter entirely — that
+      // property is one of the more expensive ones to recompute/repaint.
+      const sig = `${width}x${height}x${r}x${strength}x${chromaticAberration}x${blur}x${SUPPORTS_SVG_GLASS}`;
+      if (el.dataset.glassSig === sig) return;
+
       let filterValue;
       if (SUPPORTS_SVG_GLASS) {
         const depth = Math.max(r / 4, 6);
-        const url = window.DisplacementUtils.getDisplacementFilter({ height, width, radius: r, depth, strength, chromaticAberration });
+        const url = getCachedDisplacementFilter({ height, width, radius: r, depth, strength, chromaticAberration });
         filterValue = `blur(${blur / 2}px) url('${url}') blur(${blur}px) saturate(1.6) brightness(1.05)`;
       } else {
         filterValue = `blur(${blur * 3}px) saturate(1.6)`;
       }
       el.style.backdropFilter = filterValue;
       el.style.webkitBackdropFilter = filterValue;
+      el.dataset.glassSig = sig;
+
+      // Promote the element to its own compositor layer once. Without this,
+      // the GPU has to re-sample and re-run the whole displacement filter on
+      // the backdrop every frame the page repaints anywhere nearby; with it,
+      // the result is cached on its own layer and only redone when it truly
+      // changes. This is the single biggest win for smoothness on Android.
+      if (!el.dataset.glassLayered) {
+        el.style.willChange = 'backdrop-filter';
+        if (!el.style.transform) el.style.transform = 'translateZ(0)';
+        el.dataset.glassLayered = '1';
+      }
     }
 
     function refreshBottomNavGlass() {
       const nav = document.querySelector('.bottom-nav');
       if (!nav || getComputedStyle(nav).display === 'none') return;
-      const rect = nav.getBoundingClientRect();
-      applyLiquidGlass(nav, { radius: rect.height / 2, strength: 150, chromaticAberration: 8, blur: 1 });
+      // No explicit radius: the nav is always wider than it is tall, so the
+      // default (min(width,height)/2) already lands on the same stadium
+      // radius while letting applyLiquidGlass work off its own rounded size.
+      applyLiquidGlass(nav, { strength: 150, chromaticAberration: 8, blur: 1 });
     }
 
     
@@ -5729,7 +5771,19 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       });
     }
 
-    window.addEventListener('resize', refreshBottomNavGlass);
+    // Debounce to at most one recalculation per animation frame instead of
+    // once per resize event — mobile browsers can fire dozens of resize
+    // events per second (e.g. the address bar showing/hiding on scroll),
+    // and each one used to trigger a full glass rebuild.
+    let glassResizeRAF = null;
+    function scheduleBottomNavGlassRefresh() {
+      if (glassResizeRAF) return;
+      glassResizeRAF = requestAnimationFrame(() => {
+        glassResizeRAF = null;
+        refreshBottomNavGlass();
+      });
+    }
+    window.addEventListener('resize', scheduleBottomNavGlassRefresh, { passive: true });
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
