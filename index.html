@@ -56,6 +56,31 @@
       --grad-flame-1: #e8305f; --grad-flame-2: #ff6b35;
     }
 
+    #dev-watermark {
+      position: fixed;
+      top: calc(var(--safe-top) + 6px);
+      left: 6px;
+      z-index: 2147483647;
+      max-width: 190px;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+      mix-blend-mode: difference;
+    }
+    #dev-watermark .dw-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.55);
+      line-height: 1.25;
+    }
+    #dev-watermark .dw-body {
+      margin-top: 2px;
+      font-size: 8px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.4);
+      line-height: 1.3;
+    }
+
     @media (prefers-color-scheme: dark) {
       :root {
         --grad-sunset-1: #ff922b; --grad-sunset-2: #ffd43b;
@@ -3737,6 +3762,11 @@
 </head>
 <body>
 
+  <div id="dev-watermark">
+    <div class="dw-title">Let's not leak our work!</div>
+    <div class="dw-body">RIVEN is still being developed, and a lot of what you're seeing here isn't meant to be public yet. Please keep this build private and don't share anything from it outside the platform.</div>
+  </div>
+
   <div id="app-container">
 
         <div id="splash-screen">
@@ -4290,7 +4320,7 @@
         <div class="modal-overlay" id="about-modal">
       <div class="modal-content" style="width:90%; max-width:340px;">
         <h3>RIVEN™</h3>
-        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.9.3 Beta
+        <p style="font-size:13px; color:#333; text-shadow: 0 1px 3px rgba(255,255,255,0.7); line-height:1.6; white-space:pre-line;">Version: v26.9.4 Beta
 
 DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
         <div class="modal-buttons" style="justify-content:center; margin-top:2px;">
