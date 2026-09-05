@@ -2690,11 +2690,22 @@
       display: flex;
       justify-content: space-around;
       align-items: center;
-      border: 1.5px solid rgba(255,255,255,0.5);
+      border: none;
       z-index: 100;
       flex-shrink: 0;
       transition: transform 0.2s var(--ease-smooth), opacity 0.2s ease;
       overflow: hidden;
+    }
+
+    
+    .glass-specular {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 2;
+      background: radial-gradient(140px circle at var(--spec-x, 50%) var(--spec-y, 0%), rgba(255,255,255,0.4), rgba(255,255,255,0) 62%);
+      mix-blend-mode: overlay;
     }
 
     
@@ -5671,12 +5682,30 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     }
     const SUPPORTS_SVG_GLASS = detectSVGGlassSupport();
 
-    
-    
-    
+    // Device-tier check based on OS age, not brand or specs. Liquid Glass
+    // should run at full effect on Android generally — including budget
+    // phones like the Honor X6b — and only fall back to a plain blur on the
+    // permanently-visible bottom nav when the phone is genuinely old (stuck
+    // on an outdated Chrome/WebView that can't keep the SVG-displacement
+    // backdrop-filter smooth while the feed scrolls behind it). Short-lived
+    // menus/modals always keep the full multi-pass glass regardless.
+    function detectLowEndDevice() {
+      const match = navigator.userAgent.match(/Android\s(\d+)/i);
+      if (match) {
+        const androidVersion = parseInt(match[1], 10);
+        if (androidVersion > 0 && androidVersion <= 8) return true; // Oreo (2017) or older
+      }
+      // Extremely low RAM is a reasonable, brand-independent proxy for an
+      // old device even when the UA doesn't expose a clear Android version.
+      const mem = navigator.deviceMemory;
+      if (typeof mem === 'number' && mem <= 2) return true;
+      return false;
+    }
+    const IS_LOW_END_DEVICE = detectLowEndDevice();
+
     // Cache generated displacement filters by their exact params. Building the
     // SVG string + encodeURIComponent + having the browser decode/rasterize a
-    // brand-new data-URI on every single call was the main cost on weaker
+    // brand-new data-URI on every single call was a big cost on weaker
     // Android GPUs — most calls (resize, reopening the same menu, etc.) ask
     // for an identical filter we already built once, so just reuse it.
     const glassFilterCache = new Map();
@@ -5692,7 +5721,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       return url;
     }
 
-    function applyLiquidGlass(el, { radius, strength = 55, chromaticAberration = 1.5, blur = 4 } = {}) {
+    function applyLiquidGlass(el, { radius, strength = 55, chromaticAberration = 1.5, blur = 4, forceSimple = false } = {}) {
       if (!el || !window.DisplacementUtils) return;
       const rect = el.getBoundingClientRect();
       // Round to the nearest 4px: visually identical, but lets near-identical
@@ -5702,33 +5731,43 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       const height = Math.max(roundTo(rect.height, 4), 4);
       if (width < 4 || height < 4) return;
       const r = radius != null ? roundTo(radius, 2) : Math.min(width, height) / 2;
+      const useSVG = SUPPORTS_SVG_GLASS && !forceSimple;
 
       // If nothing actually changed since the last time we applied glass to
       // this exact element, skip re-touching backdrop-filter entirely — that
       // property is one of the more expensive ones to recompute/repaint.
-      const sig = `${width}x${height}x${r}x${strength}x${chromaticAberration}x${blur}x${SUPPORTS_SVG_GLASS}`;
+      const sig = `${width}x${height}x${r}x${strength}x${chromaticAberration}x${blur}x${useSVG}`;
       if (el.dataset.glassSig === sig) return;
 
       let filterValue;
-      if (SUPPORTS_SVG_GLASS) {
+      if (useSVG) {
         const depth = Math.max(r / 4, 6);
         const url = getCachedDisplacementFilter({ height, width, radius: r, depth, strength, chromaticAberration });
         filterValue = `blur(${blur / 2}px) url('${url}') blur(${blur}px) saturate(1.6) brightness(1.05)`;
       } else {
+        // Plain blur fallback — used for browsers without SVG-backdrop
+        // support, and forced on low-end devices for elements that stay on
+        // screen continuously (see forceSimple above).
         filterValue = `blur(${blur * 3}px) saturate(1.6)`;
       }
       el.style.backdropFilter = filterValue;
       el.style.webkitBackdropFilter = filterValue;
       el.dataset.glassSig = sig;
 
-      // Promote the element to its own compositor layer once. Without this,
-      // the GPU has to re-sample and re-run the whole displacement filter on
-      // the backdrop every frame the page repaints anywhere nearby; with it,
-      // the result is cached on its own layer and only redone when it truly
-      // changes. This is the single biggest win for smoothness on Android.
-      if (!el.dataset.glassLayered) {
+      // Promote to its own compositor layer once — only worth the extra GPU
+      // memory when we're actually running the heavier SVG filter. The plain
+      // blur fallback is cheap enough on its own, and skipping the layer
+      // promotion there keeps GPU memory pressure down on constrained
+      // devices, which matters as much as raw compute on something like the
+      // Honor X6b.
+      // `will-change` alone is enough to get Chromium to promote this to its
+      // own layer — it deliberately does NOT also force an inline
+      // `transform`, because the nav, dropdowns, and modal all already use
+      // `transform: scale(...)` in their own CSS for open/close animations,
+      // and an inline transform here would permanently override that with
+      // higher specificity and silently break those animations.
+      if (useSVG && !el.dataset.glassLayered) {
         el.style.willChange = 'backdrop-filter';
-        if (!el.style.transform) el.style.transform = 'translateZ(0)';
         el.dataset.glassLayered = '1';
       }
     }
@@ -5739,32 +5778,55 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       // No explicit radius: the nav is always wider than it is tall, so the
       // default (min(width,height)/2) already lands on the same stadium
       // radius while letting applyLiquidGlass work off its own rounded size.
-      applyLiquidGlass(nav, { strength: 150, chromaticAberration: 8, blur: 1 });
+      applyLiquidGlass(nav, { strength: 150, chromaticAberration: 8, blur: 1, forceSimple: IS_LOW_END_DEVICE });
     }
 
-    
-    
-    
-    
+    // Dropdowns/modals are only on screen for as long as they're open, so
+    // they don't carry the same continuous repaint cost as the nav — they
+    // keep the full effect everywhere, just slightly lighter on low-end
+    // devices as a safety margin.
+    const MENU_GLASS_OPTS = IS_LOW_END_DEVICE
+      ? { radius: 12, strength: 80, chromaticAberration: 4, blur: 1.5 }
+      : { radius: 12, strength: 130, chromaticAberration: 7, blur: 1 };
+    const MODAL_GLASS_OPTS = IS_LOW_END_DEVICE
+      ? { radius: 20, strength: 80, chromaticAberration: 4, blur: 1.5 }
+      : { radius: 20, strength: 130, chromaticAberration: 7, blur: 1 };
+
+    // When a transient menu/modal closes, drop the compositor layer we
+    // promoted it to. Otherwise every dropdown/modal the user has ever
+    // opened keeps reserving its own GPU layer for the rest of the
+    // session — harmless on a flagship, but it adds up on constrained
+    // GPU memory over a long session on something like the Honor X6b.
+    function releaseGlassLayer(el) {
+      if (!el || !el.dataset.glassLayered) return;
+      el.style.willChange = '';
+      delete el.dataset.glassLayered;
+      delete el.dataset.glassSig;
+    }
+
     function watchGlassTarget(el, opts) {
       if (!el) return;
       const observer = new MutationObserver(() => {
         if (el.classList.contains('active')) {
           requestAnimationFrame(() => applyLiquidGlass(el, opts));
+        } else {
+          releaseGlassLayer(el);
         }
       });
       observer.observe(el, { attributes: true, attributeFilter: ['class'] });
     }
 
     function setupLiquidGlassObservers() {
-      watchGlassTarget(document.getElementById('profile-menu-dropdown'), { radius: 12, strength: 130, chromaticAberration: 7, blur: 1 });
-      watchGlassTarget(document.getElementById('chat-menu-dropdown'), { radius: 12, strength: 130, chromaticAberration: 7, blur: 1 });
-      watchGlassTarget(document.getElementById('video-cell-menu'), { radius: 12, strength: 130, chromaticAberration: 7, blur: 1 });
+      watchGlassTarget(document.getElementById('profile-menu-dropdown'), MENU_GLASS_OPTS);
+      watchGlassTarget(document.getElementById('chat-menu-dropdown'), MENU_GLASS_OPTS);
+      watchGlassTarget(document.getElementById('video-cell-menu'), MENU_GLASS_OPTS);
       document.querySelectorAll('.modal-overlay').forEach(overlay => {
         const observer = new MutationObserver(() => {
+          const content = overlay.querySelector('.modal-content');
           if (overlay.classList.contains('active')) {
-            const content = overlay.querySelector('.modal-content');
-            if (content) requestAnimationFrame(() => applyLiquidGlass(content, { radius: 20, strength: 130, chromaticAberration: 7, blur: 1 }));
+            if (content) requestAnimationFrame(() => applyLiquidGlass(content, MODAL_GLASS_OPTS));
+          } else if (content) {
+            releaseGlassLayer(content);
           }
         });
         observer.observe(overlay, { attributes: true, attributeFilter: ['class'] });
@@ -5784,6 +5846,71 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
       });
     }
     window.addEventListener('resize', scheduleBottomNavGlassRefresh, { passive: true });
+
+    // --- Gyroscope-driven specular highlight on the bottom nav ---------
+    // A small radial-gradient sheen layered on top of the nav's glass,
+    // whose position shifts with device tilt to mimic light catching a
+    // curved glass edge. This is deliberately cheap: it only ever writes
+    // two CSS custom properties and lets the browser paint a tiny gradient
+    // — no filters, no re-layout — so it costs virtually nothing extra even
+    // on the Honor X6b.
+    function initGlassSpecular() {
+      const nav = document.querySelector('.bottom-nav');
+      if (!nav) return;
+      let specular = nav.querySelector('.glass-specular');
+      if (!specular) {
+        specular = document.createElement('div');
+        specular.className = 'glass-specular';
+        nav.appendChild(specular);
+      }
+
+      let targetX = 50, targetY = 0, curX = 50, curY = 0;
+      let rafId = null;
+
+      function paint() {
+        rafId = null;
+        // Light easing so the highlight glides instead of snapping with
+        // every sensor sample.
+        curX += (targetX - curX) * 0.18;
+        curY += (targetY - curY) * 0.18;
+        nav.style.setProperty('--spec-x', curX.toFixed(1) + '%');
+        nav.style.setProperty('--spec-y', curY.toFixed(1) + '%');
+        if (Math.abs(targetX - curX) > 0.1 || Math.abs(targetY - curY) > 0.1) {
+          rafId = requestAnimationFrame(paint);
+        }
+      }
+      function schedulePaint() {
+        if (!rafId) rafId = requestAnimationFrame(paint);
+      }
+
+      function onOrientation(e) {
+        const beta = e.beta || 0;   // front-back tilt, -180..180
+        const gamma = e.gamma || 0; // left-right tilt, -90..90
+        targetX = Math.min(100, Math.max(0, 50 + gamma * 1.1));
+        targetY = Math.min(100, Math.max(0, 50 + (beta - 45) * 0.6));
+        schedulePaint();
+      }
+
+      function startListening() {
+        window.addEventListener('deviceorientation', onOrientation, { passive: true });
+      }
+
+      const DOE = window.DeviceOrientationEvent;
+      if (DOE && typeof DOE.requestPermission === 'function') {
+        // iOS 13+ requires a user gesture before sensors can be read.
+        const grantOnGesture = () => {
+          document.removeEventListener('touchend', grantOnGesture);
+          document.removeEventListener('click', grantOnGesture);
+          DOE.requestPermission().then(state => {
+            if (state === 'granted') startListening();
+          }).catch(() => {});
+        };
+        document.addEventListener('touchend', grantOnGesture, { once: true, passive: true });
+        document.addEventListener('click', grantOnGesture, { once: true });
+      } else if (DOE) {
+        startListening();
+      }
+    }
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -11811,6 +11938,7 @@ DO NOT SEND THE LINK OF RIVEN TO ANY OTHER USERS OUTSIDE DEVELOPERS</p>
     
     setupLiquidGlassObservers();
     refreshBottomNavGlass();
+    initGlassSpecular();
 
     
     loadFeed();
