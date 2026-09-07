@@ -174,6 +174,11 @@ struct CommentsView: View {
             }
             ?? false
 
+        let displayHandle =
+            item.wrappedValue.handle.isEmpty
+            ? "user"
+            : item.wrappedValue.handle
+
         return VStack(
             alignment: .leading,
             spacing: 10
@@ -194,9 +199,7 @@ struct CommentsView: View {
                 ) {
 
                     Text(
-                        "@\(item.wrappedValue.handle.isEmpty
-                          ? "user"
-                          : item.wrappedValue.handle)"
+                        "@\(displayHandle)"
                     )
                     .font(
                         .subheadline.weight(
@@ -342,7 +345,12 @@ struct CommentsView: View {
         _ reply: RIVENReply
     ) -> some View {
 
-        HStack(
+        let displayHandle =
+            reply.handle.isEmpty
+            ? "user"
+            : reply.handle
+
+        return HStack(
             alignment: .top,
             spacing: 8
         ) {
@@ -361,9 +369,7 @@ struct CommentsView: View {
             ) {
 
                 Text(
-                    "@\(reply.handle.isEmpty
-                      ? "user"
-                      : reply.handle)"
+                    "@\(displayHandle)"
                 )
                 .font(
                     .caption.weight(
