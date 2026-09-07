@@ -27,8 +27,8 @@ struct FeedView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
 
-    // Only this video is allowed to be playing.
-    @State private var activeVideoID: String?
+    @State private var currentIndex = 0
+    @State private var dragOffset: CGFloat = 0
 
     var body: some View {
 
@@ -37,7 +37,7 @@ struct FeedView: View {
             ZStack {
 
                 Color.black
-                    .ignoresSafeArea(edges: .horizontal)
+                    .ignoresSafeArea()
 
                 if isLoading {
 
@@ -88,64 +88,90 @@ struct FeedView: View {
 
                 } else {
 
-                    ScrollView(
-                        .vertical,
-                        showsIndicators: false
-                    ) {
+                    VStack(spacing: 0) {
 
-                        LazyVStack(
-                            spacing: 0
-                        ) {
+                        ForEach(
+                            Array(videos.enumerated()),
+                            id: \.element.id
+                        ) { index, video in
 
-                            ForEach(videos) { video in
-
-                                VideoPostView(
-                                    video: video,
-                                    isActive: activeVideoID == video.id
-                                )
-                                .frame(
-                                    width: geometry.size.width,
-                                    height: geometry.size.height
-                                )
-                                .background(Color.black)
-                                .id(video.id)
-
-                                // When this post becomes visible,
-                                // make it the ONLY active video.
-                                .onAppear {
-
-                                    activeVideoID = video.id
-                                }
-
-                                // When the active post leaves the
-                                // screen, deactivate it.
-                                .onDisappear {
-
-                                    if activeVideoID == video.id {
-                                        activeVideoID = nil
-                                    }
-                                }
-                            }
+                            VideoPostView(
+                                video: video,
+                                isActive: currentIndex == index
+                            )
+                            .frame(
+                                width: geometry.size.width,
+                                height: geometry.size.height
+                            )
                         }
                     }
                     .frame(
                         width: geometry.size.width,
-                        height: geometry.size.height
+                        height: geometry.size.height,
+                        alignment: .center
                     )
-                    .scrollTargetBehaviorCompat()
-                    .onScrollPositionChangeCompat { visibleID in
+                    .offset(
+                        y:
+                            -CGFloat(currentIndex)
+                            * geometry.size.height
+                            + dragOffset
+                    )
+                    .animation(
+                        .interactiveSpring(
+                            response: 0.32,
+                            dampingFraction: 0.86,
+                            blendDuration: 0.12
+                        ),
+                        value: currentIndex
+                    )
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(
+                            minimumDistance: 10,
+                            coordinateSpace: .local
+                        )
+                        .onChanged { value in
 
-                        guard let visibleID else {
-                            activeVideoID = nil
-                            return
+                            dragOffset = value.translation.height
                         }
+                        .onEnded { value in
 
-                        // Switching this value automatically makes
-                        // the previous VideoPostView inactive.
-                        if activeVideoID != visibleID {
-                            activeVideoID = visibleID
+                            let translation =
+                                value.translation.height
+
+                            let predicted =
+                                value.predictedEndTranslation.height
+
+                            let threshold =
+                                geometry.size.height * 0.18
+
+                            var newIndex =
+                                currentIndex
+
+                            if translation < -threshold ||
+                                predicted < -geometry.size.height * 0.35 {
+
+                                newIndex =
+                                    min(
+                                        currentIndex + 1,
+                                        videos.count - 1
+                                    )
+
+                            } else if translation > threshold ||
+                                      predicted > geometry.size.height * 0.35 {
+
+                                newIndex =
+                                    max(
+                                        currentIndex - 1,
+                                        0
+                                    )
+                            }
+
+                            dragOffset = 0
+                            currentIndex = newIndex
                         }
-                    }
+                    )
+                    .clipped()
                 }
             }
         }
@@ -157,8 +183,8 @@ struct FeedView: View {
         }
         .onDisappear {
 
-            // Leaving the feed stops whichever video is playing.
-            activeVideoID = nil
+            dragOffset = 0
+            currentIndex = 0
         }
     }
 
@@ -166,9 +192,8 @@ struct FeedView: View {
 
         isLoading = true
         errorMessage = nil
-
-        // Stop any currently playing video while reloading.
-        activeVideoID = nil
+        currentIndex = 0
+        dragOffset = 0
 
         Firestore.firestore()
             .collection("videos")
@@ -196,7 +221,6 @@ struct FeedView: View {
                     else {
 
                         videos = []
-                        activeVideoID = nil
                         return
                     }
 
@@ -283,29 +307,7 @@ struct FeedView: View {
                                     isPrivate
                             )
                         }
-
-                    // Start only the first video after loading.
-                    activeVideoID =
-                        videos.first?.id
                 }
             }
-    }
-}
-
-
-// MARK: - iOS 15 Compatibility
-
-private extension View {
-
-    @ViewBuilder
-    func scrollTargetBehaviorCompat() -> some View {
-        self
-    }
-
-    @ViewBuilder
-    func onScrollPositionChangeCompat(
-        _ action: @escaping (String?) -> Void
-    ) -> some View {
-        self
     }
 }
