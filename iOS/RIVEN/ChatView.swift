@@ -30,6 +30,7 @@ struct ChatView: View {
 
                             if item.senderID ==
                                 Auth.auth().currentUser?.uid {
+
                                 Spacer()
                             }
 
@@ -51,6 +52,7 @@ struct ChatView: View {
 
                             if item.senderID !=
                                 Auth.auth().currentUser?.uid {
+
                                 Spacer()
                             }
                         }
@@ -61,19 +63,40 @@ struct ChatView: View {
 
             HStack {
 
-                TextField("Message...", text: $message)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                TextField(
+                    "Message...",
+                    text: $message
+                )
+                .textFieldStyle(
+                    RoundedBorderTextFieldStyle()
+                )
 
                 Button {
                     send()
                 } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 28))
+
+                    Image(
+                        systemName:
+                            "arrow.up.circle.fill"
+                    )
+                    .font(
+                        .system(size: 28)
+                    )
                 }
+                .disabled(
+                    message
+                        .trimmingCharacters(
+                            in: .whitespacesAndNewlines
+                        )
+                        .isEmpty
+                )
             }
             .padding()
         }
-        .navigationBarTitle(username, displayMode: .inline)
+        .navigationBarTitle(
+            username,
+            displayMode: .inline
+        )
         .onAppear {
             listen()
         }
@@ -81,54 +104,141 @@ struct ChatView: View {
 
     private func chatID() -> String {
 
-        let me = Auth.auth().currentUser?.uid ?? ""
+        guard
+            let me =
+                Auth.auth().currentUser?.uid
+        else {
+            return ""
+        }
 
-        return [me, userID]
-            .sorted()
-            .joined(separator: "_")
+        return [
+            me,
+            userID
+        ]
+        .sorted()
+        .joined(
+            separator: "_"
+        )
     }
 
     private func listen() {
 
+        let id = chatID()
+
+        guard !id.isEmpty else {
+            return
+        }
+
         Firestore.firestore()
             .collection("chats")
-            .document(chatID())
+            .document(id)
             .collection("messages")
-            .order(by: "createdAt")
-            .addSnapshotListener { snapshot, _ in
+            .order(
+                by: "createdAt"
+            )
+            .addSnapshotListener {
+                snapshot,
+                error in
 
-                guard let documents = snapshot?.documents else {
+                if let error {
+
+                    print(
+                        "RIVEN Chat error:",
+                        error.localizedDescription
+                    )
+
                     return
                 }
 
-                messages = documents.map {
+                guard
+                    let documents =
+                        snapshot?.documents
+                else {
+                    return
+                }
 
-                    ChatMessage(
-                        id: $0.documentID,
-                        text: $0.data()["text"] as? String ?? "",
-                        senderID: $0.data()["senderID"] as? String ?? ""
-                    )
+                let loadedMessages =
+                    documents.map { document in
+
+                        let data =
+                            document.data()
+
+                        return ChatMessage(
+                            id:
+                                document.documentID,
+
+                            text:
+                                data["text"]
+                                as? String
+                                ?? "",
+
+                            senderID:
+                                data["senderID"]
+                                as? String
+                                ?? ""
+                        )
+                    }
+
+                DispatchQueue.main.async {
+
+                    messages =
+                        loadedMessages
                 }
             }
     }
 
     private func send() {
 
-        guard !message.isEmpty,
-              let uid = Auth.auth().currentUser?.uid else {
+        let trimmedMessage =
+            message
+                .trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+
+        guard
+            !trimmedMessage.isEmpty,
+            let uid =
+                Auth.auth().currentUser?.uid
+        else {
+            return
+        }
+
+        let id = chatID()
+
+        guard !id.isEmpty else {
             return
         }
 
         Firestore.firestore()
             .collection("chats")
-            .document(chatID())
+            .document(id)
             .collection("messages")
-            .addDocument(data: [
-                "text": message,
-                "senderID": uid,
-                "createdAt": Timestamp()
-            ])
+            .addDocument(
+                data: [
+                    "text":
+                        trimmedMessage,
 
-        message = ""
+                    "senderID":
+                        uid,
+
+                    "createdAt":
+                        Timestamp()
+                ]
+            ) { error in
+
+                if let error {
+
+                    print(
+                        "RIVEN Send DM error:",
+                        error.localizedDescription
+                    )
+
+                    return
+                }
+
+                DispatchQueue.main.async {
+                    message = ""
+                }
+            }
     }
 }
