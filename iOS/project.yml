@@ -14,6 +14,7 @@ settings:
     SWIFT_VERSION: 5.0
     PRODUCT_BUNDLE_IDENTIFIER: com.riven.app
     TARGETED_DEVICE_FAMILY: "1,2"
+    EXECUTABLE_NAME: RIVEN
 
 targets:
   RIVEN:
@@ -38,5 +39,7 @@ targets:
       base:
         INFOPLIST_FILE: RIVEN/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.riven.app
+        EXECUTABLE_NAME: RIVEN
+        GENERATE_INFOPLIST_FILE: NO
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
