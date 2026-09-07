@@ -7,87 +7,81 @@ import FirebaseFirestore
 
 struct ProfileView: View {
 
-    @State private var username = ""
+    let uid: String
+
+    @State private var username = "RIVEN User"
     @State private var handle = ""
     @State private var bio = ""
     @State private var profileImageURL = ""
 
     @State private var videos: [ProfileVideo] = []
     @State private var isLoading = true
-
     @State private var selectedVideo: ProfileVideo?
 
     private let db = Firestore.firestore()
 
-    private let columns = [
-        GridItem(
-            .flexible(),
-            spacing: 2
-        ),
-        GridItem(
-            .flexible(),
-            spacing: 2
-        ),
-        GridItem(
-            .flexible(),
-            spacing: 2
-        )
-    ]
-
     var body: some View {
-
         NavigationView {
-
             ScrollView {
-
-                VStack(
-                    spacing: 18
-                ) {
+                VStack(spacing: 18) {
 
                     profileHeader
 
                     Divider()
-                        .padding(.horizontal)
+                        .opacity(0.35)
 
                     if isLoading {
 
                         ProgressView()
-                            .padding(.top, 30)
+                            .padding(.top, 40)
+
+                    } else if videos.isEmpty {
+
+                        VStack(spacing: 10) {
+                            Image(systemName: "video.slash")
+                                .font(.system(size: 38))
+
+                            Text("No videos yet")
+                                .font(.headline)
+
+                            Text("Videos posted by this user will appear here.")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, 45)
+                        .padding(.horizontal, 30)
 
                     } else {
 
                         LazyVGrid(
-                            columns: columns,
+                            columns: [
+                                GridItem(.flexible(), spacing: 2),
+                                GridItem(.flexible(), spacing: 2),
+                                GridItem(.flexible(), spacing: 2)
+                            ],
                             spacing: 2
                         ) {
-
                             ForEach(videos) { video in
-
                                 Button {
-
-                                    selectedVideo =
-                                        video
-
+                                    selectedVideo = video
                                 } label: {
-
-                                    RIVENVideoThumbnail(
-                                        video: video
-                                    )
-                                    .frame(
-                                        maxWidth: .infinity
-                                    )
-                                    .aspectRatio(
-                                        9.0 / 16.0,
-                                        contentMode: .fit
-                                    )
-                                    .clipped()
+                                    RIVENVideoThumbnail(video: video)
+                                        .aspectRatio(
+                                            9.0 / 16.0,
+                                            contentMode: .fill
+                                        )
+                                        .frame(
+                                            maxWidth: .infinity
+                                        )
+                                        .clipped()
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
                     }
                 }
-                .padding(.top, 20)
+                .padding(.bottom, 20)
             }
             .navigationBarTitle(
                 "Profile",
@@ -99,204 +93,117 @@ struct ProfileView: View {
         )
         .onAppear {
             loadProfile()
+            loadVideos()
         }
-        .fullScreenCover(
-            item: $selectedVideo
-        ) { video in
-
-            RIVENVideoPlayerView(
-                video: video
-            )
+        .fullScreenCover(item: $selectedVideo) { video in
+            RIVENProfileVideoPlayer(video: video)
         }
     }
 
     // MARK: - Profile Header
 
     private var profileHeader: some View {
-
-        VStack(
-            spacing: 12
-        ) {
+        VStack(spacing: 12) {
 
             if !profileImageURL.isEmpty,
-               let url = URL(
-                    string: profileImageURL
-               ) {
+               let url = URL(string: profileImageURL) {
 
-                AsyncImage(
-                    url: url
-                ) { image in
-
+                AsyncImage(url: url) { image in
                     image
                         .resizable()
                         .scaledToFill()
-
                 } placeholder: {
-
-                    Image(
-                        systemName:
-                            "person.circle.fill"
-                    )
-                    .resizable()
-                    .scaledToFill()
-                    .foregroundColor(
-                        .secondary
-                    )
+                    Image(systemName: "person.circle.fill")
+                        .resizable()
+                        .scaledToFill()
+                        .foregroundColor(.secondary)
                 }
                 .frame(
-                    width: 92,
-                    height: 92
+                    width: 90,
+                    height: 90
                 )
-                .clipShape(
-                    Circle()
-                )
+                .clipShape(Circle())
 
             } else {
 
-                Image(
-                    systemName:
-                        "person.circle.fill"
-                )
-                .resizable()
-                .scaledToFill()
-                .frame(
-                    width: 92,
-                    height: 92
-                )
-                .foregroundColor(
-                    .secondary
-                )
+                Image(systemName: "person.circle.fill")
+                    .resizable()
+                    .scaledToFill()
+                    .foregroundColor(.secondary)
+                    .frame(
+                        width: 90,
+                        height: 90
+                    )
             }
 
-            Text(
-                username.isEmpty
-                    ? "RIVEN User"
-                    : username
-            )
-            .font(
-                .title2.weight(.bold)
-            )
+            Text(username)
+                .font(.title2.weight(.bold))
 
             if !handle.isEmpty {
-
                 Text("@\(handle)")
-                    .foregroundColor(
-                        .secondary
-                    )
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
             }
 
             if !bio.isEmpty {
-
                 Text(bio)
                     .font(.body)
-                    .multilineTextAlignment(
-                        .center
-                    )
-                    .padding(
-                        .horizontal,
-                        30
-                    )
-            }
-
-            HStack(
-                spacing: 30
-            ) {
-
-                VStack {
-
-                    Text(
-                        "\(videos.count)"
-                    )
-                    .font(
-                        .headline.weight(.bold)
-                    )
-
-                    Text("Videos")
-                        .font(
-                            .caption
-                        )
-                        .foregroundColor(
-                            .secondary
-                        )
-                }
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 30)
             }
         }
-        .padding(.horizontal)
+        .padding(.top, 20)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Load Profile
 
     private func loadProfile() {
 
-        guard
-            let uid =
-                Auth.auth()
-                    .currentUser?
-                    .uid
-        else {
-
-            isLoading = false
-            return
-        }
-
-        isLoading = true
-
         db.collection("users")
             .document(uid)
             .getDocument { snapshot, error in
 
+                guard let data = snapshot?.data(),
+                      error == nil
+                else {
+                    return
+                }
+
                 DispatchQueue.main.async {
 
-                    if let data =
-                        snapshot?.data() {
+                    username =
+                        data["username"] as? String
+                        ?? data["displayName"] as? String
+                        ?? "RIVEN User"
 
-                        username =
-                            data["username"]
-                                as? String
-                                ?? data["displayName"]
-                                as? String
-                                ?? ""
+                    handle =
+                        data["handle"] as? String
+                        ?? data["username"] as? String
+                        ?? ""
 
-                        handle =
-                            data["handle"]
-                                as? String
-                                ?? data["username"]
-                                as? String
-                                ?? ""
+                    bio =
+                        data["bio"] as? String
+                        ?? ""
 
-                        bio =
-                            data["bio"]
-                                as? String
-                                ?? ""
-
-                        profileImageURL =
-                            data["profileImageURL"]
-                                as? String
-                                ?? data["photoURL"]
-                                as? String
-                                ?? data["profileImageUrl"]
-                                as? String
-                                ?? ""
-                    }
-
-                    loadVideos(
-                        uid: uid
-                    )
+                    profileImageURL =
+                        data["profileImageURL"] as? String
+                        ?? data["profileImageUrl"] as? String
+                        ?? data["photoURL"] as? String
+                        ?? ""
                 }
             }
     }
 
     // MARK: - Load Videos
 
-    private func loadVideos(
-        uid: String
-    ) {
+    private func loadVideos() {
+
+        isLoading = true
 
         db.collection("videos")
-            .whereField(
-                "uid",
-                isEqualTo: uid
-            )
+            .whereField("uid", isEqualTo: uid)
             .getDocuments { snapshot, error in
 
                 DispatchQueue.main.async {
@@ -304,99 +211,67 @@ struct ProfileView: View {
                     isLoading = false
 
                     guard
-                        let documents =
-                            snapshot?.documents
+                        let documents = snapshot?.documents,
+                        error == nil
                     else {
-
                         videos = []
                         return
                     }
 
-                    videos =
-                        documents
-                            .compactMap {
-                                document in
+                    videos = documents.compactMap { document in
 
-                                let data =
-                                    document.data()
+                        let data = document.data()
 
-                                guard
-                                    let videoURL =
-                                        data[
-                                            "videoUrl"
-                                        ] as? String,
-                                    !videoURL.isEmpty
-                                else {
-                                    return nil
-                                }
+                        guard
+                            let videoURL =
+                                data["videoUrl"] as? String,
+                            !videoURL.isEmpty
+                        else {
+                            return nil
+                        }
 
-                                let caption =
-                                    data[
-                                        "caption"
-                                    ] as? String
-                                    ?? ""
+                        let caption =
+                            data["caption"] as? String
+                            ?? ""
 
-                                let likesBy =
-                                    data[
-                                        "likesBy"
-                                    ] as? [String]
-                                    ?? []
+                        let likesBy =
+                            data["likesBy"] as? [String]
+                            ?? []
 
-                                let createdAt =
-                                    data[
-                                        "createdAt"
-                                    ] as? Timestamp
+                        return ProfileVideo(
+                            id: document.documentID,
+                            videoURL: videoURL,
+                            caption: caption,
+                            likesBy: likesBy
+                        )
+                    }
 
-                                return ProfileVideo(
-                                    id:
-                                        document
-                                            .documentID,
-                                    videoURL:
-                                        videoURL,
-                                    caption:
-                                        caption,
-                                    likesBy:
-                                        likesBy,
-                                    createdAt:
-                                        createdAt
-                                )
-                            }
-                            .sorted {
-
-                                ($0.createdAt?
-                                    .dateValue()
-                                    ?? .distantPast)
-                                >
-                                ($1.createdAt?
-                                    .dateValue()
-                                    ?? .distantPast)
-                            }
+                    videos.sort { first, second in
+                        first.id > second.id
+                    }
                 }
             }
     }
 }
 
-// MARK: - Profile Video
 
-struct ProfileVideo:
-    Identifiable {
+// MARK: - Profile Video Model
 
+struct ProfileVideo: Identifiable {
     let id: String
     let videoURL: String
     let caption: String
     let likesBy: [String]
-    let createdAt: Timestamp?
 }
+
 
 // MARK: - Video Thumbnail
 
-struct RIVENVideoThumbnail:
-    View {
+struct RIVENVideoThumbnail: View {
 
     let video: ProfileVideo
 
-    @State private var thumbnail:
-        UIImage?
+    @State private var thumbnail: UIImage?
 
     var body: some View {
 
@@ -406,16 +281,14 @@ struct RIVENVideoThumbnail:
 
             if let thumbnail {
 
-                Image(
-                    uiImage: thumbnail
-                )
-                .resizable()
-                .scaledToFill()
-                .frame(
-                    maxWidth: .infinity,
-                    maxHeight: .infinity
-                )
-                .clipped()
+                Image(uiImage: thumbnail)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(
+                        maxWidth: .infinity,
+                        maxHeight: .infinity
+                    )
+                    .clipped()
 
             } else {
 
@@ -428,8 +301,7 @@ struct RIVENVideoThumbnail:
             contentMode: .fit
         )
         .clipped()
-        .task {
-
+        .onAppear {
             generateThumbnail()
         }
     }
@@ -437,30 +309,23 @@ struct RIVENVideoThumbnail:
     private func generateThumbnail() {
 
         guard
-            let url = URL(
-                string: video.videoURL
-            )
+            thumbnail == nil,
+            let url = URL(string: video.videoURL)
         else {
             return
         }
 
-        let asset =
-            AVAsset(
-                url: url
-            )
+        let asset = AVAsset(url: url)
 
         let generator =
-            AVAssetImageGenerator(
-                asset: asset
-            )
+            AVAssetImageGenerator(asset: asset)
 
-        generator.appliesPreferredTrackTransform =
-            true
+        generator.appliesPreferredTrackTransform = true
 
         generator.maximumSize =
             CGSize(
                 width: 500,
-                height: 889
+                height: 900
             )
 
         let time =
@@ -470,43 +335,34 @@ struct RIVENVideoThumbnail:
             )
 
         generator.generateCGImagesAsynchronously(
-            forTimes: [time]
+            forTimes: [NSValue(time: time)]
         ) { _, image, _, _, _ in
 
-            guard
-                let image
-            else {
+            guard let image else {
                 return
             }
 
             let uiImage =
-                UIImage(
-                    cgImage: image
-                )
+                UIImage(cgImage: image)
 
             DispatchQueue.main.async {
-
-                thumbnail =
-                    uiImage
+                thumbnail = uiImage
             }
         }
     }
 }
 
-// MARK: - Video Player
 
-struct RIVENVideoPlayerView:
-    View {
+// MARK: - Fullscreen Profile Video
+
+struct RIVENProfileVideoPlayer: View {
 
     let video: ProfileVideo
 
-    @Environment(
-        \.dismiss
-    )
-    private var dismiss
+    @Environment(\.presentationMode)
+    private var presentationMode
 
-    @State private var player:
-        AVPlayer?
+    @State private var player: AVPlayer?
 
     var body: some View {
 
@@ -528,35 +384,26 @@ struct RIVENVideoPlayerView:
                 HStack {
 
                     Button {
-
-                        dismiss()
-
+                        presentationMode.wrappedValue.dismiss()
                     } label: {
-
-                        Image(
-                            systemName:
-                                "xmark"
-                        )
-                        .font(
-                            .system(
-                                size: 18,
-                                weight: .bold
+                        Image(systemName: "xmark")
+                            .font(
+                                .system(
+                                    size: 18,
+                                    weight: .bold
+                                )
                             )
-                        )
-                        .foregroundColor(
-                            .white
-                        )
-                        .frame(
-                            width: 42,
-                            height: 42
-                        )
-                        .background(
-                            Color.black
-                                .opacity(0.45)
-                        )
-                        .clipShape(
-                            Circle()
-                        )
+                            .foregroundColor(.white)
+                            .frame(
+                                width: 42,
+                                height: 42
+                            )
+                            .background(
+                                Circle()
+                                    .fill(
+                                        Color.black.opacity(0.45)
+                                    )
+                            )
                     }
 
                     Spacer()
@@ -567,33 +414,39 @@ struct RIVENVideoPlayerView:
             }
         }
         .onAppear {
-
-            guard
-                let url =
-                    URL(
-                        string:
-                            video.videoURL
-                    )
-            else {
-                return
-            }
-
-            let newPlayer =
-                AVPlayer(
-                    url: url
-                )
-
-            newPlayer.isMuted = false
-
-            player =
-                newPlayer
-
-            newPlayer.play()
+            startPlayer()
         }
         .onDisappear {
-
             player?.pause()
             player = nil
+        }
+    }
+
+    private func startPlayer() {
+
+        guard
+            let url = URL(string: video.videoURL)
+        else {
+            return
+        }
+
+        let newPlayer =
+            AVPlayer(url: url)
+
+        newPlayer.actionAtItemEnd = .none
+
+        player = newPlayer
+
+        newPlayer.play()
+
+        NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: newPlayer.currentItem,
+            queue: .main
+        ) { _ in
+
+            newPlayer.seek(to: .zero)
+            newPlayer.play()
         }
     }
 }
