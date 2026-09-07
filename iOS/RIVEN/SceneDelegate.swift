@@ -15,27 +15,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
 
-        let window = RIVENEdgeToEdgeWindow(windowScene: windowScene)
-
         let rootView = ContentView()
 
-        let hostingController = RIVENFullscreenController(
+        let hostingController = UIHostingController(
             rootView: rootView
         )
 
-        // Force the hosting controller to behave like a normal
-        // full-screen iPhone application.
         hostingController.modalPresentationStyle = .fullScreen
-
         hostingController.view.backgroundColor = .systemBackground
-        hostingController.view.frame = windowScene.coordinateSpace.bounds
 
+        let window = UIWindow(windowScene: windowScene)
         window.rootViewController = hostingController
+        window.backgroundColor = .systemBackground
 
         self.window = window
-
-        window.frame = windowScene.coordinateSpace.bounds
-        window.backgroundColor = .systemBackground
 
         window.makeKeyAndVisible()
     }
