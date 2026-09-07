@@ -402,7 +402,7 @@ struct ProfileView: View {
                             video: video
                         )
                         .aspectRatio(
-                            0.72,
+                            9.0 / 16.0,
                             contentMode: .fill
                         )
                         .clipped()
