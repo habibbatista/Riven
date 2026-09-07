@@ -1,12 +1,16 @@
 import SwiftUI
+import AVKit
 import AVFoundation
+import FirebaseAuth
 import FirebaseFirestore
+
+// MARK: - Video Model
 
 struct RIVENVideo: Identifiable {
     let id: String
     let uid: String
     let authorName: String
-    let authorHandle: String
+    let handle: String
     let authorPfp: String
     let videoURL: String
     let caption: String
@@ -14,307 +18,234 @@ struct RIVENVideo: Identifiable {
     var commentsCount: Int
     var isPrivate: Bool
 
-    init(
-        id: String,
-        uid: String = "",
-        authorName: String = "User",
-        authorHandle: String = "user",
-        authorPfp: String = "",
-        videoURL: String,
-        caption: String = "",
-        likesBy: [String] = [],
-        commentsCount: Int = 0,
-        isPrivate: Bool = false
-    ) {
-        self.id = id
-        self.uid = uid
-        self.authorName = authorName
-        self.authorHandle = authorHandle
-        self.authorPfp = authorPfp
-        self.videoURL = videoURL
-        self.caption = caption
-        self.likesBy = likesBy
-        self.commentsCount = commentsCount
-        self.isPrivate = isPrivate
+    // Compatibility with code that uses authorHandle
+    var authorHandle: String {
+        handle
     }
 }
+
+// MARK: - Feed View
 
 struct FeedView: View {
     @State private var videos: [RIVENVideo] = []
-    @State private var currentIndex = 0
+    @State private var isLoading = true
+    @State private var errorMessage: String?
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.black
-                    .ignoresSafeArea()
+        ZStack {
+            Color.black
+                .ignoresSafeArea()
 
-                if videos.isEmpty {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    TabView(selection: $currentIndex) {
-                        ForEach(Array(videos.enumerated()), id: \.element.id) { index, video in
-                            FYPVideoPage(
-                                video: video,
-                                isCurrent: currentIndex == index
-                            )
-                            .tag(index)
-                            .frame(
-                                width: geometry.size.width,
-                                height: geometry.size.height
-                            )
-                        }
+            if isLoading {
+                ProgressView()
+                    .tint(.white)
+            } else if let errorMessage {
+                VStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 34))
+                        .foregroundColor(.white)
+
+                    Text(errorMessage)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 30)
+
+                    Button("Retry") {
+                        loadVideos()
                     }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    .frame(
-                        width: geometry.size.width,
-                        height: geometry.size.height
-                    )
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
                 }
+            } else if videos.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "video.slash")
+                        .font(.system(size: 36))
+                        .foregroundColor(.white)
+
+                    Text("No videos yet")
+                        .font(.headline)
+                        .foregroundColor(.white)
+
+                    Text("Videos will appear here when people post.")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 30)
+            } else {
+                TabView {
+                    ForEach(videos) { video in
+                        VideoPostView(video: video)
+                            .frame(
+                                maxWidth: .infinity,
+                                maxHeight: .infinity
+                            )
+                            .background(Color.black)
+                            .ignoresSafeArea()
+                            .tag(video.id)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity
+                )
+                .ignoresSafeArea()
             }
-            .frame(
-                width: geometry.size.width,
-                height: geometry.size.height
-            )
         }
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity
+        )
         .ignoresSafeArea()
         .task {
-            await loadVideos()
-        }
-    }
-
-    private func loadVideos() async {
-        do {
-            let snapshot = try await Firestore.firestore()
-                .collection("videos")
-                .order(by: "createdAt", descending: true)
-                .getDocuments()
-
-            videos = snapshot.documents.compactMap { document in
-                let data = document.data()
-
-                guard let videoURL = data["videoUrl"] as? String,
-                      !videoURL.isEmpty else {
-                    return nil
-                }
-
-                return RIVENVideo(
-                    id: document.documentID,
-                    uid: data["uid"] as? String ?? "",
-                    authorName: data["authorName"] as? String ?? "User",
-                    authorHandle: data["authorHandle"] as? String ?? "user",
-                    authorPfp: data["authorPfp"] as? String ?? "",
-                    videoURL: videoURL,
-                    caption: data["caption"] as? String ?? "",
-                    likesBy: data["likesBy"] as? [String] ?? [],
-                    commentsCount: data["commentsCount"] as? Int ?? 0,
-                    isPrivate: data["isPrivate"] as? Bool ?? false
-                )
+            if videos.isEmpty {
+                loadVideos()
             }
-        } catch {
-            print("FYP load error:", error)
         }
     }
-}
 
-struct FYPVideoPage: View {
-    let video: RIVENVideo
-    let isCurrent: Bool
+    // MARK: - Load Videos
 
-    @State private var player: AVPlayer?
-    @State private var isPlaying = false
-    @State private var isMuted = false
+    private func loadVideos() {
+        isLoading = true
+        errorMessage = nil
 
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.black
-                    .ignoresSafeArea()
+        Firestore.firestore()
+            .collection("videos")
+            .order(by: "createdAt", descending: true)
+            .getDocuments { snapshot, error in
 
-                if let player {
-                    FYPPlayerView(player: player)
-                        .frame(
-                            width: geometry.size.width,
-                            height: geometry.size.height
+                DispatchQueue.main.async {
+                    isLoading = false
+
+                    if let error {
+                        errorMessage = error.localizedDescription
+                        return
+                    }
+
+                    guard let documents = snapshot?.documents else {
+                        videos = []
+                        return
+                    }
+
+                    videos = documents.compactMap { document in
+                        let data = document.data()
+
+                        guard let videoURL = data["videoUrl"] as? String,
+                              !videoURL.isEmpty else {
+                            return nil
+                        }
+
+                        let uid = data["uid"] as? String ?? ""
+
+                        let authorName =
+                            data["authorName"] as? String ?? "RIVEN User"
+
+                        let handle =
+                            data["authorHandle"] as? String
+                            ?? data["handle"] as? String
+                            ?? ""
+
+                        let authorPfp =
+                            data["authorPfp"] as? String ?? ""
+
+                        let caption =
+                            data["caption"] as? String ?? ""
+
+                        let likesBy =
+                            data["likesBy"] as? [String] ?? []
+
+                        let commentsCount =
+                            data["commentsCount"] as? Int ?? 0
+
+                        let isPrivate =
+                            data["isPrivate"] as? Bool ?? false
+
+                        // Don't show private videos unless they belong
+                        // to the currently signed-in user.
+                        if isPrivate {
+                            let currentUID =
+                                Auth.auth().currentUser?.uid ?? ""
+
+                            if uid != currentUID {
+                                return nil
+                            }
+                        }
+
+                        return RIVENVideo(
+                            id: document.documentID,
+                            uid: uid,
+                            authorName: authorName,
+                            handle: handle,
+                            authorPfp: authorPfp,
+                            videoURL: videoURL,
+                            caption: caption,
+                            likesBy: likesBy,
+                            commentsCount: commentsCount,
+                            isPrivate: isPrivate
                         )
-                        .clipped()
-                        .ignoresSafeArea()
-                }
-
-                VStack {
-                    Spacer()
-
-                    HStack(alignment: .bottom) {
-                        VStack(alignment: .leading, spacing: 7) {
-                            Text("@\(video.authorHandle)")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundStyle(.white)
-
-                            if !video.caption.isEmpty {
-                                Text(video.caption)
-                                    .font(.system(size: 16))
-                                    .foregroundStyle(.white)
-                                    .lineLimit(3)
-                            }
-                        }
-
-                        Spacer()
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 105)
-                }
-
-                VStack {
-                    Spacer()
-
-                    HStack {
-                        Spacer()
-
-                        VStack(spacing: 28) {
-                            Button {
-                                // Like
-                            } label: {
-                                Image(systemName: "heart")
-                                    .font(.system(size: 31))
-                                    .foregroundStyle(.white)
-                            }
-
-                            Button {
-                                // Comments
-                            } label: {
-                                Image(systemName: "bubble.right")
-                                    .font(.system(size: 30))
-                                    .foregroundStyle(.white)
-                            }
-
-                            Button {
-                                // Share
-                            } label: {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 30))
-                                    .foregroundStyle(.white)
-                            }
-                        }
-                        .padding(.trailing, 18)
-                        .padding(.bottom, 125)
-                    }
-                }
-
-                VStack {
-                    HStack {
-                        Spacer()
-
-                        Button {
-                            isMuted.toggle()
-                            player?.isMuted = isMuted
-                        } label: {
-                            Image(
-                                systemName: isMuted
-                                    ? "speaker.slash.fill"
-                                    : "speaker.wave.2.fill"
-                            )
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 52, height: 52)
-                            .background(.black.opacity(0.35))
-                            .clipShape(Circle())
-                        }
-                        .padding(.top, 60)
-                        .padding(.trailing, 18)
-                    }
-
-                    Spacer()
-                }
-
-                if !isPlaying {
-                    Button {
-                        player?.play()
-                        isPlaying = true
-                    } label: {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 34))
-                            .foregroundStyle(.white)
-                            .frame(width: 92, height: 92)
-                            .background(.black.opacity(0.35))
-                            .clipShape(Circle())
                     }
                 }
             }
-            .frame(
-                width: geometry.size.width,
-                height: geometry.size.height
-            )
-            .clipped()
-            .ignoresSafeArea()
-            .onAppear {
-                let newPlayer = AVPlayer(
-                    url: URL(string: video.videoURL)!
-                )
-
-                newPlayer.actionAtItemEnd = .none
-                newPlayer.isMuted = isMuted
-
-                player = newPlayer
-
-                if isCurrent {
-                    newPlayer.play()
-                    isPlaying = true
-                }
-
-                NotificationCenter.default.addObserver(
-                    forName: .AVPlayerItemDidPlayToEndTime,
-                    object: newPlayer.currentItem,
-                    queue: .main
-                ) { _ in
-                    newPlayer.seek(to: .zero)
-
-                    if isCurrent {
-                        newPlayer.play()
-                    }
-                }
-            }
-            .onChange(of: isCurrent) { active in
-                if active {
-                    player?.play()
-                    isPlaying = true
-                } else {
-                    player?.pause()
-                    isPlaying = false
-                }
-            }
-            .onDisappear {
-                player?.pause()
-                player = nil
-            }
-        }
-        .ignoresSafeArea()
     }
 }
+
+// MARK: - Fullscreen Video Player
 
 struct FYPPlayerView: UIViewRepresentable {
-    let player: AVPlayer
+    let url: URL
 
-    func makeUIView(context: Context) -> FYPPlayerUIView {
-        let view = FYPPlayerUIView()
+    func makeUIView(context: Context) -> PlayerView {
+        let view = PlayerView()
+        view.backgroundColor = .black
+        view.playerLayer.videoGravity = .resizeAspectFill
+
+        let player = AVPlayer(url: url)
+        player.actionAtItemEnd = .none
+
         view.player = player
+        player.play()
+
+        NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: player.currentItem,
+            queue: .main
+        ) { _ in
+            player.seek(to: .zero)
+            player.play()
+        }
+
         return view
     }
 
     func updateUIView(
-        _ uiView: FYPPlayerUIView,
+        _ uiView: PlayerView,
         context: Context
     ) {
-        uiView.player = player
+        uiView.playerLayer.videoGravity = .resizeAspectFill
+    }
+
+    static func dismantleUIView(
+        _ uiView: PlayerView,
+        coordinator: ()
+    ) {
+        uiView.player?.pause()
+        uiView.player = nil
     }
 }
 
-final class FYPPlayerUIView: UIView {
+// MARK: - AVPlayer Layer Container
+
+final class PlayerView: UIView {
     override class var layerClass: AnyClass {
         AVPlayerLayer.self
     }
 
-    private var playerLayer: AVPlayerLayer {
+    var playerLayer: AVPlayerLayer {
         layer as! AVPlayerLayer
     }
 
@@ -324,14 +255,6 @@ final class FYPPlayerUIView: UIView {
         }
         set {
             playerLayer.player = newValue
-            playerLayer.videoGravity = .resizeAspectFill
         }
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-
-        playerLayer.frame = bounds
-        playerLayer.videoGravity = .resizeAspectFill
     }
 }
