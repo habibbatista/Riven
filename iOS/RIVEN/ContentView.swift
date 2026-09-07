@@ -1,213 +1,214 @@
 import SwiftUI
 import UIKit
-import FirebaseAuth
 
 struct ContentView: View {
     @State private var selectedTab = 0
-    @State private var isSignedIn = Auth.auth().currentUser != nil
 
     var body: some View {
-        Group {
-            if isSignedIn {
-                mainInterface
-            } else {
-                LoginView()
-            }
-        }
-        .onAppear {
-            isSignedIn = Auth.auth().currentUser != nil
-        }
-        .onReceive(
-            NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
-        ) { _ in
-            isSignedIn = Auth.auth().currentUser != nil
-        }
-    }
-
-    private var mainInterface: some View {
         ZStack(alignment: .bottom) {
             Group {
                 switch selectedTab {
                 case 0:
-                    NavigationView {
-                        FeedView()
-                            .navigationBarTitleDisplayMode(.inline)
-                    }
+                    FeedView()
 
                 case 1:
-                    NavigationView {
-                        SearchView()
-                            .navigationBarTitleDisplayMode(.inline)
-                    }
+                    SearchView()
 
                 case 2:
-                    NavigationView {
-                        CreateView()
-                            .navigationBarTitleDisplayMode(.inline)
-                    }
+                    CreateView()
 
                 case 3:
-                    NavigationView {
-                        InboxView()
-                            .navigationBarTitleDisplayMode(.inline)
-                    }
+                    InboxView()
 
                 case 4:
-                    NavigationView {
-                        ProfileView()
-                            .navigationBarTitleDisplayMode(.inline)
-                    }
+                    ProfileView()
 
                 default:
                     FeedView()
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(uiColor: .systemBackground))
-            .padding(.bottom, 82)
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: .infinity
+            )
 
-            RIVENUIKitTabBar(selectedTab: $selectedTab)
-                .frame(height: 82)
-                .ignoresSafeArea(edges: .bottom)
+            RIVENUIKitTabBar(selection: $selectedTab)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(uiColor: .systemBackground))
-        .ignoresSafeArea(edges: .bottom)
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity
+        )
+        .background(Color.black)
+        .ignoresSafeArea()
     }
 }
 
-// MARK: - Native Apple UIKit Tab Bar
+// MARK: - Native iOS Tab Bar
 
-private struct RIVENUIKitTabBar: UIViewControllerRepresentable {
-    @Binding var selectedTab: Int
+struct RIVENUIKitTabBar: UIViewControllerRepresentable {
+    @Binding var selection: Int
 
-    func makeUIViewController(context: Context) -> RIVENUIKitTabBarController {
-        let controller = RIVENUIKitTabBarController()
+    func makeCoordinator() -> Coordinator {
+        Coordinator(selection: $selection)
+    }
 
-        controller.selectedTab = selectedTab
+    func makeUIViewController(
+        context: Context
+    ) -> RIVENTabBarViewController {
+        let controller = RIVENTabBarViewController()
 
         controller.onSelectionChanged = { index in
-            DispatchQueue.main.async {
-                selectedTab = index
-            }
+            context.coordinator.selection.wrappedValue = index
         }
+
+        controller.setSelectedIndex(selection)
 
         return controller
     }
 
     func updateUIViewController(
-        _ controller: RIVENUIKitTabBarController,
+        _ uiViewController: RIVENTabBarViewController,
         context: Context
     ) {
-        controller.selectedTab = selectedTab
+        uiViewController.setSelectedIndex(selection)
+
+        uiViewController.onSelectionChanged = { index in
+            context.coordinator.selection.wrappedValue = index
+        }
+    }
+
+    final class Coordinator {
+        var selection: Binding<Int>
+
+        init(selection: Binding<Int>) {
+            self.selection = selection
+        }
     }
 }
 
-private final class RIVENUIKitTabBarController: UIViewController, UITabBarDelegate {
+// MARK: - UIKit Tab Bar Controller
+
+final class RIVENTabBarViewController: UIViewController {
 
     private let tabBar = UITabBar()
 
     var onSelectionChanged: ((Int) -> Void)?
 
-    var selectedTab: Int = 0 {
-        didSet {
-            guard let items = tabBar.items else {
-                return
-            }
-
-            guard items.indices.contains(selectedTab) else {
-                return
-            }
-
-            if tabBar.selectedItem !== items[selectedTab] {
-                tabBar.selectedItem = items[selectedTab]
-            }
-        }
-    }
+    private var hasConfigured = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         view.backgroundColor = .clear
+        view.isOpaque = false
 
         configureTabBar()
-        configureAppearance()
-        configureLayout()
     }
 
     private func configureTabBar() {
-        let homeItem = UITabBarItem(
-            title: "Home",
-            image: UIImage(systemName: "house"),
-            selectedImage: UIImage(systemName: "house.fill")
-        )
+        guard !hasConfigured else {
+            return
+        }
 
-        let searchItem = UITabBarItem(
-            title: "Search",
-            image: UIImage(systemName: "magnifyingglass"),
-            selectedImage: UIImage(systemName: "magnifyingglass")
-        )
+        hasConfigured = true
 
-        let createItem = UITabBarItem(
-            title: "Create",
-            image: UIImage(systemName: "plus"),
-            selectedImage: UIImage(systemName: "plus")
-        )
-
-        let inboxItem = UITabBarItem(
-            title: "Inbox",
-            image: UIImage(systemName: "bubble.left.and.bubble.right"),
-            selectedImage: UIImage(systemName: "bubble.left.and.bubble.right.fill")
-        )
-
-        let profileItem = UITabBarItem(
-            title: "Profile",
-            image: UIImage(systemName: "person"),
-            selectedImage: UIImage(systemName: "person.fill")
-        )
+        tabBar.delegate = self
+        tabBar.translatesAutoresizingMaskIntoConstraints = false
 
         tabBar.items = [
-            homeItem,
-            searchItem,
-            createItem,
-            inboxItem,
-            profileItem
+            UITabBarItem(
+                title: "Home",
+                image: UIImage(
+                    systemName: "house"
+                ),
+                selectedImage: UIImage(
+                    systemName: "house.fill"
+                )
+            ),
+
+            UITabBarItem(
+                title: "Search",
+                image: UIImage(
+                    systemName: "magnifyingglass"
+                ),
+                selectedImage: UIImage(
+                    systemName: "magnifyingglass"
+                )
+            ),
+
+            UITabBarItem(
+                title: "Create",
+                image: UIImage(
+                    systemName: "plus"
+                ),
+                selectedImage: UIImage(
+                    systemName: "plus"
+                )
+            ),
+
+            UITabBarItem(
+                title: "Inbox",
+                image: UIImage(
+                    systemName: "bubble.left.and.bubble.right"
+                ),
+                selectedImage: UIImage(
+                    systemName: "bubble.left.and.bubble.right.fill"
+                )
+            ),
+
+            UITabBarItem(
+                title: "Profile",
+                image: UIImage(
+                    systemName: "person"
+                ),
+                selectedImage: UIImage(
+                    systemName: "person.fill"
+                )
+            )
         ]
 
-        tabBar.selectedItem = homeItem
-        tabBar.delegate = self
+        tabBar.selectedItem = tabBar.items?.first
 
-        tabBar.isTranslucent = true
-    }
-
-    private func configureAppearance() {
         let appearance = UITabBarAppearance()
 
-        // Classic Apple blur instead of Liquid Glass.
-        appearance.configureWithTransparentBackground()
+        appearance.configureWithDefaultBackground()
 
         appearance.backgroundEffect = UIBlurEffect(
-            style: .systemChromeMaterial
+            style: .systemChromeMaterialDark
         )
 
-        appearance.backgroundColor = UIColor.clear
+        appearance.backgroundColor = UIColor(
+            white: 0.08,
+            alpha: 0.82
+        )
 
-        appearance.shadowColor = UIColor.separator.withAlphaComponent(0.35)
+        appearance.shadowColor = UIColor(
+            white: 1.0,
+            alpha: 0.12
+        )
 
-        appearance.stackedLayoutAppearance.normal.iconColor =
-            UIColor.secondaryLabel
+        let normal = appearance.stackedLayoutAppearance.normal
 
-        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-            .foregroundColor: UIColor.secondaryLabel,
-            .font: UIFont.systemFont(ofSize: 10, weight: .medium)
+        normal.iconColor = .white.withAlphaComponent(0.78)
+
+        normal.titleTextAttributes = [
+            .foregroundColor: UIColor.white.withAlphaComponent(0.78),
+            .font: UIFont.systemFont(
+                ofSize: 12,
+                weight: .medium
+            )
         ]
 
-        appearance.stackedLayoutAppearance.selected.iconColor =
-            UIColor.label
+        let selected = appearance.stackedLayoutAppearance.selected
 
-        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-            .foregroundColor: UIColor.label,
-            .font: UIFont.systemFont(ofSize: 10, weight: .semibold)
+        selected.iconColor = .white
+
+        selected.titleTextAttributes = [
+            .foregroundColor: UIColor.white,
+            .font: UIFont.systemFont(
+                ofSize: 12,
+                weight: .semibold
+            )
         ]
 
         tabBar.standardAppearance = appearance
@@ -215,30 +216,59 @@ private final class RIVENUIKitTabBarController: UIViewController, UITabBarDelega
         if #available(iOS 15.0, *) {
             tabBar.scrollEdgeAppearance = appearance
         }
-    }
 
-    private func configureLayout() {
+        tabBar.isTranslucent = true
+
         view.addSubview(tabBar)
 
-        tabBar.translatesAutoresizingMaskIntoConstraints = false
-
         NSLayoutConstraint.activate([
-            tabBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tabBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tabBar.topAnchor.constraint(equalTo: view.topAnchor),
-            tabBar.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tabBar.leadingAnchor.constraint(
+                equalTo: view.leadingAnchor,
+                constant: 14
+            ),
+
+            tabBar.trailingAnchor.constraint(
+                equalTo: view.trailingAnchor,
+                constant: -14
+            ),
+
+            tabBar.bottomAnchor.constraint(
+                equalTo: view.bottomAnchor,
+                constant: -8
+            ),
+
+            tabBar.heightAnchor.constraint(
+                equalToConstant: 72
+            )
         ])
+
+        tabBar.layer.cornerRadius = 36
+        tabBar.layer.masksToBounds = true
     }
+
+    func setSelectedIndex(_ index: Int) {
+        guard
+            let items = tabBar.items,
+            index >= 0,
+            index < items.count
+        else {
+            return
+        }
+
+        tabBar.selectedItem = items[index]
+    }
+}
+
+extension RIVENTabBarViewController: UITabBarDelegate {
 
     func tabBar(
         _ tabBar: UITabBar,
         didSelect item: UITabBarItem
     ) {
-        guard let items = tabBar.items else {
-            return
-        }
-
-        guard let index = items.firstIndex(of: item) else {
+        guard
+            let items = tabBar.items,
+            let index = items.firstIndex(of: item)
+        else {
             return
         }
 
