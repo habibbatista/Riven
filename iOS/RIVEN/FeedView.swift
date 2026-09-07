@@ -4,8 +4,6 @@ import AVFoundation
 import FirebaseAuth
 import FirebaseFirestore
 
-// MARK: - Video Model
-
 struct RIVENVideo: Identifiable {
     let id: String
     let uid: String
@@ -18,89 +16,103 @@ struct RIVENVideo: Identifiable {
     var commentsCount: Int
     var isPrivate: Bool
 
-    // Compatibility with code that uses authorHandle
     var authorHandle: String {
         handle
     }
 }
 
-// MARK: - Feed View
-
 struct FeedView: View {
+
     @State private var videos: [RIVENVideo] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
 
     var body: some View {
-        ZStack {
-            Color.black
-                .ignoresSafeArea()
 
-            if isLoading {
-                ProgressView()
-                    .tint(.white)
-            } else if let errorMessage {
-                VStack(spacing: 12) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 34))
+        GeometryReader { geometry in
+
+            ZStack {
+
+                Color.black
+                    .ignoresSafeArea(edges: .horizontal)
+
+                if isLoading {
+
+                    ProgressView()
+                        .tint(.white)
+
+                } else if let errorMessage {
+
+                    VStack(spacing: 12) {
+
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 34))
+                            .foregroundColor(.white)
+
+                        Text(errorMessage)
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 30)
+
+                        Button("Retry") {
+                            loadVideos()
+                        }
                         .foregroundColor(.white)
-
-                    Text(errorMessage)
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 30)
-
-                    Button("Retry") {
-                        loadVideos()
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Capsule())
                     }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-                }
-            } else if videos.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "video.slash")
-                        .font(.system(size: 36))
-                        .foregroundColor(.white)
 
-                    Text("No videos yet")
-                        .font(.headline)
-                        .foregroundColor(.white)
+                } else if videos.isEmpty {
 
-                    Text("Videos will appear here when people post.")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, 30)
-            } else {
-                TabView {
-                    ForEach(videos) { video in
-                        VideoPostView(video: video)
-                            .frame(
-                                maxWidth: .infinity,
-                                maxHeight: .infinity
-                            )
-                            .background(Color.black)
-                            .ignoresSafeArea()
-                            .tag(video.id)
+                    VStack(spacing: 12) {
+
+                        Image(systemName: "video.slash")
+                            .font(.system(size: 36))
+                            .foregroundColor(.white)
+
+                        Text("No videos yet")
+                            .font(.headline)
+                            .foregroundColor(.white)
+
+                        Text("Videos will appear here when people post.")
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
                     }
+                    .padding(.horizontal, 30)
+
+                } else {
+
+                    ScrollView(
+                        .vertical,
+                        showsIndicators: false
+                    ) {
+
+                        LazyVStack(
+                            spacing: 0
+                        ) {
+
+                            ForEach(videos) { video in
+
+                                VideoPostView(video: video)
+                                    .frame(
+                                        width: geometry.size.width,
+                                        height: geometry.size.height
+                                    )
+                                    .background(Color.black)
+                                    .id(video.id)
+                            }
+                        }
+                    }
+                    .frame(
+                        width: geometry.size.width,
+                        height: geometry.size.height
+                    )
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(
-                    maxWidth: .infinity,
-                    maxHeight: .infinity
-                )
-                .ignoresSafeArea()
             }
         }
-        .frame(
-            maxWidth: .infinity,
-            maxHeight: .infinity
-        )
-        .ignoresSafeArea()
         .task {
             if videos.isEmpty {
                 loadVideos()
@@ -108,18 +120,22 @@ struct FeedView: View {
         }
     }
 
-    // MARK: - Load Videos
-
     private func loadVideos() {
+
         isLoading = true
         errorMessage = nil
 
         Firestore.firestore()
             .collection("videos")
-            .order(by: "createdAt", descending: true)
+            .order(
+                by: "createdAt",
+                descending: true
+            )
+            .limit(to: 60)
             .getDocuments { snapshot, error in
 
                 DispatchQueue.main.async {
+
                     isLoading = false
 
                     if let error {
@@ -133,17 +149,23 @@ struct FeedView: View {
                     }
 
                     videos = documents.compactMap { document in
+
                         let data = document.data()
 
-                        guard let videoURL = data["videoUrl"] as? String,
-                              !videoURL.isEmpty else {
+                        guard
+                            let videoURL = data["videoUrl"] as? String,
+                            !videoURL.isEmpty
+                        else {
                             return nil
                         }
 
-                        let uid = data["uid"] as? String ?? ""
+                        let uid =
+                            data["uid"] as? String
+                            ?? ""
 
                         let authorName =
-                            data["authorName"] as? String ?? "RIVEN User"
+                            data["authorName"] as? String
+                            ?? "RIVEN User"
 
                         let handle =
                             data["authorHandle"] as? String
@@ -151,25 +173,30 @@ struct FeedView: View {
                             ?? ""
 
                         let authorPfp =
-                            data["authorPfp"] as? String ?? ""
+                            data["authorPfp"] as? String
+                            ?? ""
 
                         let caption =
-                            data["caption"] as? String ?? ""
+                            data["caption"] as? String
+                            ?? ""
 
                         let likesBy =
-                            data["likesBy"] as? [String] ?? []
+                            data["likesBy"] as? [String]
+                            ?? []
 
                         let commentsCount =
-                            data["commentsCount"] as? Int ?? 0
+                            data["commentsCount"] as? Int
+                            ?? 0
 
                         let isPrivate =
-                            data["isPrivate"] as? Bool ?? false
+                            data["isPrivate"] as? Bool
+                            ?? false
 
-                        // Don't show private videos unless they belong
-                        // to the currently signed-in user.
                         if isPrivate {
+
                             let currentUID =
-                                Auth.auth().currentUser?.uid ?? ""
+                                Auth.auth().currentUser?.uid
+                                ?? ""
 
                             if uid != currentUID {
                                 return nil
@@ -191,70 +218,5 @@ struct FeedView: View {
                     }
                 }
             }
-    }
-}
-
-// MARK: - Fullscreen Video Player
-
-struct FYPPlayerView: UIViewRepresentable {
-    let url: URL
-
-    func makeUIView(context: Context) -> PlayerView {
-        let view = PlayerView()
-        view.backgroundColor = .black
-        view.playerLayer.videoGravity = .resizeAspectFill
-
-        let player = AVPlayer(url: url)
-        player.actionAtItemEnd = .none
-
-        view.player = player
-        player.play()
-
-        NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemDidPlayToEndTime,
-            object: player.currentItem,
-            queue: .main
-        ) { _ in
-            player.seek(to: .zero)
-            player.play()
-        }
-
-        return view
-    }
-
-    func updateUIView(
-        _ uiView: PlayerView,
-        context: Context
-    ) {
-        uiView.playerLayer.videoGravity = .resizeAspectFill
-    }
-
-    static func dismantleUIView(
-        _ uiView: PlayerView,
-        coordinator: ()
-    ) {
-        uiView.player?.pause()
-        uiView.player = nil
-    }
-}
-
-// MARK: - AVPlayer Layer Container
-
-final class PlayerView: UIView {
-    override class var layerClass: AnyClass {
-        AVPlayerLayer.self
-    }
-
-    var playerLayer: AVPlayerLayer {
-        layer as! AVPlayerLayer
-    }
-
-    var player: AVPlayer? {
-        get {
-            playerLayer.player
-        }
-        set {
-            playerLayer.player = newValue
-        }
     }
 }
