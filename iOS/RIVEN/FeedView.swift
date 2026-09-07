@@ -3,6 +3,7 @@ import AVKit
 import AVFoundation
 import FirebaseAuth
 import FirebaseFirestore
+import UIKit
 
 struct RIVENVideo: Identifiable {
     let id: String
@@ -36,7 +37,7 @@ struct FeedView: View {
             ZStack {
 
                 Color.black
-                    .ignoresSafeArea()
+                    .ignoresSafeArea(edges: .horizontal)
 
                 if isLoading {
 
@@ -89,12 +90,14 @@ struct FeedView: View {
 
                     RIVENPagedFeed(
                         videos: videos,
-                        activeVideoID: $activeVideoID
+                        activeVideoID: $activeVideoID,
+                        pageSize: geometry.size
                     )
                     .frame(
                         width: geometry.size.width,
                         height: geometry.size.height
                     )
+                    .background(Color.black)
                 }
             }
         }
@@ -145,7 +148,8 @@ struct FeedView: View {
                     }
 
                     videos =
-                        documents.compactMap { document in
+                        documents.compactMap {
+                            document in
 
                             let data =
                                 document.data()
@@ -235,13 +239,16 @@ struct FeedView: View {
     }
 }
 
-// MARK: - Native iOS 15 Paging Feed
+
+// MARK: - One-Video-Per-Swipe Feed
 
 struct RIVENPagedFeed: UIViewRepresentable {
 
     let videos: [RIVENVideo]
 
     @Binding var activeVideoID: String?
+
+    let pageSize: CGSize
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -256,24 +263,54 @@ struct RIVENPagedFeed: UIViewRepresentable {
         scrollView.backgroundColor = .black
 
         scrollView.isPagingEnabled = true
-        scrollView.alwaysBounceVertical = true
+        scrollView.alwaysBounceVertical = false
         scrollView.alwaysBounceHorizontal = false
-
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
 
-        scrollView.directionalLockEnabled = true
+        scrollView.bounces = true
+        scrollView.decelerationRate = .fast
 
-        scrollView.decelerationRate =
-            .fast
+        // Correct UIKit property name.
+        scrollView.isDirectionalLockEnabled = true
 
-        scrollView.delegate =
-            context.coordinator
+        scrollView.contentInset = .zero
+        scrollView.scrollIndicatorInsets = .zero
 
-        buildPages(
-            in: scrollView,
-            coordinator: context.coordinator
-        )
+        scrollView.delegate = context.coordinator
+
+        let hostedView =
+            context.coordinator.hostingController.view!
+
+        hostedView.backgroundColor = .black
+        hostedView.translatesAutoresizingMaskIntoConstraints = false
+
+        scrollView.addSubview(hostedView)
+
+        context.coordinator.hostedView = hostedView
+
+        NSLayoutConstraint.activate([
+
+            hostedView.leadingAnchor.constraint(
+                equalTo: scrollView.contentLayoutGuide.leadingAnchor
+            ),
+
+            hostedView.trailingAnchor.constraint(
+                equalTo: scrollView.contentLayoutGuide.trailingAnchor
+            ),
+
+            hostedView.topAnchor.constraint(
+                equalTo: scrollView.contentLayoutGuide.topAnchor
+            ),
+
+            hostedView.bottomAnchor.constraint(
+                equalTo: scrollView.contentLayoutGuide.bottomAnchor
+            ),
+
+            hostedView.widthAnchor.constraint(
+                equalTo: scrollView.frameLayoutGuide.widthAnchor
+            )
+        ])
 
         return scrollView
     }
@@ -283,150 +320,54 @@ struct RIVENPagedFeed: UIViewRepresentable {
         context: Context
     ) {
 
-        context.coordinator.parent =
-            self
+        context.coordinator.parent = self
 
-        let needsRebuild =
-            context.coordinator.videoIDs !=
-            videos.map(\.id)
+        context.coordinator.hostingController.rootView =
+            RIVENPagedFeedContent(
+                videos: videos,
+                activeVideoID: $activeVideoID,
+                pageSize: pageSize
+            )
 
-        if needsRebuild {
+        let expectedHeight =
+            pageSize.height * CGFloat(videos.count)
 
-            buildPages(
-                in: scrollView,
-                coordinator: context.coordinator
+        if scrollView.contentSize.height != expectedHeight {
+
+            scrollView.contentSize = CGSize(
+                width: pageSize.width,
+                height: expectedHeight
             )
         }
 
-        DispatchQueue.main.async {
-
-            if
-                let activeVideoID,
-                let index =
-                    videos.firstIndex(
-                        where: {
-                            $0.id == activeVideoID
-                        }
-                    )
-            {
-
-                let pageHeight =
-                    scrollView.bounds.height
-
-                guard pageHeight > 0 else {
-                    return
-                }
-
-                let targetY =
-                    CGFloat(index)
-                    * pageHeight
-
-                if abs(
-                    scrollView.contentOffset.y
-                    - targetY
-                ) > 1 {
-
-                    scrollView.setContentOffset(
-                        CGPoint(
-                            x: 0,
-                            y: targetY
-                        ),
-                        animated: false
-                    )
-                }
-            }
-        }
-    }
-
-    private func buildPages(
-        in scrollView: UIScrollView,
-        coordinator: Coordinator
-    ) {
-
-        scrollView.subviews.forEach {
-            $0.removeFromSuperview()
-        }
-
-        coordinator.videoIDs =
-            videos.map(\.id)
-
-        guard !videos.isEmpty else {
-            return
-        }
-
-        let pageWidth =
-            scrollView.bounds.width
-
-        let pageHeight =
-            scrollView.bounds.height
-
         guard
-            pageWidth > 0,
-            pageHeight > 0
+            let activeVideoID,
+            let index = videos.firstIndex(
+                where: { $0.id == activeVideoID }
+            )
         else {
             return
         }
 
-        let hostingController =
-            UIHostingController(
-                rootView:
-                    RIVENPagedFeedContent(
-                        videos: videos,
-                        activeVideoID:
-                            $activeVideoID
-                    )
-            )
+        let targetY =
+            CGFloat(index) * pageSize.height
 
-        hostingController.view.backgroundColor =
-            .black
+        let currentY =
+            scrollView.contentOffset.y
 
-        hostingController.view.frame =
-            CGRect(
-                x: 0,
-                y: 0,
-                width: pageWidth,
-                height:
-                    pageHeight
-                    * CGFloat(videos.count)
-            )
+        // Only reposition when we're not already essentially
+        // on the requested page. This prevents SwiftUI updates
+        // from fighting the user's swipe.
+        if abs(currentY - targetY) > 2,
+           !context.coordinator.isUserDragging {
 
-        scrollView.addSubview(
-            hostingController.view
-        )
-
-        coordinator.hostingController =
-            hostingController
-
-        scrollView.contentSize =
-            CGSize(
-                width: pageWidth,
-                height:
-                    pageHeight
-                    * CGFloat(videos.count)
-            )
-
-        scrollView.contentInset = .zero
-        scrollView.scrollIndicatorInsets = .zero
-
-        if let activeVideoID,
-           let index =
-                videos.firstIndex(
-                    where: {
-                        $0.id == activeVideoID
-                    }
-                ) {
-
-            scrollView.contentOffset =
+            scrollView.setContentOffset(
                 CGPoint(
                     x: 0,
-                    y:
-                        CGFloat(index)
-                        * pageHeight
-                )
-        } else {
-
-            activeVideoID =
-                videos.first?.id
+                    y: targetY
+                ),
+                animated: false
+            )
         }
     }
 
@@ -436,25 +377,112 @@ struct RIVENPagedFeed: UIViewRepresentable {
 
         var parent: RIVENPagedFeed
 
-        var videoIDs: [String] = []
+        let hostingController:
+            UIHostingController<RIVENPagedFeedContent>
 
-        var hostingController:
-            UIViewController?
+        weak var hostedView: UIView?
+
+        var isUserDragging = false
 
         init(
             _ parent: RIVENPagedFeed
         ) {
+
             self.parent = parent
+
+            let initialContent =
+                RIVENPagedFeedContent(
+                    videos: parent.videos,
+                    activeVideoID:
+                        parent.$activeVideoID,
+                    pageSize:
+                        parent.pageSize
+                )
+
+            self.hostingController =
+                UIHostingController(
+                    rootView: initialContent
+                )
+
+            super.init()
         }
 
-        func scrollViewDidEndDecelerating(
+        // MARK: Dragging
+
+        func scrollViewWillBeginDragging(
             _ scrollView: UIScrollView
         ) {
 
-            updateActiveVideo(
-                scrollView
-            )
+            isUserDragging = true
         }
+
+        func scrollViewWillEndDragging(
+            _ scrollView: UIScrollView,
+            withVelocity velocity: CGPoint,
+            targetContentOffset:
+                UnsafeMutablePointer<CGPoint>
+        ) {
+
+            let pageHeight =
+                max(scrollView.bounds.height, 1)
+
+            let currentPage =
+                Int(
+                    round(
+                        scrollView.contentOffset.y
+                        / pageHeight
+                    )
+                )
+
+            var targetPage = currentPage
+
+            // Only ever allow ONE page per swipe.
+            if velocity.y > 0.1 {
+
+                targetPage = currentPage + 1
+
+            } else if velocity.y < -0.1 {
+
+                targetPage = currentPage - 1
+
+            } else {
+
+                targetPage =
+                    Int(
+                        round(
+                            targetContentOffset.pointee.y
+                            / pageHeight
+                        )
+                    )
+
+                // Even without meaningful velocity,
+                // clamp the movement to one page.
+                if targetPage > currentPage + 1 {
+                    targetPage = currentPage + 1
+                }
+
+                if targetPage < currentPage - 1 {
+                    targetPage = currentPage - 1
+                }
+            }
+
+            targetPage =
+                max(
+                    0,
+                    min(
+                        targetPage,
+                        parent.videos.count - 1
+                    )
+                )
+
+            targetContentOffset.pointee =
+                CGPoint(
+                    x: 0,
+                    y: CGFloat(targetPage) * pageHeight
+                )
+        }
+
+        // MARK: Paging Finished
 
         func scrollViewDidEndDragging(
             _ scrollView: UIScrollView,
@@ -462,97 +490,107 @@ struct RIVENPagedFeed: UIViewRepresentable {
         ) {
 
             if !decelerate {
-
-                updateActiveVideo(
-                    scrollView
-                )
+                updateActivePage(scrollView)
+                isUserDragging = false
             }
+        }
+
+        func scrollViewDidEndDecelerating(
+            _ scrollView: UIScrollView
+        ) {
+
+            updateActivePage(scrollView)
+            isUserDragging = false
         }
 
         func scrollViewDidEndScrollingAnimation(
             _ scrollView: UIScrollView
         ) {
 
-            updateActiveVideo(
-                scrollView
-            )
+            updateActivePage(scrollView)
         }
 
-        private func updateActiveVideo(
+        // MARK: Active Video
+
+        private func updateActivePage(
             _ scrollView: UIScrollView
         ) {
 
-            let pageHeight =
-                scrollView.bounds.height
-
-            guard pageHeight > 0 else {
+            guard !parent.videos.isEmpty else {
                 return
             }
 
-            let rawIndex =
-                scrollView.contentOffset.y
-                / pageHeight
+            let pageHeight =
+                max(scrollView.bounds.height, 1)
 
-            let index =
+            var index =
                 Int(
-                    round(rawIndex)
+                    round(
+                        scrollView.contentOffset.y
+                        / pageHeight
+                    )
                 )
 
-            guard
-                index >= 0,
-                index < parent.videos.count
-            else {
-                return
-            }
+            index =
+                max(
+                    0,
+                    min(
+                        index,
+                        parent.videos.count - 1
+                    )
+                )
 
-            let videoID =
+            let newID =
                 parent.videos[index].id
 
-            if parent.activeVideoID !=
-                videoID {
+            if parent.activeVideoID != newID {
 
                 DispatchQueue.main.async {
-
-                    self.parent.activeVideoID =
-                        videoID
+                    self.parent.activeVideoID = newID
                 }
             }
         }
     }
 }
 
-// MARK: - SwiftUI Page Content
 
-private struct RIVENPagedFeedContent:
-    View {
+// MARK: - Hosted SwiftUI Feed Content
+
+struct RIVENPagedFeedContent: View {
 
     let videos: [RIVENVideo]
 
     @Binding var activeVideoID: String?
 
+    let pageSize: CGSize
+
     var body: some View {
 
-        GeometryReader { geometry in
+        VStack(
+            spacing: 0
+        ) {
 
-            VStack(
-                spacing: 0
-            ) {
+            ForEach(videos) { video in
 
-                ForEach(videos) { video in
-
-                    VideoPostView(
-                        video: video,
-                        isActive:
-                            activeVideoID == video.id
-                    )
-                    .frame(
-                        width:
-                            geometry.size.width,
-                        height:
-                            geometry.size.height
-                    )
-                }
+                VideoPostView(
+                    video: video,
+                    isActive:
+                        activeVideoID == video.id
+                )
+                .frame(
+                    width: pageSize.width,
+                    height: pageSize.height
+                )
+                .background(Color.black)
+                .clipped()
             }
         }
+        .frame(
+            width: pageSize.width,
+            height:
+                pageSize.height
+                * CGFloat(videos.count),
+            alignment: .top
+        )
     }
 }
