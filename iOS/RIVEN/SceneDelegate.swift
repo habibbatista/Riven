@@ -15,16 +15,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
 
-        let rootView = ContentView()
+        let window = UIWindow(windowScene: windowScene)
 
         let hostingController = UIHostingController(
-            rootView: rootView
+            rootView: ContentView()
         )
 
-        hostingController.modalPresentationStyle = .fullScreen
-        hostingController.view.backgroundColor = .systemBackground
-
-        let window = UIWindow(windowScene: windowScene)
         window.rootViewController = hostingController
         window.backgroundColor = .systemBackground
 
