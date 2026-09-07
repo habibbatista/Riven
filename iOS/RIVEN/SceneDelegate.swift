@@ -15,11 +15,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             return
         }
 
-        let window = UIWindow(windowScene: windowScene)
+        let window = RIVENEdgeToEdgeWindow(windowScene: windowScene)
 
         let rootView = ContentView()
 
-        let hostingController = UIHostingController(
+        let hostingController = RIVENFullscreenController(
             rootView: rootView
         )
 
