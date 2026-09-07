@@ -1,10 +1,46 @@
 import SwiftUI
 import AVFoundation
-import AVKit
 import FirebaseFirestore
 
+struct RIVENVideo: Identifiable {
+    let id: String
+    let uid: String
+    let authorName: String
+    let authorHandle: String
+    let authorPfp: String
+    let videoURL: String
+    let caption: String
+    var likesBy: [String]
+    var commentsCount: Int
+    var isPrivate: Bool
+
+    init(
+        id: String,
+        uid: String = "",
+        authorName: String = "User",
+        authorHandle: String = "user",
+        authorPfp: String = "",
+        videoURL: String,
+        caption: String = "",
+        likesBy: [String] = [],
+        commentsCount: Int = 0,
+        isPrivate: Bool = false
+    ) {
+        self.id = id
+        self.uid = uid
+        self.authorName = authorName
+        self.authorHandle = authorHandle
+        self.authorPfp = authorPfp
+        self.videoURL = videoURL
+        self.caption = caption
+        self.likesBy = likesBy
+        self.commentsCount = commentsCount
+        self.isPrivate = isPrivate
+    }
+}
+
 struct FeedView: View {
-    @State private var videos: [FeedVideo] = []
+    @State private var videos: [RIVENVideo] = []
     @State private var currentIndex = 0
 
     var body: some View {
@@ -19,13 +55,15 @@ struct FeedView: View {
                 } else {
                     TabView(selection: $currentIndex) {
                         ForEach(Array(videos.enumerated()), id: \.element.id) { index, video in
-                            FYPVideoPage(video: video)
-                                .tag(index)
-                                .frame(
-                                    width: geometry.size.width,
-                                    height: geometry.size.height
-                                )
-                                .clipped()
+                            FYPVideoPage(
+                                video: video,
+                                isCurrent: currentIndex == index
+                            )
+                            .tag(index)
+                            .frame(
+                                width: geometry.size.width,
+                                height: geometry.size.height
+                            )
                         }
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
@@ -35,6 +73,10 @@ struct FeedView: View {
                     )
                 }
             }
+            .frame(
+                width: geometry.size.width,
+                height: geometry.size.height
+            )
         }
         .ignoresSafeArea()
         .task {
@@ -57,34 +99,28 @@ struct FeedView: View {
                     return nil
                 }
 
-                return FeedVideo(
+                return RIVENVideo(
                     id: document.documentID,
-                    authorName: data["authorName"] as? String ?? "",
-                    authorHandle: data["authorHandle"] as? String ?? "",
+                    uid: data["uid"] as? String ?? "",
+                    authorName: data["authorName"] as? String ?? "User",
+                    authorHandle: data["authorHandle"] as? String ?? "user",
                     authorPfp: data["authorPfp"] as? String ?? "",
                     videoURL: videoURL,
                     caption: data["caption"] as? String ?? "",
-                    likes: data["likesBy"] as? [String] ?? []
+                    likesBy: data["likesBy"] as? [String] ?? [],
+                    commentsCount: data["commentsCount"] as? Int ?? 0,
+                    isPrivate: data["isPrivate"] as? Bool ?? false
                 )
             }
         } catch {
-            print("Failed to load FYP:", error)
+            print("FYP load error:", error)
         }
     }
 }
 
-struct FeedVideo: Identifiable {
-    let id: String
-    let authorName: String
-    let authorHandle: String
-    let authorPfp: String
-    let videoURL: String
-    let caption: String
-    let likes: [String]
-}
-
 struct FYPVideoPage: View {
-    let video: FeedVideo
+    let video: RIVENVideo
+    let isCurrent: Bool
 
     @State private var player: AVPlayer?
     @State private var isPlaying = false
@@ -97,22 +133,19 @@ struct FYPVideoPage: View {
                     .ignoresSafeArea()
 
                 if let player {
-                    FYPPlayerView(
-                        player: player,
-                        isPlaying: $isPlaying
-                    )
-                    .frame(
-                        width: geometry.size.width,
-                        height: geometry.size.height
-                    )
-                    .clipped()
-                    .ignoresSafeArea()
+                    FYPPlayerView(player: player)
+                        .frame(
+                            width: geometry.size.width,
+                            height: geometry.size.height
+                        )
+                        .clipped()
+                        .ignoresSafeArea()
                 }
 
                 VStack {
                     Spacer()
 
-                    HStack(alignment: .bottom, spacing: 12) {
+                    HStack(alignment: .bottom) {
                         VStack(alignment: .leading, spacing: 7) {
                             Text("@\(video.authorHandle)")
                                 .font(.system(size: 17, weight: .bold))
@@ -126,7 +159,7 @@ struct FYPVideoPage: View {
                             }
                         }
 
-                        Spacer(minLength: 70)
+                        Spacer()
                     }
                     .padding(.horizontal, 18)
                     .padding(.bottom, 105)
@@ -138,9 +171,9 @@ struct FYPVideoPage: View {
                     HStack {
                         Spacer()
 
-                        VStack(spacing: 25) {
+                        VStack(spacing: 28) {
                             Button {
-                                // Like action
+                                // Like
                             } label: {
                                 Image(systemName: "heart")
                                     .font(.system(size: 31))
@@ -148,7 +181,7 @@ struct FYPVideoPage: View {
                             }
 
                             Button {
-                                // Comments action
+                                // Comments
                             } label: {
                                 Image(systemName: "bubble.right")
                                     .font(.system(size: 30))
@@ -156,7 +189,7 @@ struct FYPVideoPage: View {
                             }
 
                             Button {
-                                // Share action
+                                // Share
                             } label: {
                                 Image(systemName: "square.and.arrow.up")
                                     .font(.system(size: 30))
@@ -166,6 +199,32 @@ struct FYPVideoPage: View {
                         .padding(.trailing, 18)
                         .padding(.bottom, 125)
                     }
+                }
+
+                VStack {
+                    HStack {
+                        Spacer()
+
+                        Button {
+                            isMuted.toggle()
+                            player?.isMuted = isMuted
+                        } label: {
+                            Image(
+                                systemName: isMuted
+                                    ? "speaker.slash.fill"
+                                    : "speaker.wave.2.fill"
+                            )
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 52, height: 52)
+                            .background(.black.opacity(0.35))
+                            .clipShape(Circle())
+                        }
+                        .padding(.top, 60)
+                        .padding(.trailing, 18)
+                    }
+
+                    Spacer()
                 }
 
                 if !isPlaying {
@@ -181,42 +240,27 @@ struct FYPVideoPage: View {
                             .clipShape(Circle())
                     }
                 }
-
-                VStack {
-                    HStack {
-                        Spacer()
-
-                        Button {
-                            isMuted.toggle()
-                            player?.isMuted = isMuted
-                        } label: {
-                            Image(systemName: isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                                .font(.system(size: 22, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 52, height: 52)
-                                .background(.black.opacity(0.35))
-                                .clipShape(Circle())
-                        }
-                        .padding(.top, 60)
-                        .padding(.trailing, 18)
-                    }
-
-                    Spacer()
-                }
             }
             .frame(
                 width: geometry.size.width,
                 height: geometry.size.height
             )
             .clipped()
+            .ignoresSafeArea()
             .onAppear {
                 let newPlayer = AVPlayer(
                     url: URL(string: video.videoURL)!
                 )
+
                 newPlayer.actionAtItemEnd = .none
+                newPlayer.isMuted = isMuted
+
                 player = newPlayer
-                newPlayer.play()
-                isPlaying = true
+
+                if isCurrent {
+                    newPlayer.play()
+                    isPlaying = true
+                }
 
                 NotificationCenter.default.addObserver(
                     forName: .AVPlayerItemDidPlayToEndTime,
@@ -224,7 +268,19 @@ struct FYPVideoPage: View {
                     queue: .main
                 ) { _ in
                     newPlayer.seek(to: .zero)
-                    newPlayer.play()
+
+                    if isCurrent {
+                        newPlayer.play()
+                    }
+                }
+            }
+            .onChange(of: isCurrent) { active in
+                if active {
+                    player?.play()
+                    isPlaying = true
+                } else {
+                    player?.pause()
+                    isPlaying = false
                 }
             }
             .onDisappear {
@@ -238,25 +294,27 @@ struct FYPVideoPage: View {
 
 struct FYPPlayerView: UIViewRepresentable {
     let player: AVPlayer
-    @Binding var isPlaying: Bool
 
-    func makeUIView(context: Context) -> PlayerView {
-        let view = PlayerView()
+    func makeUIView(context: Context) -> FYPPlayerUIView {
+        let view = FYPPlayerUIView()
         view.player = player
         return view
     }
 
-    func updateUIView(_ uiView: PlayerView, context: Context) {
+    func updateUIView(
+        _ uiView: FYPPlayerUIView,
+        context: Context
+    ) {
         uiView.player = player
     }
 }
 
-final class PlayerView: UIView {
+final class FYPPlayerUIView: UIView {
     override class var layerClass: AnyClass {
         AVPlayerLayer.self
     }
 
-    var playerLayer: AVPlayerLayer {
+    private var playerLayer: AVPlayerLayer {
         layer as! AVPlayerLayer
     }
 
@@ -272,6 +330,7 @@ final class PlayerView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+
         playerLayer.frame = bounds
         playerLayer.videoGravity = .resizeAspectFill
     }
