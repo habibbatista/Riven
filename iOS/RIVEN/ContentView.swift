@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAuth
 
 struct ContentView: View {
 
@@ -9,39 +10,59 @@ struct ContentView: View {
 
             FeedView()
                 .tabItem {
-                    Label("Home", systemImage: "house")
+                    Image(systemName: "house.fill")
+                    Text("Home")
                 }
                 .tag(0)
 
             SearchView()
                 .tabItem {
-                    Label("Search", systemImage: "magnifyingglass")
+                    Image(systemName: "magnifyingglass")
+                    Text("Search")
                 }
                 .tag(1)
 
             CreateView()
                 .tabItem {
-                    Label("Create", systemImage: "plus")
+                    Image(systemName: "plus.circle.fill")
+                    Text("Create")
                 }
                 .tag(2)
 
             InboxView()
                 .tabItem {
-                    Label("Inbox", systemImage: "bubble.left.and.bubble.right")
+                    Image(systemName: "message.fill")
+                    Text("Inbox")
                 }
                 .tag(3)
 
-            ProfileView()
+            profileTab
                 .tabItem {
-                    Label("Profile", systemImage: "person")
+                    Image(systemName: "person.fill")
+                    Text("Profile")
                 }
                 .tag(4)
         }
-        .tint(.blue)
-        .frame(
-            maxWidth: .infinity,
-            maxHeight: .infinity
-        )
-        .background(Color.black)
+    }
+
+    @ViewBuilder
+    private var profileTab: some View {
+        if let uid = Auth.auth().currentUser?.uid {
+            ProfileView(uid: uid)
+        } else {
+            VStack(spacing: 12) {
+                Image(systemName: "person.crop.circle.badge.exclamationmark")
+                    .font(.system(size: 42))
+
+                Text("Not signed in")
+                    .font(.headline)
+
+                Text("Please sign in to view your profile.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding()
+        }
     }
 }
