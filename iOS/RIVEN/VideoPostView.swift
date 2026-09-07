@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import AVFoundation
 import FirebaseAuth
 import FirebaseFirestore
@@ -11,13 +12,16 @@ struct VideoPostView: View {
     @State private var liked = false
     @State private var muted = false
     @State private var isPlaying = true
+
     @State private var showComments = false
     @State private var showShare = false
     @State private var showControls = true
+
     @State private var currentTime: Double = 0
     @State private var duration: Double = 0
 
     @State private var hideControlsTask: DispatchWorkItem?
+    @State private var progressTimer: Timer?
 
     private let db = Firestore.firestore()
 
@@ -30,7 +34,7 @@ struct VideoPostView: View {
                 Color.black
                     .ignoresSafeArea()
 
-                if let player {
+                if let player = player {
 
                     RIVENCustomVideoSurface(
                         player: player
@@ -72,11 +76,13 @@ struct VideoPostView: View {
             stopPlayer()
         }
         .sheet(isPresented: $showComments) {
+
             CommentsView(
                 videoID: video.id
             )
         }
         .sheet(isPresented: $showShare) {
+
             ShareView(
                 videoURL: video.videoURL
             )
@@ -110,11 +116,13 @@ struct VideoPostView: View {
                     )
                 }
                 .padding(.horizontal, 16)
+
+                // Keep controls safely above the native TabView.
                 .padding(
                     .bottom,
                     max(
-                        geometry.safeAreaInsets.bottom + 12,
-                        18
+                        geometry.safeAreaInsets.bottom + 76,
+                        86
                     )
                 )
             }
@@ -135,7 +143,9 @@ struct VideoPostView: View {
                     )
                     .background(
                         Circle()
-                            .fill(.black.opacity(0.45))
+                            .fill(
+                                Color.black.opacity(0.45)
+                            )
                     )
                     .allowsHitTesting(false)
             }
@@ -148,18 +158,17 @@ struct VideoPostView: View {
                     player: player
                 )
                 .padding(.horizontal, 16)
+
                 .padding(
                     .bottom,
                     max(
-                        geometry.safeAreaInsets.bottom + 4,
-                        8
+                        geometry.safeAreaInsets.bottom + 66,
+                        74
                     )
                 )
             }
         }
-        .transition(
-            .opacity
-        )
+        .transition(.opacity)
     }
 
     private var captionSection: some View {
@@ -169,7 +178,7 @@ struct VideoPostView: View {
             spacing: 7
         ) {
 
-            Text("@\(video.handle)")
+            Text("@\(video.authorHandle)")
                 .font(
                     .headline.weight(.semibold)
                 )
@@ -189,7 +198,7 @@ struct VideoPostView: View {
             alignment: .leading
         )
         .shadow(
-            color: .black.opacity(0.7),
+            color: Color.black.opacity(0.7),
             radius: 4,
             x: 0,
             y: 1
@@ -247,9 +256,7 @@ struct VideoPostView: View {
         action: @escaping () -> Void
     ) -> some View {
 
-        Button(
-            action: action
-        ) {
+        Button(action: action) {
 
             Image(systemName: icon)
                 .font(
@@ -275,7 +282,7 @@ struct VideoPostView: View {
         player: AVPlayer?
     ) -> some View {
 
-        VStack(spacing: 4) {
+        Group {
 
             if duration > 0 {
 
@@ -285,7 +292,9 @@ struct VideoPostView: View {
                             currentTime
                         },
                         set: { newValue in
+
                             currentTime = newValue
+
                             player?.seek(
                                 to: CMTime(
                                     seconds: newValue,
@@ -294,7 +303,10 @@ struct VideoPostView: View {
                             )
                         }
                     ),
-                    in: 0...max(duration, 0.1)
+                    in: 0...max(
+                        duration,
+                        0.1
+                    )
                 )
                 .tint(.white)
             }
@@ -345,13 +357,11 @@ struct VideoPostView: View {
 
             newPlayer.play()
 
-            DispatchQueue.main.async {
-                currentTime = 0
-                isPlaying = true
-            }
+            currentTime = 0
+            isPlaying = true
         }
 
-        observePlayerDuration(
+        startProgressTimer(
             newPlayer
         )
 
@@ -361,12 +371,19 @@ struct VideoPostView: View {
     private func stopPlayer() {
 
         hideControlsTask?.cancel()
+        hideControlsTask = nil
 
-        NotificationCenter.default.removeObserver(
-            self,
-            name: .AVPlayerItemDidPlayToEndTime,
-            object: player?.currentItem
-        )
+        progressTimer?.invalidate()
+        progressTimer = nil
+
+        if let currentItem = player?.currentItem {
+
+            NotificationCenter.default.removeObserver(
+                self,
+                name: .AVPlayerItemDidPlayToEndTime,
+                object: currentItem
+            )
+        }
 
         player?.pause()
         player = nil
@@ -374,7 +391,7 @@ struct VideoPostView: View {
 
     private func togglePlayback() {
 
-        guard let player else {
+        guard let player = player else {
             return
         }
 
@@ -400,7 +417,9 @@ struct VideoPostView: View {
 
         } else {
 
-            withAnimation(.easeInOut(duration: 0.18)) {
+            withAnimation(
+                .easeInOut(duration: 0.18)
+            ) {
                 showControls = true
             }
 
@@ -414,17 +433,12 @@ struct VideoPostView: View {
 
         let task = DispatchWorkItem {
 
-            DispatchQueue.main.async {
+            if isPlaying {
 
-                if isPlaying {
-
-                    withAnimation(
-                        .easeInOut(
-                            duration: 0.2
-                        )
-                    ) {
-                        showControls = false
-                    }
+                withAnimation(
+                    .easeInOut(duration: 0.2)
+                ) {
+                    showControls = false
                 }
             }
         }
@@ -450,43 +464,43 @@ struct VideoPostView: View {
 
     // MARK: - Time
 
-    private func observePlayerDuration(
+    private func startProgressTimer(
         _ player: AVPlayer
     ) {
 
-        Timer.scheduledTimer(
+        progressTimer?.invalidate()
+
+        progressTimer = Timer.scheduledTimer(
             withTimeInterval: 0.25,
             repeats: true
         ) { timer in
 
             guard self.player === player else {
+
                 timer.invalidate()
                 return
             }
 
             let current =
-                player.currentTime()
-                    .seconds
+                player.currentTime().seconds
 
             let total =
                 player.currentItem?
                     .duration.seconds
                     ?? 0
 
-            DispatchQueue.main.async {
+            if current.isFinite {
 
-                if current.isFinite {
-                    self.currentTime = max(
-                        current,
-                        0
-                    )
-                }
+                self.currentTime = max(
+                    current,
+                    0
+                )
+            }
 
-                if total.isFinite,
-                   total > 0 {
+            if total.isFinite,
+               total > 0 {
 
-                    self.duration = total
-                }
+                self.duration = total
             }
         }
     }
@@ -505,30 +519,24 @@ struct VideoPostView: View {
 
         liked.toggle()
 
-        if wasLiked {
+        let update: [String: Any]
 
-            video.likesBy.removeAll {
-                $0 == user.uid
-            }
+        if liked {
+
+            update = [
+                "likesBy": FieldValue.arrayUnion(
+                    [user.uid]
+                )
+            ]
 
         } else {
 
-            if !video.likesBy.contains(user.uid) {
-                video.likesBy.append(
-                    user.uid
+            update = [
+                "likesBy": FieldValue.arrayRemove(
+                    [user.uid]
                 )
-            }
+            ]
         }
-
-        let update: [String: Any] = [
-            "likesBy": liked
-                ? FieldValue.arrayUnion(
-                    [user.uid]
-                )
-                : FieldValue.arrayRemove(
-                    [user.uid]
-                )
-        ]
 
         db.collection("videos")
             .document(video.id)
@@ -537,6 +545,7 @@ struct VideoPostView: View {
                 if let error {
 
                     DispatchQueue.main.async {
+
                         liked = wasLiked
                     }
 
@@ -563,9 +572,8 @@ struct RIVENCustomVideoSurface: UIViewRepresentable {
 
         view.backgroundColor = .black
 
-        // IMPORTANT:
-        // resizeAspect preserves the entire video.
-        // It does NOT crop to fill the screen.
+        // Keep the complete 9:16 video visible.
+        // No cropping.
         view.playerLayer.videoGravity =
             .resizeAspect
 
@@ -595,6 +603,8 @@ struct RIVENCustomVideoSurface: UIViewRepresentable {
     }
 }
 
+// MARK: - Player View
+
 final class RIVENPlayerView: UIView {
 
     override class var layerClass: AnyClass {
@@ -606,6 +616,7 @@ final class RIVENPlayerView: UIView {
     }
 
     var player: AVPlayer? {
+
         get {
             playerLayer.player
         }
