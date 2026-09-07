@@ -463,14 +463,10 @@ struct CommentsView: View {
 
             TextField(
                 "Add a comment...",
-                text: $comment,
-                axis: .vertical
+                text: $comment
             )
             .textFieldStyle(
                 .roundedBorder
-            )
-            .lineLimit(
-                1...4
             )
 
             Button {
