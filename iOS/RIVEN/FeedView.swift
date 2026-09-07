@@ -27,8 +27,7 @@ struct FeedView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
 
-    @State private var currentIndex = 0
-    @State private var dragOffset: CGFloat = 0
+    @State private var activeVideoID: String?
 
     var body: some View {
 
@@ -88,90 +87,14 @@ struct FeedView: View {
 
                 } else {
 
-                    VStack(spacing: 0) {
-
-                        ForEach(
-                            Array(videos.enumerated()),
-                            id: \.element.id
-                        ) { index, video in
-
-                            VideoPostView(
-                                video: video,
-                                isActive: currentIndex == index
-                            )
-                            .frame(
-                                width: geometry.size.width,
-                                height: geometry.size.height
-                            )
-                        }
-                    }
+                    RIVENPagedFeed(
+                        videos: videos,
+                        activeVideoID: $activeVideoID
+                    )
                     .frame(
                         width: geometry.size.width,
-                        height: geometry.size.height,
-                        alignment: .center
+                        height: geometry.size.height
                     )
-                    .offset(
-                        y:
-                            -CGFloat(currentIndex)
-                            * geometry.size.height
-                            + dragOffset
-                    )
-                    .animation(
-                        .interactiveSpring(
-                            response: 0.32,
-                            dampingFraction: 0.86,
-                            blendDuration: 0.12
-                        ),
-                        value: currentIndex
-                    )
-                    .contentShape(Rectangle())
-                    .gesture(
-                        DragGesture(
-                            minimumDistance: 10,
-                            coordinateSpace: .local
-                        )
-                        .onChanged { value in
-
-                            dragOffset = value.translation.height
-                        }
-                        .onEnded { value in
-
-                            let translation =
-                                value.translation.height
-
-                            let predicted =
-                                value.predictedEndTranslation.height
-
-                            let threshold =
-                                geometry.size.height * 0.18
-
-                            var newIndex =
-                                currentIndex
-
-                            if translation < -threshold ||
-                                predicted < -geometry.size.height * 0.35 {
-
-                                newIndex =
-                                    min(
-                                        currentIndex + 1,
-                                        videos.count - 1
-                                    )
-
-                            } else if translation > threshold ||
-                                      predicted > geometry.size.height * 0.35 {
-
-                                newIndex =
-                                    max(
-                                        currentIndex - 1,
-                                        0
-                                    )
-                            }
-
-                            dragOffset = 0
-                            currentIndex = newIndex
-                        }
-                    )
-                    .clipped()
                 }
             }
         }
@@ -182,9 +105,7 @@ struct FeedView: View {
             }
         }
         .onDisappear {
-
-            dragOffset = 0
-            currentIndex = 0
+            activeVideoID = nil
         }
     }
 
@@ -192,8 +113,7 @@ struct FeedView: View {
 
         isLoading = true
         errorMessage = nil
-        currentIndex = 0
-        dragOffset = 0
+        activeVideoID = nil
 
         Firestore.firestore()
             .collection("videos")
@@ -307,7 +227,332 @@ struct FeedView: View {
                                     isPrivate
                             )
                         }
+
+                    activeVideoID =
+                        videos.first?.id
                 }
             }
+    }
+}
+
+// MARK: - Native iOS 15 Paging Feed
+
+struct RIVENPagedFeed: UIViewRepresentable {
+
+    let videos: [RIVENVideo]
+
+    @Binding var activeVideoID: String?
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func makeUIView(
+        context: Context
+    ) -> UIScrollView {
+
+        let scrollView = UIScrollView()
+
+        scrollView.backgroundColor = .black
+
+        scrollView.isPagingEnabled = true
+        scrollView.alwaysBounceVertical = true
+        scrollView.alwaysBounceHorizontal = false
+
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.showsHorizontalScrollIndicator = false
+
+        scrollView.directionalLockEnabled = true
+
+        scrollView.decelerationRate =
+            .fast
+
+        scrollView.delegate =
+            context.coordinator
+
+        buildPages(
+            in: scrollView,
+            coordinator: context.coordinator
+        )
+
+        return scrollView
+    }
+
+    func updateUIView(
+        _ scrollView: UIScrollView,
+        context: Context
+    ) {
+
+        context.coordinator.parent =
+            self
+
+        let needsRebuild =
+            context.coordinator.videoIDs !=
+            videos.map(\.id)
+
+        if needsRebuild {
+
+            buildPages(
+                in: scrollView,
+                coordinator: context.coordinator
+            )
+        }
+
+        DispatchQueue.main.async {
+
+            if
+                let activeVideoID,
+                let index =
+                    videos.firstIndex(
+                        where: {
+                            $0.id == activeVideoID
+                        }
+                    )
+            {
+
+                let pageHeight =
+                    scrollView.bounds.height
+
+                guard pageHeight > 0 else {
+                    return
+                }
+
+                let targetY =
+                    CGFloat(index)
+                    * pageHeight
+
+                if abs(
+                    scrollView.contentOffset.y
+                    - targetY
+                ) > 1 {
+
+                    scrollView.setContentOffset(
+                        CGPoint(
+                            x: 0,
+                            y: targetY
+                        ),
+                        animated: false
+                    )
+                }
+            }
+        }
+    }
+
+    private func buildPages(
+        in scrollView: UIScrollView,
+        coordinator: Coordinator
+    ) {
+
+        scrollView.subviews.forEach {
+            $0.removeFromSuperview()
+        }
+
+        coordinator.videoIDs =
+            videos.map(\.id)
+
+        guard !videos.isEmpty else {
+            return
+        }
+
+        let pageWidth =
+            scrollView.bounds.width
+
+        let pageHeight =
+            scrollView.bounds.height
+
+        guard
+            pageWidth > 0,
+            pageHeight > 0
+        else {
+            return
+        }
+
+        let hostingController =
+            UIHostingController(
+                rootView:
+                    RIVENPagedFeedContent(
+                        videos: videos,
+                        activeVideoID:
+                            $activeVideoID
+                    )
+            )
+
+        hostingController.view.backgroundColor =
+            .black
+
+        hostingController.view.frame =
+            CGRect(
+                x: 0,
+                y: 0,
+                width: pageWidth,
+                height:
+                    pageHeight
+                    * CGFloat(videos.count)
+            )
+
+        scrollView.addSubview(
+            hostingController.view
+        )
+
+        coordinator.hostingController =
+            hostingController
+
+        scrollView.contentSize =
+            CGSize(
+                width: pageWidth,
+                height:
+                    pageHeight
+                    * CGFloat(videos.count)
+            )
+
+        scrollView.contentInset = .zero
+        scrollView.scrollIndicatorInsets = .zero
+
+        if let activeVideoID,
+           let index =
+                videos.firstIndex(
+                    where: {
+                        $0.id == activeVideoID
+                    }
+                ) {
+
+            scrollView.contentOffset =
+                CGPoint(
+                    x: 0,
+                    y:
+                        CGFloat(index)
+                        * pageHeight
+                )
+        } else {
+
+            activeVideoID =
+                videos.first?.id
+        }
+    }
+
+    final class Coordinator:
+        NSObject,
+        UIScrollViewDelegate {
+
+        var parent: RIVENPagedFeed
+
+        var videoIDs: [String] = []
+
+        var hostingController:
+            UIViewController?
+
+        init(
+            _ parent: RIVENPagedFeed
+        ) {
+            self.parent = parent
+        }
+
+        func scrollViewDidEndDecelerating(
+            _ scrollView: UIScrollView
+        ) {
+
+            updateActiveVideo(
+                scrollView
+            )
+        }
+
+        func scrollViewDidEndDragging(
+            _ scrollView: UIScrollView,
+            willDecelerate decelerate: Bool
+        ) {
+
+            if !decelerate {
+
+                updateActiveVideo(
+                    scrollView
+                )
+            }
+        }
+
+        func scrollViewDidEndScrollingAnimation(
+            _ scrollView: UIScrollView
+        ) {
+
+            updateActiveVideo(
+                scrollView
+            )
+        }
+
+        private func updateActiveVideo(
+            _ scrollView: UIScrollView
+        ) {
+
+            let pageHeight =
+                scrollView.bounds.height
+
+            guard pageHeight > 0 else {
+                return
+            }
+
+            let rawIndex =
+                scrollView.contentOffset.y
+                / pageHeight
+
+            let index =
+                Int(
+                    round(rawIndex)
+                )
+
+            guard
+                index >= 0,
+                index < parent.videos.count
+            else {
+                return
+            }
+
+            let videoID =
+                parent.videos[index].id
+
+            if parent.activeVideoID !=
+                videoID {
+
+                DispatchQueue.main.async {
+
+                    self.parent.activeVideoID =
+                        videoID
+                }
+            }
+        }
+    }
+}
+
+// MARK: - SwiftUI Page Content
+
+private struct RIVENPagedFeedContent:
+    View {
+
+    let videos: [RIVENVideo]
+
+    @Binding var activeVideoID: String?
+
+    var body: some View {
+
+        GeometryReader { geometry in
+
+            VStack(
+                spacing: 0
+            ) {
+
+                ForEach(videos) { video in
+
+                    VideoPostView(
+                        video: video,
+                        isActive:
+                            activeVideoID == video.id
+                    )
+                    .frame(
+                        width:
+                            geometry.size.width,
+                        height:
+                            geometry.size.height
+                    )
+                }
+            }
+        }
     }
 }
