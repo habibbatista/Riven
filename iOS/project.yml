@@ -1,0 +1,26 @@
+name: RIVEN
+
+options:
+  deploymentTarget:
+    iOS: "13.0"
+
+settings:
+  base:
+    SWIFT_VERSION: 5.0
+    PRODUCT_BUNDLE_IDENTIFIER: com.riven.app
+    TARGETED_DEVICE_FAMILY: "1,2"
+
+targets:
+  RIVEN:
+    type: application
+    platform: iOS
+
+    sources:
+      - path: RIVEN
+
+    settings:
+      base:
+        INFOPLIST_FILE: RIVEN/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.riven.app
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
